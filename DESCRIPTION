@@ -3,8 +3,7 @@ Type: Package
 Title: RForestry
 Version: 0.8.1.0
 Author: Sören Künzel, Theo Saarinen, Edward Liu, Allen Tang, Jasjeet Sekhon
-Maintainer: Sören Künzel <srk@berkeley.edu>, Theo Saarinen <theo_s@berkeley.edu>
-  , Jasjeet Sekhon <jasjeet.sekhon@yale.edu>
+Maintainer: Sören Künzel <srk@berkeley.edu>, Theo Saarinen <theo_s@berkeley.edu>, Jasjeet Sekhon <jasjeet.sekhon@yale.edu>
 Description: Gradient Boosting, Random Forests, Tree Estimators with an emphasis
   on statistical inference and interpretability.
 License: GPL (>=3) | file LICENSE
