@@ -3,7 +3,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2629366.svg)](https://doi.org/10.5281/zenodo.2629366)
 
 
-## Rforestry: Provides Functions for Fast Random Forests
+## Rforestry: Random Forests, Linear Trees, and Gradient Boosting for Inference and Interpretability
 
 Sören Künzel, Theo Saarinen, Edward Liu, Allen Tang, Jasjeet Sekhon
 
