@@ -3,27 +3,28 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2629366.svg)](https://doi.org/10.5281/zenodo.2629366)
 
 
-## forestry: Provides Functions for Fast Random Forests
+## Rforestry: Provides Functions for Fast Random Forests
 
-Sören Künzel, Edward Liu, Theo Saarinen, Allen Tang, Jasjeet Sekhon
+Sören Künzel, Theo Saarinen, Edward Liu, Allen Tang, Jasjeet Sekhon
 
 ## Introduction
 
-forestry is a fast implementation of Honest Random Forests. 
+Rforestry is a fast implementation of Honest Random Forests, gradient boosting 
+and ridge penalized random forests. 
 
 ## How to install
 1. The GFortran compiler has to be up to date. GFortran Binaries can be found [here](https://gcc.gnu.org/wiki/GFortranBinaries).
 2. The [devtools](https://github.com/hadley/devtools) package has to be installed. You can install it using,  `install.packages("devtools")`.
 3. The package contains compiled code, and you must have a development environment to install the development version. You can use `devtools::has_devel()` to check whether you do. If no development environment exists, Windows users download and install [Rtools](https://cran.r-project.org/bin/windows/Rtools/) and macOS users download and install [Xcode](https://itunes.apple.com/us/app/xcode/id497799835).
 4. The latest development version can then be installed using 
-`devtools::install_github("soerenkuenzel/forestry") `.
+`devtools::install_github("forestry-labs/Rforestry") `.
 
 
 ## Usage 
 
 ```R
 set.seed(292315)
-library(forestry)
+library(Rforestry)
 test_idx <- sample(nrow(iris), 3)
 x_train <- iris[-test_idx, -1]
 y_train <- iris[-test_idx, 1]
@@ -44,7 +45,7 @@ Example:
 
 ```R
 set.seed(49)
-library(forestry)
+library(Rforestry)
 
 n <- c(100)
 a <- rnorm(n)
@@ -61,6 +62,8 @@ predict(forest, x)
 A parameter controlling monotonic constraints for features in forestry.
 
 ```R
+library(Rforestry)
+
 x <- rnorm(150)+5
 y <- .15*x + .5*sin(3*x)
 data_train <- data.frame(x1 = x, x2 = rnorm(150)+5, y = y + rnorm(150, sd = .4))
@@ -86,7 +89,7 @@ The predictions for these are returned NaN.
 
 
 ```R
-library(forestry)
+library(Rforestry)
 
 # Train a forest
 rf <- forestry(x = iris[,-1], 

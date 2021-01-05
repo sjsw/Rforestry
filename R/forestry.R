@@ -1,4 +1,4 @@
-#' @useDynLib forestry, .registration = TRUE
+#' @useDynLib Rforestry, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
 #' @importFrom stats predict runif
 NULL
