@@ -167,7 +167,7 @@ For Linear Random Forests, set the linear option to TRUE and
 }
 \examples{
 set.seed(292315)
-library(forestry)
+library(Rforestry)
 test_idx <- sample(nrow(iris), 3)
 x_train <- iris[-test_idx, -1]
 y_train <- iris[-test_idx, 1]
@@ -180,7 +180,7 @@ weights \%*\% y_train
 predict(rf, x_test)
 
 set.seed(49)
-library(forestry)
+library(Rforestry)
 
 n <- c(100)
 a <- rnorm(n)

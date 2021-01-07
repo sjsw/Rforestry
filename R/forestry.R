@@ -441,7 +441,7 @@ setClass(
 #' @seealso \code{\link{make_savable}}
 #' @examples
 #' set.seed(292315)
-#' library(forestry)
+#' library(Rforestry)
 #' test_idx <- sample(nrow(iris), 3)
 #' x_train <- iris[-test_idx, -1]
 #' y_train <- iris[-test_idx, 1]
@@ -454,7 +454,7 @@ setClass(
 #' predict(rf, x_test)
 #'
 #' set.seed(49)
-#' library(forestry)
+#' library(Rforestry)
 #'
 #' n <- c(100)
 #' a <- rnorm(n)
@@ -1421,20 +1421,20 @@ make_savable <- function(object) {
   }
 
 # Add .onAttach file to give citation information
-.onAttach <- function( ... )
-{
-  Lib <- dirname(system.file(package = "Rforestry"))
-  version <- packageDescription("Rforestry", lib.loc = Lib)$Version
-  BuildDate <- packageDescription("Rforestry", lib.loc = Lib)$Date
-
-  message <- paste("## \n##  Rforestry (Version ", version, ", Build Date: ", BuildDate, ")\n",
-                   "##  See https://github.com/forestry-labs for additional documentation.\n",
-                   "##  Please cite software as:\n",
-                   "##    Sören R. Künzel, Theo F. Saarinen, Edward W. Liu, Jasjeet S. Sekhon (2019)\n",
-                   "##    \''Linear Aggregation in Tree-based Estimators\'' \n",
-                   "##",
-                   sep = "")
-  packageStartupMessage(message)
-}
+# .onAttach <- function( ... )
+# {
+#   Lib <- dirname(system.file(package = "Rforestry"))
+#   version <- packageDescription("Rforestry", lib.loc = Lib)$Version
+#   BuildDate <- packageDescription("Rforestry", lib.loc = Lib)$Date
+#
+#   message <- paste("## \n##  Rforestry (Version ", version, ", Build Date: ", BuildDate, ")\n",
+#                    "##  See https://github.com/forestry-labs for additional documentation.\n",
+#                    "##  Please cite software as:\n",
+#                    "##    Sören R. Künzel, Theo F. Saarinen, Edward W. Liu, Jasjeet S. Sekhon (2019)\n",
+#                    "##    \''Linear Aggregation in Tree-based Estimators\'' \n",
+#                    "##",
+#                    sep = "")
+#   packageStartupMessage(message)
+# }
 
 
