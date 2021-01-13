@@ -5,12 +5,12 @@
 
 ## Rforestry: Random Forests, Linear Trees, and Gradient Boosting for Inference and Interpretability
 
-Sören Künzel, Theo Saarinen, Edward Liu, Allen Tang, Jasjeet Sekhon
+Sören Künzel, Theo Saarinen, Simon Walter, Edward Liu, Allen Tang, Jasjeet Sekhon
 
 ## Introduction
 
-Rforestry is a fast implementation of Honest Random Forests, gradient boosting 
-and ridge penalized random forests. 
+Rforestry is a fast implementation of Honest Random Forests, Gradient Boosting, 
+and Linear Random Forests, with an emphasis on inference and interpretability. 
 
 ## How to install
 1. The GFortran compiler has to be up to date. GFortran Binaries can be found [here](https://gcc.gnu.org/wiki/GFortranBinaries).
