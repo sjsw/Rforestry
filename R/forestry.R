@@ -1430,8 +1430,9 @@ make_savable <- function(object) {
   message <- paste("## \n##  Rforestry (Version ", version, ", Build Date: ", BuildDate, ")\n",
                    "##  See https://github.com/forestry-labs for additional documentation.\n",
                    "##  Please cite software as:\n",
-                   "##    Soren R. Kunzel, Theo F. Saarinen, Edward W. Liu, Jasjeet S. Sekhon (2019)\n",
-                   "##    \''Linear Aggregation in Tree-based Estimators\'' \n",
+                   "##    Soren R. Kunzel, Theo F. Saarinen, Edward W. Liu, Jasjeet S. Sekhon. 2019.\n",
+                   "##    \''Linear Aggregation in Tree-based Estimators.\'' arXiv preprint \n",
+                   "##    arXiv:1906.06463. https://arxiv.org/abs/1906.06463 \n",
                    "##",
                    sep = "")
   packageStartupMessage(message)
