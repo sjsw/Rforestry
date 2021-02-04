@@ -516,6 +516,9 @@ void forestry::calculateVariableImportance() {
     // For non-parallel version, just simply iterate all trees serially
     for(int i=0; i<((int) getNtree()); i++ ) {
     #endif
+      unsigned int myseed = getSeed() * (i + 1);
+      std::mt19937_64 random_number_generator;
+      random_number_generator.seed(myseed);
         try {
           std::vector<float> outputOOBPrediction_iteration(numObservations);
           std::vector<size_t> outputOOBCount_iteration(numObservations);
@@ -528,7 +531,8 @@ void forestry::calculateVariableImportance() {
               outputOOBPrediction_iteration,
               outputOOBCount_iteration,
               getTrainingData(),
-              featNum
+              featNum,
+              random_number_generator
           );
           #if DOPARELLEL
           std::lock_guard<std::mutex> lock(threadLock);
@@ -639,6 +643,9 @@ void forestry::calculateLocalVariableImportance(
     // Loop over all features
     for (size_t featNum = 0; featNum < getTrainingData()->getNumColumns(); featNum++) {
       for (int i = 0; i < ((int) getNtree()); i++) {
+        unsigned int myseed = getSeed() * (i + 1);
+        std::mt19937_64 random_number_generator;
+        random_number_generator.seed(myseed);
         try {
           std::vector<float> outputOOBPrediction_iteration(numTrainingObs, 0);
           std::vector<size_t> outputOOBCount_iteration(numTrainingObs, 0);
@@ -647,7 +654,8 @@ void forestry::calculateLocalVariableImportance(
               outputOOBPrediction_iteration,
               outputOOBCount_iteration,
               getTrainingData(),
-              featNum
+              featNum,
+              random_number_generator
           );
           for (size_t j=0; j < numTrainingObs; j++) {
             outputTrainingPrediction[j] += outputOOBPrediction_iteration[j];
