@@ -449,7 +449,7 @@ Rcpp::List rcpp_cppPredictInterface(
   } catch(...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
-  return NULL;
+  return Rcpp::List::create(NA_REAL);
 }
 
 // [[Rcpp::export]]
@@ -497,7 +497,7 @@ Rcpp::List rcpp_cppMultilayerPredictInterface(
   } catch(...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
-  return NULL;
+  return Rcpp::List::create(NA_REAL);
 }
 
 
@@ -664,7 +664,7 @@ Rcpp::List rcpp_CppToR_translator(
   } catch(...) {
     ::Rf_error("c++ exception (unknown reason)");
   }
-  return NULL;
+  return Rcpp::List::create(NA_REAL);
 }
 
 // [[Rcpp::export]]
