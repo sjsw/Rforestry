@@ -377,19 +377,23 @@ std::pair<float, float> calculateRSquaredSplit (
     std::vector<size_t>* splittingSampleIndex,
     std::vector<size_t>* splittingLeftPartitionIndex,
     std::vector<size_t>* splittingRightPartitionIndex,
-    float overfitPenalty
+    float overfitPenalty,
+    std::mt19937_64& random_number_generator
 ) {
   // Get residual sum of squares for parent, left child, and right child nodes
   float rssParent, rssLeft, rssRight;
   rssParent = calculateRSS(trainingData,
                            splittingSampleIndex,
-                           overfitPenalty);
+                           overfitPenalty,
+                           random_number_generator);
   rssLeft = calculateRSS(trainingData,
                          splittingLeftPartitionIndex,
-                         overfitPenalty);
+                         overfitPenalty,
+                         random_number_generator);
   rssRight = calculateRSS(trainingData,
                           splittingRightPartitionIndex,
-                          overfitPenalty);
+                          overfitPenalty,
+                          random_number_generator);
 
   // Calculate total sum of squares
   float outcomeSum = 0;
@@ -418,7 +422,8 @@ float crossValidatedRSquared (
     std::vector<size_t>* splittingLeftPartitionIndex,
     std::vector<size_t>* splittingRightPartitionIndex,
     float overfitPenalty,
-    size_t numTimesCV
+    size_t numTimesCV,
+    std::mt19937_64& random_number_generator
 ) {
   // Apply 5 times 10-fold cross-validation
   float rSquaredParent, rSquaredChildren;
@@ -432,7 +437,8 @@ float crossValidatedRSquared (
         splittingSampleIndex,
         splittingLeftPartitionIndex,
         splittingRightPartitionIndex,
-        overfitPenalty
+        overfitPenalty,
+        random_number_generator
       );
     totalRSquaredParent += rSquaredParent;
     totalRSquaredChildren += rSquaredChildren;
@@ -580,7 +586,8 @@ void forestryTree::recursivePartition(
         &splittingLeftPartitionIndex,
         &splittingRightPartitionIndex,
         overfitPenalty,
-        1
+        1,
+        random_number_generator
       );
 
       if (rSquaredDifference < getMinSplitGain()) {

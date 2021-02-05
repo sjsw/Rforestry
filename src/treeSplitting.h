@@ -14,7 +14,8 @@
 float calculateRSS(
     DataFrame* trainingData,
     std::vector<size_t>* splittingSampleIndex,
-    float overfitPenalty
+    float overfitPenalty,
+    std::mt19937_64& random_number_generator
 );
 
 void updateBestSplit(

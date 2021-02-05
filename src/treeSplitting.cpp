@@ -16,12 +16,13 @@
 float calculateRSS(
     DataFrame* trainingData,
     std::vector<size_t>* splittingSampleIndex,
-    float overfitPenalty
+    float overfitPenalty,
+    std::mt19937_64& random_number_generator
 ) {
   // Get cross validation folds
   std::vector< std::vector< size_t > > cvFolds(10);
   if (splittingSampleIndex->size() >= 10) {
-    std::random_shuffle(splittingSampleIndex->begin(), splittingSampleIndex->end());
+    std::shuffle(splittingSampleIndex->begin(), splittingSampleIndex->end(), random_number_generator);
     size_t foldIndex = 0;
     for (size_t sampleIndex : *splittingSampleIndex) {
       cvFolds.at(foldIndex).push_back(sampleIndex);
