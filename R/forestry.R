@@ -676,6 +676,9 @@ forestry <- function(x,
     if (is.null(categoricalFeatureCols_cpp)) {
       categoricalFeatureCols_cpp <- vector(mode = "numeric", length = 0)
     } else {
+      # If we have monotonic constraints on any categorical features we need to
+      # zero these out as we cannot do monotonicity with categorical features
+      monotonicConstraints[categoricalFeatureCols_cpp] <- 0
       categoricalFeatureCols_cpp <- categoricalFeatureCols_cpp - 1
     }
 
@@ -947,6 +950,7 @@ multilayerForestry <- function(x,
     if (is.null(categoricalFeatureCols_cpp)) {
       categoricalFeatureCols_cpp <- vector(mode = "numeric", length = 0)
     } else {
+      monotonicConstraints[categoricalFeatureCols_cpp] <- 0
       categoricalFeatureCols_cpp <- categoricalFeatureCols_cpp - 1
     }
 
@@ -984,6 +988,7 @@ multilayerForestry <- function(x,
         maxObs,
         maxProp,
         sampleWeights,
+        monotonicConstraints,
         linear,
         overfitPenalty,
         doubleTree,

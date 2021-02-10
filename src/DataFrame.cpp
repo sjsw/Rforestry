@@ -4,7 +4,8 @@ DataFrame::DataFrame():
   _featureData(nullptr), _outcomeData(nullptr), _rowNumbers(nullptr),
   _categoricalFeatureCols(nullptr), _numericalFeatureCols(nullptr),
   _splitFeatureCols(nullptr), _linearFeatureCols(nullptr),
-  _numRows(0), _numColumns(0), _sampleWeights(nullptr) {}
+  _numRows(0), _numColumns(0),
+  _sampleWeights(nullptr), _monotonicConstraints(nullptr) {}
 
 DataFrame::~DataFrame() {
 //  std::cout << "DataFrame() destructor is called." << std::endl;

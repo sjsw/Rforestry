@@ -856,7 +856,6 @@ void forestry::reconstructTrees(
       } catch (std::runtime_error &err) {
         Rcpp::Rcerr << err.what() << std::endl;
       }
-
   }
 
   return;
