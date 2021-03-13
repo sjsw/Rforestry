@@ -1,5 +1,5 @@
-test_that("Tests if linear works", {
-  context('Tests linear')
+test_that("Tests if ridgeRF works", {
+  context('Tests RidgeRF')
 
   x <- iris[, c(1,2,3)]
   y <- iris[, 4]
@@ -32,9 +32,9 @@ test_that("Tests if linear works", {
   y_pred <- predict(forest, x)
 
   # Mean Square Error
-  sum((y_pred - y) ^ 2)
+  mean((y_pred - y) ^ 2)
 
-  expect_equal(sum((y_pred - y) ^ 2), 3.01, tolerance = 0.5)
+  expect_equal(mean((y_pred - y) ^ 2), 0.0199184561243013, tolerance = 1e-3)
 
   for (seed in 270:275) {
     set.seed(seed)
@@ -76,7 +76,7 @@ test_that("Tests if linear works", {
   y_pred <- predict(forest, x)
 
   # Mean Square Error
-  sum((y_pred - y) ^ 2)
+  mean((y_pred - y) ^ 2)
 
-  expect_equal(sum((y_pred - y) ^ 2), 2.998391, tolerance = 0.2)
+  expect_equal(mean((y_pred - y) ^ 2), 0.0200273762841208, tolerance = 1e-3)
 })

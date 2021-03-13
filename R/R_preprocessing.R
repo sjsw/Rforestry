@@ -12,13 +12,10 @@ NULL
 #'   converting data to dataframe, and encoding categorical data into numerical
 #'   representation.
 #' @inheritParams forestry
-#' @import plyr
 #' @return A list of two datasets along with necessary information that encoding
 #'   the preprocessing.
-#' @noRd
 preprocess_training <- function(x, y) {
   x <- as.data.frame(x)
-
   # Check if the input dimension of x matches y
   if (nrow(x) != length(y)) {
     stop("The dimension of input dataset x doesn't match the output vector y.")
@@ -49,17 +46,14 @@ preprocess_training <- function(x, y) {
   categoricalFeatureMapping <- list()
   dummyIndex <- 1
   for (categoricalFeatureCol in unlist(categoricalFeatureCols)) {
-    uniqueFeatureValues <- unique(x[, categoricalFeatureCol])
-    numericFeatureValues <- 1:length(uniqueFeatureValues)
-    x[, categoricalFeatureCol] <-
-      plyr::mapvalues(x = x[, categoricalFeatureCol],
-                      from = uniqueFeatureValues,
-                      to = numericFeatureValues)
+    # drop unused levels
+    x[, categoricalFeatureCol] <- factor(x[, categoricalFeatureCol])
     categoricalFeatureMapping[[dummyIndex]] <- list(
       "categoricalFeatureCol" = categoricalFeatureCol,
-      "uniqueFeatureValues" = uniqueFeatureValues,
-      "numericFeatureValues" = numericFeatureValues
+      "uniqueFeatureValues" = levels(x[, categoricalFeatureCol]),
+      "numericFeatureValues" = 1:length(levels(x[, categoricalFeatureCol]))
     )
+    x[, categoricalFeatureCol] <- as.integer(x[, categoricalFeatureCol])
     dummyIndex <- dummyIndex + 1
   }
 
@@ -79,17 +73,13 @@ preprocess_training <- function(x, y) {
 #'   training data and encoding categorical data into numerical representation
 #'   in the same way as training data.
 #' @inheritParams forestry
-#' @param featureNames A vector of column names in training data.
 #' @param categoricalFeatureCols A list of index for all categorical data. Used
 #'   for trees to detect categorical columns.
 #' @param categoricalFeatureMapping A list of encoding details for each
 #'   categorical column, including all unique factor values and their
 #'   corresponding numeric representation.
-#' @import plyr
 #' @return A preprocessed training dataaset x
-#' @noRd
 preprocess_testing <- function(x,
-                               featureNames,
                                categoricalFeatureCols,
                                categoricalFeatureMapping) {
   x <- as.data.frame(x)
@@ -98,10 +88,6 @@ preprocess_testing <- function(x,
   testingFeatureNames <- colnames(x)
   if (is.null(testingFeatureNames)) {
     warning("No names are given for each column.")
-  }
-
-  if (!(identical((featureNames), testingFeatureNames))) {
-    stop("Training data and testing data column names must be the same.")
   }
 
   # Track all categorical features (both factors and characters)
@@ -140,10 +126,10 @@ preprocess_testing <- function(x,
       numericFeatureValues <- 1:length(uniqueFeatureValues)
     }
 
-    x[, categoricalFeatureCol] <-
-      plyr::mapvalues(x = x[, categoricalFeatureCol],
-                      from = uniqueFeatureValues,
-                      to = numericFeatureValues)
+    x[, categoricalFeatureCol] <- match(
+      as.character(x[, categoricalFeatureCol]),
+      uniqueFeatureValues
+    )
   }
 
   # Return transformed data and encoding information

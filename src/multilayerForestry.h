@@ -22,33 +22,38 @@ public:
     DataFrame* trainingData,
     size_t ntree,
     size_t nrounds,
-    float eta,
+    double eta,
     bool replace,
     size_t sampSize,
-    float splitRatio,
+    double splitRatio,
     size_t mtry,
     size_t minNodeSizeSpt,
     size_t minNodeSizeAvg,
     size_t minNodeSizeToSplitSpt,
     size_t minNodeSizeToSplitAvg,
-    float minSplitGain,
+    double minSplitGain,
     size_t maxDepth,
     unsigned int seed,
     size_t nthread,
     bool verbose,
     bool splitMiddle,
     size_t maxObs,
-    float maxProp,
     bool linear,
-    float overfitPenalty,
+    double overfitPenalty,
     bool doubleTree
   );
 
   void addForests(size_t ntree);
 
-  std::unique_ptr< std::vector<float> > predict(
-      std::vector< std::vector<float> >* xNew,
-      arma::Mat<float>* weightMatrix
+  std::unique_ptr< std::vector<double> > predict(
+      std::vector< std::vector<double> >* xNew,
+      arma::Mat<double>* weightMatrix,
+      int seed
+  );
+
+  void reconstructForests(
+      std::vector< forestry* >& multilayerForests,
+      std::vector<double>& gammas
   );
 
   DataFrame* getTrainingData() {
@@ -75,7 +80,7 @@ public:
     return _minNodeSizeToSplitAvg;
   }
 
-  float getMinSplitGain() {
+  double getMinSplitGain() {
     return _minSplitGain;
   }
 
@@ -104,7 +109,7 @@ public:
     return _sampSize;
   }
 
-  float getSplitRatio() {
+  double getSplitRatio() {
     return _splitRatio;
   }
 
@@ -136,7 +141,7 @@ public:
     return _linear;
   }
 
-  float getOverfitPenalty() {
+  double getOverfitPenalty() {
     return _overfitPenalty;
   }
 
@@ -149,11 +154,11 @@ public:
     return _multilayerForests.get();
   }
 
-  std::vector<float> getGammas() {
+  std::vector<double> getGammas() {
     return _gammas;
   }
 
-  float getMeanOutcome() {
+  double getMeanOutcome() {
     return _meanOutcome;
   }
 
@@ -162,30 +167,29 @@ private:
   DataFrame* _trainingData;
   size_t _ntree;
   size_t _nrounds;
-  float _eta;
+  double _eta;
   bool _replace;
   size_t _sampSize;
-  float _splitRatio;
+  double _splitRatio;
   size_t _mtry;
   size_t _minNodeSizeSpt;
   size_t _minNodeSizeAvg;
   size_t _minNodeSizeToSplitSpt;
   size_t _minNodeSizeToSplitAvg;
-  float _minSplitGain;
+  double _minSplitGain;
   size_t _maxDepth;
   unsigned int _seed;
   bool _verbose;
   size_t _nthread;
-  std::unique_ptr< std::vector<float> > _variableImportance;
+  std::unique_ptr< std::vector<double> > _variableImportance;
   bool _splitMiddle;
   size_t _maxObs;
-  float _maxProp;
   bool _linear;
-  float _overfitPenalty;
+  double _overfitPenalty;
   bool _doubleTree;
   std::unique_ptr<std::vector< forestry* > > _multilayerForests;
-  std::vector<float> _gammas;
-  float _meanOutcome;
+  std::vector<double> _gammas;
+  double _meanOutcome;
 };
 
 

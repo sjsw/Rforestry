@@ -1,4 +1,4 @@
 library(testthat)
-library(Rforestry)
+library(forestry)
 
-test_check("Rforestry")
+test_check("forestry")

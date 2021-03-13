@@ -26,5 +26,5 @@ test_that("Tests that maxDepth parameter is working correctly", {
   y_pred <- predict(forest, x)
 
   # Mean Square Error
-  expect_equal(sum((y_pred - y) ^ 2), 11.25824, tolerance = 0.5)
+  expect_equal(sum((y_pred - y) ^ 2), 11.076804560351238393, tolerance = 1e-12)
 })

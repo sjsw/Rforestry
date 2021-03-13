@@ -9,21 +9,30 @@
   object,
   feature.new,
   aggregation = "average",
-  localVariableImportance = FALSE,
+  seed = as.integer(runif(1) * 10000),
   ...
 )
 }
 \arguments{
-\item{object}{A trained model object of class "forestry".}
+\item{object}{A `forestry` object.}
 
 \item{feature.new}{A data frame of testing predictors.}
 
-\item{aggregation}{How shall the leaf be aggregated. The default is to return
-the mean of the leave `average`. Other options are `weightMatrix` and `coefs`
-to return the ridge regression coefficients when doing Linear Random Forest.}
+\item{aggregation}{How the individual tree predictions are aggregated:
+`average` returns the mean of all trees in the forest; `weightMatrix`
+returns a list consisting of "weightMatrix", the adaptive nearest neighbor
+weights used to construct the predictions; "terminalNodes", a matrix where
+the ith entry of the jth column is the index of the leaf node to which the
+ith observation is assigned in the jth tree; and "sparse", a matrix
+where the ith entry in the jth column is 1 if the ith observation in
+feature.new is assigned to the jth leaf and 0 otherwise. In each tree the
+leaves are indexed using a depth first ordering, and, in the "sparse"
+representation, the first leaf in the second tree has column index one more than
+the number of leaves in the first tree and so on. So, for example, if the
+first tree has 5 leaves, the sixth column of the "sparse" matrix corresponds
+to the first leaf in the second tree.}
 
-\item{localVariableImportance}{Returns a matrix providing local variable
-importance for each prediction.}
+\item{seed}{random seed}
 
 \item{...}{additional arguments.}
 }
@@ -32,10 +41,4 @@ A vector of predicted responses.
 }
 \description{
 Return the prediction from the forest.
-}
-\details{
-Allows for different methods of prediction on new data.
-}
-\seealso{
-\code{\link{forestry}}
 }

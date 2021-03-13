@@ -5,7 +5,13 @@
 \alias{predict.multilayerForestry}
 \title{predict-multilayer-forestry}
 \usage{
-\method{predict}{multilayerForestry}(object, feature.new, aggregation = "average", ...)
+\method{predict}{multilayerForestry}(
+  object,
+  feature.new,
+  aggregation = "average",
+  seed = as.integer(runif(1) * 10000),
+  ...
+)
 }
 \arguments{
 \item{object}{A `multilayerForestry` object.}
@@ -15,6 +21,8 @@
 \item{aggregation}{How shall the leaf be aggregated. The default is to return
 the mean of the leave `average`. Other options are `weightMatrix`.}
 
+\item{seed}{random seed}
+
 \item{...}{additional arguments.}
 }
 \value{
@@ -22,7 +30,4 @@ A vector of predicted responses.
 }
 \description{
 Return the prediction from the forest.
-}
-\seealso{
-\code{\link{forestry}}
 }

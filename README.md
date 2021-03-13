@@ -9,18 +9,18 @@ Sören Künzel, Theo Saarinen, Simon Walter, Edward Liu, Allen Tang, Jasjeet Sek
 
 ## Introduction
 
-Rforestry is a fast implementation of Honest Random Forests, Gradient Boosting, 
-and Linear Random Forests, with an emphasis on inference and interpretability. 
+Rforestry is a fast implementation of Honest Random Forests, Gradient Boosting,
+and Linear Random Forests, with an emphasis on inference and interpretability.
 
 ## How to install
 1. The GFortran compiler has to be up to date. GFortran Binaries can be found [here](https://gcc.gnu.org/wiki/GFortranBinaries).
 2. The [devtools](https://github.com/hadley/devtools) package has to be installed. You can install it using,  `install.packages("devtools")`.
 3. The package contains compiled code, and you must have a development environment to install the development version. You can use `devtools::has_devel()` to check whether you do. If no development environment exists, Windows users download and install [Rtools](https://cran.r-project.org/bin/windows/Rtools/) and macOS users download and install [Xcode](https://itunes.apple.com/us/app/xcode/id497799835).
-4. The latest development version can then be installed using 
+4. The latest development version can then be installed using
 `devtools::install_github("forestry-labs/Rforestry") `.
 
 
-## Usage 
+## Usage
 
 ```R
 set.seed(292315)
@@ -43,7 +43,7 @@ A fast implementation of random forests using ridge penalized splitting and ridg
 
 Example:
 
-```R
+  ```R
 set.seed(49)
 library(Rforestry)
 
@@ -83,8 +83,8 @@ predict(monotone_rf, feature.new = data_train %>% select(-y))
 
 We can return the predictions for the training dataset using only the trees in
 which each observation was out of bag. Note that when there are few trees, or a
-high proportion of the observations sampled, there may be some observations 
-which are not out of bag for any trees. 
+high proportion of the observations sampled, there may be some observations
+which are not out of bag for any trees.
 The predictions for these are returned NaN.
 
 
@@ -92,10 +92,10 @@ The predictions for these are returned NaN.
 library(Rforestry)
 
 # Train a forest
-rf <- forestry(x = iris[,-1], 
+rf <- forestry(x = iris[,-1],
                y = iris[,1],
                ntree = 500)
-               
+
 # Get the OOB predictions for the training set
 oob_preds <- getOOBpreds(rf)
 

@@ -4,19 +4,18 @@
 \alias{getVI}
 \title{getVI-forestry}
 \usage{
-getVI(object, noWarning = FALSE)
+getVI(object, noWarning)
 }
 \arguments{
-\item{object}{A trained model object of class "forestry".}
+\item{object}{A `forestry` object.}
 
-\item{noWarning}{Flag to not display warnings or display warnings.}
+\item{noWarning}{flag to not display warnings}
 }
 \description{
-Calculate variable importance for `forestry` object as
-  introduced by Breiman (2001). Returns a list of percentage increases in
-  out-of-bag error when shuffling each feature values and getting
-  out-of-bag error.
+Calculate increase in OOB for each shuffled feature for forest.
 }
-\seealso{
-\code{\link{forestry}}
+\note{
+No seed is passed to this function so it is
+  not possible in the current implementation to replicate the vector
+  permutations used when measuring feature importance.
 }

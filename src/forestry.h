@@ -23,30 +23,32 @@ public:
     size_t ntree,
     bool replace,
     size_t sampSize,
-    float splitRatio,
+    double splitRatio,
     size_t mtry,
     size_t minNodeSizeSpt,
     size_t minNodeSizeAvg,
     size_t minNodeSizeToSplitSpt,
     size_t minNodeSizeToSplitAvg,
-    float minSplitGain,
+    double minSplitGain,
     size_t maxDepth,
+    size_t interactionDepth,
     unsigned int seed,
     size_t nthread,
     bool verbose,
     bool splitMiddle,
     size_t maxObs,
-    float maxProp,
+    bool hasNas,
     bool linear,
-    float overfitPenalty,
+    double overfitPenalty,
     bool doubleTree
   );
 
-  std::unique_ptr< std::vector<float> > predict(
-    std::vector< std::vector<float> >* xNew,
-    arma::Mat<float>* weightMatrix,
-    arma::Mat<float>* localVIMatrix,
-    arma::Mat<float>* coefficients
+  std::unique_ptr< std::vector<double> > predict(
+    std::vector< std::vector<double> >* xNew,
+    arma::Mat<double>* weightMatrix,
+    arma::Mat<int>* terminalNodes,
+    unsigned int seed,
+    size_t nthread
   );
 
   void fillinTreeInfo(
@@ -57,6 +59,8 @@ public:
       std::unique_ptr< std::vector<size_t> > & categoricalFeatureColsRcpp,
       std::unique_ptr< std::vector< std::vector<int> >  > & var_ids,
       std::unique_ptr< std::vector< std::vector<double> >  > & split_vals,
+      std::unique_ptr< std::vector< std::vector<int> >  > & naLeftCounts,
+      std::unique_ptr< std::vector< std::vector<int> >  > & naRightCounts,
       std::unique_ptr< std::vector< std::vector<size_t> >  > & leafAveidxs,
       std::unique_ptr< std::vector< std::vector<size_t> >  > & leafSplidxs,
       std::unique_ptr< std::vector< std::vector<size_t> >  > &
@@ -64,23 +68,18 @@ public:
       std::unique_ptr< std::vector< std::vector<size_t> >  > &
         splittingSampleIndex);
 
+  size_t getTotalNodeCount();
+
   void calculateOOBError();
 
   void calculateVariableImportance();
 
-  void calculateLocalVariableImportance(
-    std::vector< std::vector<float> >* xNew,
-    arma::Mat<float>* weightMatrix,
-    arma::Mat<float>* localVIMatrix,
-    std::vector<float> prediction
-  );
-
-  std::vector<float> getVariableImportance() {
+  std::vector<double> getVariableImportance() {
     calculateVariableImportance();
     calculateOOBError();
 
-    float OOB = getOOBError();
-    std::vector<float> OOBPercentages(getTrainingData()->getNumColumns());
+    double OOB = getOOBError();
+    std::vector<double> OOBPercentages(getTrainingData()->getNumColumns());
     //Find percentage changes in OOB error
     for (size_t i = 0; i < getTrainingData()->getNumColumns(); i++) {
       OOBPercentages[i] = ((*_variableImportance)[i] / OOB) - 1;
@@ -88,12 +87,12 @@ public:
     return OOBPercentages;
   }
 
-  float getOOBError() {
+  double getOOBError() {
     calculateOOBError();
     return _OOBError;
   }
 
-  std::vector<float> getOOBpreds() {
+  std::vector<double> getOOBpreds() {
     calculateOOBError();
     return _OOBpreds;
   }
@@ -124,12 +123,16 @@ public:
     return _minNodeSizeToSplitAvg;
   }
 
-  float getMinSplitGain() {
+  double getMinSplitGain() {
     return _minSplitGain;
   }
 
   size_t getMaxDepth() {
     return _maxDepth;
+  }
+
+  size_t getInteractionDepth() {
+    return _interactionDepth;
   }
 
   size_t getNtree() {
@@ -145,7 +148,7 @@ public:
     return _sampSize;
   }
 
-  float getSplitRatio() {
+  double getSplitRatio() {
     return _splitRatio;
   }
 
@@ -177,43 +180,48 @@ public:
     return _maxObs;
   }
 
-  float getMaxProp() {
-    return _maxProp;
+  bool gethasNas() {
+    return _hasNas;
   }
 
   bool getlinear() {
     return _linear;
   }
 
-  float getOverfitPenalty() {
+  double getOverfitPenalty() {
     return _overfitPenalty;
   }
+  std::vector<std::vector<double>>* neighborhoodImpute(
+      std::vector< std::vector<double> >* xNew,
+      arma::Mat<double>* weightMatrix
+  );
 
 private:
   DataFrame* _trainingData;
   size_t _ntree;
   bool _replace;
   size_t _sampSize;
-  float _splitRatio;
+  double _splitRatio;
   size_t _mtry;
   size_t _minNodeSizeSpt;
   size_t _minNodeSizeAvg;
   size_t _minNodeSizeToSplitSpt;
   size_t _minNodeSizeToSplitAvg;
-  float _minSplitGain;
+  double _minSplitGain;
   size_t _maxDepth;
+  size_t _interactionDepth;
   std::unique_ptr< std::vector< std::unique_ptr< forestryTree > > > _forest;
   unsigned int _seed;
   bool _verbose;
   size_t _nthread;
-  float _OOBError;
-  std::vector<float> _OOBpreds;
-  std::unique_ptr< std::vector<float> > _variableImportance;
+  double _OOBError;
+  std::vector<double> _OOBpreds;
+  std::unique_ptr< std::vector<double> > _variableImportance;
   bool _splitMiddle;
   size_t _maxObs;
-  float _maxProp;
+  bool _hasNas;
   bool _linear;
-  float _overfitPenalty;
+  double _overfitPenalty;
   bool _doubleTree;
 };
 

@@ -8,15 +8,22 @@
 make_savable(object)
 }
 \arguments{
-\item{object}{A trained model object of class "forestry".}
+\item{object}{an object of class `forestry`}
 }
 \value{
 A list of lists. Each sublist contains the information to span a
   tree.
 }
 \description{
-When a `foresty` object is saved and then reloaded ,the Cpp
-  pointers for the data set and the Cpp forest have to be reconstructed.
+When a `foresty` object is saved and then reloaded the Cpp
+  pointers for the data set and the Cpp forest have to be reconstructed
+}
+\note{
+`make_savable` does not translate all of the private member variables
+  of the C++ forestry object so when the forest is reconstructed with
+  `relinkCPP_prt` some attributes are lost. For example, `nthreads` will be
+  reset to zero. This makes it impossible to disable threading when
+  predicting for forests loaded from disk.
 }
 \examples{
 set.seed(323652639)
@@ -26,15 +33,12 @@ forest <- forestry(x, y, ntree = 3)
 y_pred_before <- predict(forest, x)
 
 forest <- make_savable(forest)
-save(forest, file = "forest.Rda")
+saveForestry(forest, file = "forest.Rda")
 rm(forest)
-load("forest.Rda", verbose = FALSE)
-forest <- relinkCPP_prt(forest)
+
+forest <- loadForestry("forest.Rda", verbose = FALSE)
 
 y_pred_after <- predict(forest, x)
 testthat::expect_equal(y_pred_before, y_pred_after, tolerance = 0.000001)
 file.remove("forest.Rda")
-}
-\seealso{
-\code{\link{forestry}}
 }

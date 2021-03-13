@@ -9,7 +9,7 @@ test_that("Tests that Monotone splits parameter is working correctly", {
 
   # Simulate some data that should be positive monotone
 
-  monotone_forest <- forestry(
+  monotone_forest <- forestry::forestry(
     x,
     y,
     ntree = 500,
@@ -19,7 +19,7 @@ test_that("Tests that Monotone splits parameter is working correctly", {
   )
   # Test predictions are monotonic increasing in the first feature
   pred_means <- sapply(c(1:9), function(x) {mean(predict(monotone_forest,
-                                                    feature.new = data.frame(V1 = rep(x, 100))))})
+                                                         feature.new = data.frame(V1 = rep(x, 100))))})
 
   # Mean Square Error
   expect_equal(all.equal(order(pred_means), 1:9), TRUE)
@@ -33,9 +33,9 @@ test_that("Tests that Monotone splits parameter is working correctly", {
     maxDepth = 10,
     monotonicConstraints = c(-1)
   )
-  # Test predictions are monotonic increasing in the first feature
+  # Test predictions are monotonic decreasing in the first feature
   pred_means <- sapply(c(1,3,5,9), function(x) {mean(predict(monotone_forest,
-                                                         feature.new = data.frame(V1 = rep(x, 100))))})
+                                                             feature.new = data.frame(V1 = rep(x, 100))))})
 
   # Mean Square Error
   # expect_equal(all.equal(order(pred_means), 4:1), TRUE)

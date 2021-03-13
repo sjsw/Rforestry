@@ -3,33 +3,39 @@
 DataFrame::DataFrame():
   _featureData(nullptr), _outcomeData(nullptr), _rowNumbers(nullptr),
   _categoricalFeatureCols(nullptr), _numericalFeatureCols(nullptr),
-  _splitFeatureCols(nullptr), _linearFeatureCols(nullptr),
-  _numRows(0), _numColumns(0),
-  _sampleWeights(nullptr), _monotonicConstraints(nullptr) {}
+  _linearFeatureCols(nullptr), _numRows(0), _numColumns(0),
+  _featureWeights(nullptr), _featureWeightsVariables(nullptr),  _deepFeatureWeights(nullptr),
+  _deepFeatureWeightsVariables(nullptr), _observationWeights(nullptr), _monotonicConstraints(nullptr){}
 
 DataFrame::~DataFrame() {
 //  std::cout << "DataFrame() destructor is called." << std::endl;
 }
 
 DataFrame::DataFrame(
-  std::shared_ptr< std::vector< std::vector<float> > > featureData,
-  std::unique_ptr< std::vector<float> > outcomeData,
+  std::shared_ptr< std::vector< std::vector<double> > > featureData,
+  std::unique_ptr< std::vector<double> > outcomeData,
   std::unique_ptr< std::vector<size_t> > categoricalFeatureCols,
-  std::unique_ptr< std::vector<size_t> > splitFeatureCols,
   std::unique_ptr< std::vector<size_t> > linearFeatureCols,
   std::size_t numRows,
   std::size_t numColumns,
-  std::unique_ptr< std::vector<float> > sampleWeights,
+  std::unique_ptr<std::vector<double>> featureWeights,
+  std::unique_ptr<std::vector<size_t>> featureWeightsVariables,
+  std::unique_ptr<std::vector<double>> deepFeatureWeights,
+  std::unique_ptr<std::vector<size_t>> deepFeatureWeightsVariables,
+  std::unique_ptr< std::vector<double> > observationWeights,
   std::shared_ptr< std::vector<int> > monotonicConstraints
 ) {
   this->_featureData = std::move(featureData);
   this->_outcomeData = std::move(outcomeData);
   this->_categoricalFeatureCols = std::move(categoricalFeatureCols);
-  this->_splitFeatureCols = std::move(splitFeatureCols);
   this->_linearFeatureCols = std::move(linearFeatureCols);
   this->_numRows = numRows;
   this->_numColumns = numColumns;
-  this->_sampleWeights = std::move(sampleWeights);
+  this->_featureWeights = std::move(featureWeights);
+  this->_featureWeightsVariables = std::move(featureWeightsVariables);
+  this->_deepFeatureWeights = std::move(deepFeatureWeights);
+  this->_deepFeatureWeightsVariables = std::move(deepFeatureWeightsVariables);
+  this->_observationWeights = std::move(observationWeights);
   this->_monotonicConstraints = std::move(monotonicConstraints);
 
   // define the row numbers to be the numbers from 1 to nrow:
@@ -56,7 +62,7 @@ DataFrame::DataFrame(
   this->_numericalFeatureCols = std::move(numericalFeatureCols);
 }
 
-float DataFrame::getPoint(size_t rowIndex, size_t colIndex) {
+double DataFrame::getPoint(size_t rowIndex, size_t colIndex) {
   // Check if rowIndex and colIndex are valid
   if (rowIndex < getNumRows() && colIndex < getNumColumns()) {
     return (*getAllFeatureData())[colIndex][rowIndex];
@@ -65,7 +71,7 @@ float DataFrame::getPoint(size_t rowIndex, size_t colIndex) {
   }
 }
 
-float DataFrame::getOutcomePoint(size_t rowIndex) {
+double DataFrame::getOutcomePoint(size_t rowIndex) {
   // Check if rowIndex is valid
   if (rowIndex < getNumRows()) {
     return (*getOutcomeData())[rowIndex];
@@ -74,7 +80,7 @@ float DataFrame::getOutcomePoint(size_t rowIndex) {
   }
 }
 
-std::vector<float>* DataFrame::getFeatureData(
+std::vector<double>* DataFrame::getFeatureData(
   size_t colIndex
 ) {
   if (colIndex < getNumColumns()) {
@@ -84,11 +90,11 @@ std::vector<float>* DataFrame::getFeatureData(
   }
 }
 
-std::vector<float> DataFrame::getLinObsData(
+std::vector<double> DataFrame::getLinObsData(
   size_t rowIndex
 ) {
   if (rowIndex < getNumRows()) {
-    std::vector<float> feat;
+    std::vector<double> feat;
     for (size_t i = 0; i < getLinCols()->size(); i++) {
       feat.push_back(getPoint(rowIndex, (*getLinCols())[i]));
     }
@@ -99,7 +105,7 @@ std::vector<float> DataFrame::getLinObsData(
 }
 
 void DataFrame::getObservationData(
-  std::vector<float> &rowData,
+  std::vector<double> &rowData,
   size_t rowIndex
 ) {
   if (rowIndex < getNumRows()) {
@@ -112,7 +118,7 @@ void DataFrame::getObservationData(
 }
 
 void DataFrame::getShuffledObservationData(
-  std::vector<float> &rowData,
+  std::vector<double> &rowData,
   size_t rowIndex,
   size_t swapFeature,
   size_t swapIndex
@@ -129,11 +135,11 @@ void DataFrame::getShuffledObservationData(
   }
 }
 
-float DataFrame::partitionMean(
+double DataFrame::partitionMean(
   std::vector<size_t>* sampleIndex
 ){
   size_t totalSampleSize = (*sampleIndex).size();
-  float accummulatedSum = 0;
+  double accummulatedSum = 0;
   for (
     std::vector<size_t>::iterator it = (*sampleIndex).begin();
     it != (*sampleIndex).end();
@@ -167,9 +173,9 @@ size_t DataFrame::get_row_idx(size_t rowIndex) {
   }
 }
 
-void DataFrame::setOutcomeData(std::vector<float> outcomeData) {
-  std::unique_ptr<std::vector<float> > outcomeData_(
-      new std::vector<float>(outcomeData)
+void DataFrame::setOutcomeData(std::vector<double> outcomeData) {
+  std::unique_ptr<std::vector<double> > outcomeData_(
+      new std::vector<double>(outcomeData)
   );
   this->_outcomeData =std::move(outcomeData_);
 }

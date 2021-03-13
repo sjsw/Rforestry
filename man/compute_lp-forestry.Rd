@@ -8,7 +8,7 @@
 compute_lp(object, feature.new, feature, p)
 }
 \arguments{
-\item{object}{A trained model object of class "forestry".}
+\item{object}{A `forestry` object.}
 
 \item{feature.new}{A data frame of testing predictors.}
 
@@ -20,7 +20,7 @@ compute_lp(object, feature.new, feature, p)
 A vector lp distances.
 }
 \description{
-Return lp distances of selected test observations.
+return lp ditances of selected test observations.
 }
 \examples{
 

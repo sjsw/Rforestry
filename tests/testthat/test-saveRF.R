@@ -73,3 +73,4 @@ test_that("Tests that saving RF and laoding it works", {
 
   file.remove("forest.Rda")
 })
+

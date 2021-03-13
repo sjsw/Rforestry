@@ -1,6 +1,6 @@
 library(testthat)
-test_that("Tests if linear works with minSplitGain", {
-  context('Tests linear and the parameter minSplitGain')
+test_that("Tests if ridgeRF works with minSplitGain", {
+  context('Tests RidgeRF and the parameter minSplitGain')
 
   x <- iris[, c(1,2,3)]
   y <- iris[, 4]
@@ -28,5 +28,5 @@ test_that("Tests if linear works with minSplitGain", {
   # Mean Square Error
   sum((y_pred - y) ^ 2)
 
-  expect_equal(sum((y_pred - y) ^ 2), 42.8, tolerance = 0.2)
+  expect_equal(sum((y_pred - y) ^ 2), 45.91750882593600, tolerance = 1e-12)
 })
