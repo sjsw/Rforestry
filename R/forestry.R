@@ -461,7 +461,7 @@ setClass(
 #' @return A `forestry` object.
 #' @examples
 #' set.seed(292315)
-#' library(forestry)
+#' library(Rforestry)
 #' test_idx <- sample(nrow(iris), 3)
 #' x_train <- iris[-test_idx, -1]
 #' y_train <- iris[-test_idx, 1]
@@ -474,7 +474,7 @@ setClass(
 #' predict(rf, x_test)
 #'
 #' set.seed(49)
-#' library(forestry)
+#' library(Rforestry)
 #'
 #' n <- c(100)
 #' a <- rnorm(n)

@@ -2,7 +2,7 @@ test_that("Tests if imputation splitting works", {
   context('Tests impute')
 
   # Try Continuous Split ---------------------------------------------------------
-  library(forestry)
+  library(Rforestry)
 
   set.seed(23934)
   x <- as.matrix(runif(100))
