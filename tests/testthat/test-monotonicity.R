@@ -9,7 +9,7 @@ test_that("Tests that Monotone splits parameter is working correctly", {
 
   # Simulate some data that should be positive monotone
 
-  monotone_forest <- forestry::forestry(
+  monotone_forest <- forestry(
     x,
     y,
     ntree = 500,

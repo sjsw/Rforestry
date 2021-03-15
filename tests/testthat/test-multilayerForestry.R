@@ -7,7 +7,7 @@ test_that("Tests that multilayerForestry is working correctly", {
   set.seed(24750371)
 
   # Test forestry (mimic RF)
-  forest <- forestry::multilayerForestry(
+  forest <- multilayerForestry(
     x,
     y,
     ntree = 500,

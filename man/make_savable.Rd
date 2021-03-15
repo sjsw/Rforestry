@@ -36,7 +36,7 @@ forest <- make_savable(forest)
 saveForestry(forest, file = "forest.Rda")
 rm(forest)
 
-forest <- loadForestry("forest.Rda", verbose = FALSE)
+forest <- loadForestry("forest.Rda")
 
 y_pred_after <- predict(forest, x)
 testthat::expect_equal(y_pred_before, y_pred_after, tolerance = 0.000001)

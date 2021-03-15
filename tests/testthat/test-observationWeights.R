@@ -7,7 +7,7 @@ test_that("Tests that observationWeights for the bootstrap is working correctly"
   set.seed(24750371)
 
   # Test forestry (mimic RF)
-  forest <- forestry::forestry(
+  forest <- forestry(
     x,
     y,
     ntree = 500,

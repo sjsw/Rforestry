@@ -12,7 +12,7 @@ test_that("Tests that Monotone splits parameter is working correctly in the case
   x_missing <- x
   x_missing[c(2,5,8,23,25,90),1] <- NA
 
-  monotone_forest <- forestry::forestry(
+  monotone_forest <- forestry(
     x_missing,
     y,
     ntree = 500,
