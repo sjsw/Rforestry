@@ -181,7 +181,7 @@ void multilayerForestry::addForests(size_t ntree) {
     //
     //   // Find gamma with smallest mean squared error
     //   std::transform(predictedResiduals->begin(), predictedResiduals->end(),
-    //                  gammaPredictedResiduals.begin(), std::bind1st(std::multiplies<double>(), gamma));
+    //                  gammaPredictedResiduals.begin(), std::bind(std::multiplies<double>(), gamma));
     //   std::transform(predictedOutcome->begin(), predictedOutcome->end(),
     //                  gammaPredictedResiduals.begin(), gammaError.begin(), std::plus<double>());
     //   std::transform(outcomeData->begin(), outcomeData->end(),
@@ -204,7 +204,7 @@ void multilayerForestry::addForests(size_t ntree) {
 
     // Multiply residuals by learning rate
     std::transform(predictedResiduals->begin(), predictedResiduals->end(),
-                   predictedResiduals->begin(), std::bind1st(std::multiplies<double>(), gammas[o]));
+                   predictedResiduals->begin(), std::bind(std::multiplies<double>(), gammas[o]));
 
     // Update prediction after each round of gradient boosting
     std::transform(predictedOutcome.begin(), predictedOutcome.end(),
@@ -256,7 +256,7 @@ std::unique_ptr< std::vector<double> > multilayerForestry::predict(
                                     this->getNthread());
 
     std::transform(predictedResiduals->begin(), predictedResiduals->end(),
-                   predictedResiduals->begin(), std::bind1st(std::multiplies<double>(), gammas[i]));
+                   predictedResiduals->begin(), std::bind(std::multiplies<double>(), gammas[i]));
 
     std::transform(prediction.begin(), prediction.end(),
                    predictedResiduals->begin(), prediction.begin(), std::plus<double>());
