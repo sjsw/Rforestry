@@ -10,17 +10,12 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     Rcpp (>= 0.12.9),
-    foreach,
-    doParallel,
     parallel,
-    MASS (>= 7.3.0),
-    rBayesianOptimization,
     methods,
     visNetwork, 
     glmnet, 
     grDevices,
-    onehot,
-    RcppThread
+    onehot
 LinkingTo: Rcpp,
   RcppArmadillo,
   RcppThread
