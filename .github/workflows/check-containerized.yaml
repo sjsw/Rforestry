@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.config.os }}
     container: rocker/r-ver:${{ matrix.config.rversion }}
 
-    name: ${{ matrix.config.os }} (${{ matrix.config.container }})
+    name: ${{ matrix.config.os }} (r${{ matrix.config.rversion }})
 
     strategy:
       fail-fast: false
