@@ -29,8 +29,7 @@ jobs:
           # - {os: macOS-latest, r: 'release'}
           # - {os: ubuntu-20.04, r: 'release', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
           # - {os: ubuntu-20.04, r: 'devel', rspm: "https://packagemanager.rstudio.com/cran/__linux__/focal/latest"}
-          - {os: ubuntu-20.04, container: 'rocker/tidyverse:4.0.4'}
-          - {os: 'windows-latest', container: 'rocker/tidyverse:4.0.4'}
+          - {os: ubuntu-20.04, container: 'rocker/r-ver:4.0.4'}
 
     env:
       R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
@@ -74,11 +73,11 @@ jobs:
       #       eval sudo $cmd
       #     done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04"))')
 
-      - name: Install dependencies
-        run: |
-          remotes::install_deps(dependencies = TRUE)
-          remotes::install_cran("rcmdcheck")
-        shell: Rscript {0}
+      # - name: Install dependencies
+      #   run: |
+      #     remotes::install_deps(dependencies = TRUE)
+      #     remotes::install_cran("rcmdcheck")
+      #   shell: Rscript {0}
 
       - name: Check
         env:
@@ -88,9 +87,9 @@ jobs:
           rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "warning", check_dir = "check")
         shell: Rscript {0}
 
-      - name: Upload check results
-        if: failure()
-        uses: actions/upload-artifact@main
-        with:
-          name: ${{ runner.os }}-results
-          path: check
+      # - name: Upload check results
+      #   if: failure()
+      #   uses: actions/upload-artifact@main
+      #   with:
+      #     name: ${{ runner.os }}-results
+      #     path: check
