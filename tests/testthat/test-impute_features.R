@@ -15,6 +15,8 @@ x_with_miss[idx_miss_factor, "Species"] <- NA
 idx_miss_numeric <- sample(nrow(x), 50, replace = TRUE)
 x_with_miss[idx_miss_numeric, "Sepal.Width"] <- NA
 
+skip_if_not_mac()
+
 forest <- forestry(x_with_miss, y, ntree = 500, seed = 2, nthread = 1)
 imputed_x <- impute_features(forest, x_with_miss, seed = 2)
 expect_equal(sum(imputed_x$Species != x$Species), 2)

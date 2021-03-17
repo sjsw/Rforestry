@@ -30,6 +30,8 @@ test_that("Tests that compute the lp distances works correctly", {
   expect_identical(length(distances_2), nrow(x_test))
 
   #set tolerance
+  skip_if_not_mac()
+
   expect_equal(distances_1,
                c(0.74127647652339, 0.56269154186560, 0.66700207007833, 0.48143305071905,
                  0.42691537245113, 0.79361471149614, 0.69064814060102, 0.60005881782247,
