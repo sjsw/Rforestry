@@ -3,7 +3,7 @@ Type: Package
 Title: Rforestry: Random Forests, Linear Trees, and Gradient Boosting for Inference and Interpretability
 Version: 0.9.0.3
 Author: Sören Künzel, Theo Saarinen, Simon Walter, Edward Liu, Allen Tang, Jasjeet Sekhon
-Maintainer: Theo Saarinen <theo_s@berkeley.edu>, Jasjeet Sekhon <jasjeet.sekhon@yale.edu>, Sören Künzel <srk@berkeley.edu>
+Maintainer: Theo Saarinen <theo_s@berkeley.edu>
 Description: Random Forests, Linear Trees, and Gradient Boosting for inference and interpretability.
 License: GPL (>=3) | file LICENSE
 Encoding: UTF-8
