@@ -1,6 +1,4 @@
-[![Travis-CI Build Status](https://travis-ci.org/soerenkuenzel/forestry.svg?branch=master)](https://travis-ci.org/soerenkuenzel/forestry)
-
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.2629366.svg)](https://doi.org/10.5281/zenodo.2629366)
+[![R-CMD-check](https://github.com/linanqiu/Rforestry/actions/workflows/check-noncontainerized.yaml/badge.svg)](https://github.com/linanqiu/Rforestry/actions/workflows/check-noncontainerized.yaml)
 
 
 ## Rforestry: Random Forests, Linear Trees, and Gradient Boosting for Inference and Interpretability
@@ -17,7 +15,7 @@ and Linear Random Forests, with an emphasis on inference and interpretability.
 2. The [devtools](https://github.com/hadley/devtools) package has to be installed. You can install it using,  `install.packages("devtools")`.
 3. The package contains compiled code, and you must have a development environment to install the development version. You can use `devtools::has_devel()` to check whether you do. If no development environment exists, Windows users download and install [Rtools](https://cran.r-project.org/bin/windows/Rtools/) and macOS users download and install [Xcode](https://itunes.apple.com/us/app/xcode/id497799835).
 4. The latest development version can then be installed using
-`devtools::install_github("forestry-labs/Rforestry") `.
+`devtools::install_github("forestry-labs/Rforestry")`. For Windows users, you'll need to skip 64-bit compilation `devtools::install_github("forestry-labs/Rforestry", INSTALL_opts = c('--no-multiarch'))` due to an outstanding gcc issue.
 
 
 ## Usage
