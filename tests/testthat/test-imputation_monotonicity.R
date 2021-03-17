@@ -42,11 +42,19 @@ test_that("Tests that Monotone splits parameter is working correctly in the case
   pred_means <- sapply(c(1,4,9,15), function(x) {mean(predict(monotone_forest,
                                                              feature.new = data.frame(V1 = rep(x, 100))))})
 
+  skip_if_not_mac()
+
   # Mean Square Error
   #print(pred_means)
-  expect_equal(all.equal(order(pred_means), 4:1), TRUE)
 
+  expect_equal(all.equal(order(pred_means), 4:1), TRUE)
+})
+
+
+test_that("Tests that Monotone splits parameter is working correctly in the case of missing data (sine wave)", {
   set.seed(23423324)
+
+  context('Positive monotone splits with missing data')
 
   # Sine wave example. Suppose we have a slight trend upwards, but this is
   # complicated by some oscillations, we can then constrain monotonicity to avoid

@@ -28,6 +28,8 @@ test_that("Tests that random forest is working correctly", {
   expect_equal(y_pred, y_pred_shuffled, tolerance = 1e-12)
 
   # Mean Square Error
+  skip_if_not_mac()
+
   mean((y_pred - y) ^ 2)
   expect_equal(mean((y_pred - y) ^ 2), 0.064760523023031, tolerance = 1e-12)
 

@@ -28,6 +28,9 @@ test_that("Tests that multilayerForestry is working correctly", {
 
   # Mean Square Error
   sum((y_pred - y) ^ 2)
+
+  skip_if_not_mac()
+
   # Multilayer forestry is non deterministic, this needs to be fixed, but for
   # now test that it at least runs without crashing
   expect_equal(sum((y_pred - y) ^ 2), 13.849777575910220, tolerance = 1e-8)
