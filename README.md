@@ -1,5 +1,4 @@
-[![R-CMD-check](https://github.com/linanqiu/Rforestry/actions/workflows/check-noncontainerized.yaml/badge.svg)](https://github.com/linanqiu/Rforestry/actions/workflows/check-noncontainerized.yaml)
-
+[![R-CMD-check](https://github.com/forestry-labs/Rforestry/actions/workflows/check-noncontainerized.yaml/badge.svg)](https://github.com/forestry-labs/Rforestry/actions/workflows/check-noncontainerized.yaml)
 
 ## Rforestry: Random Forests, Linear Trees, and Gradient Boosting for Inference and Interpretability
 
