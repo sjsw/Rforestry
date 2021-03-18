@@ -9,7 +9,7 @@ test_that('Deep splitting obeys variable selection restrictions', {
   y <- rnorm(n)
   forest <- forestry(
     x, y, interactionDepth = 3, maxDepth = 20, interactionVariables = 0:1, mtry = 1,
-    ntree = 100)
+    ntree = 100,nthread = 2)
   forest <- make_savable(forest)
   for(tree.id in 1:forest@ntree) {
     # This is an unsightly hack to recover variables used for splitting in tree
@@ -36,7 +36,7 @@ test_that("Test that deep splitting has finite run time when mtry > number of no
   y <- rnorm(n)
   forest <- forestry(
     x, y, interactionDepth = 3, maxDepth = 20, interactionVariables = 0:1, mtry = 3,
-    ntree = 100)
+    ntree = 100,nthread = 2)
   forest <- make_savable(forest)
   for(tree.id in 1:forest@ntree) {
     # This is an unsightly hack to recover variables used for splitting in tree

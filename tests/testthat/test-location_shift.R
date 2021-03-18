@@ -26,10 +26,12 @@ y <- synth_data$Y - mean(synth_data$Y)
 forest_centered <- forestry(
   x, y,
   ntree = 500,
+  nthread = 2,
   mtry = 2, seed = 10)
 forest_uncentered <- forestry(
   x, y + mean_shift,
   ntree = 500,
+  nthread = 2,
   mtry = 2, seed = 10)
 
 expect_lt(

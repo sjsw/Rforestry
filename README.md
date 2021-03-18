@@ -28,7 +28,7 @@ x_train <- iris[-test_idx, -1]
 y_train <- iris[-test_idx, 1]
 x_test <- iris[test_idx, -1]
 
-rf <- forestry(x = x_train, y = y_train)
+rf <- forestry(x = x_train, y = y_train, nthread = 2)
 
 predict(rf, x_test)
 ```
@@ -49,7 +49,7 @@ b <- rnorm(n)
 c <- rnorm(n)
 y <- 4*a + 5.5*b - .78*c
 x <- data.frame(a,b,c)
-forest <- forestry(x, y, linear = TRUE)
+forest <- forestry(x, y, linear = TRUE, nthread = 2)
 predict(forest, x)
 ```
 
@@ -94,6 +94,7 @@ library(Rforestry)
 # Train a forest
 rf <- forestry(x = iris[,-1],
                y = iris[,1],
+               nthread = 2,
                ntree = 500)
 
 # Get the OOB predictions for the training set

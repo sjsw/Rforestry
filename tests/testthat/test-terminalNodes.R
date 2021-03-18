@@ -12,6 +12,7 @@ test_that("Tests that terminal nodes are correct", {
     x,
     y,
     replace = TRUE,
+    nthread = 2,
     maxDepth = 5
   )
 

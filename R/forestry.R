@@ -467,7 +467,7 @@ setClass(
 #' y_train <- iris[-test_idx, 1]
 #' x_test <- iris[test_idx, -1]
 #'
-#' rf <- forestry(x = x_train, y = y_train)
+#' rf <- forestry(x = x_train, y = y_train, nthread = 2)
 #' weights = predict(rf, x_test, aggregation = "weightMatrix")$weightMatrix
 #'
 #' weights %*% y_train
@@ -490,6 +490,7 @@ setClass(
 #'           replace = TRUE,
 #'           nodesizeStrictSpl = 5,
 #'           nodesizeStrictAvg = 5,
+#'           nthread = 2,
 #'           linear = TRUE
 #'           )
 #'
@@ -1862,7 +1863,7 @@ relinkCPP_prt <- function(object) {
 #' set.seed(323652639)
 #' x <- iris[, -1]
 #' y <- iris[, 1]
-#' forest <- forestry(x, y, ntree = 3)
+#' forest <- forestry(x, y, ntree = 3, nthread = 2)
 #' y_pred_before <- predict(forest, x)
 #'
 #' forest <- make_savable(forest)

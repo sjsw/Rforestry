@@ -18,6 +18,7 @@ test_that("Tests that Monotone splits parameter is working correctly in the case
     ntree = 500,
     nodesizeStrictSpl = 5,
     maxDepth = 10,
+    nthread = 2,
     monotonicConstraints = c(1),
     seed = 2
   )
@@ -35,6 +36,7 @@ test_that("Tests that Monotone splits parameter is working correctly in the case
     ntree = 500,
     nodesizeStrictSpl = 3,
     maxDepth = 10,
+    nthread = 2,
     monotonicConstraints = c(-1),
     seed = 2
   )

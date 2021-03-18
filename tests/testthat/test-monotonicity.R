@@ -15,6 +15,7 @@ test_that("Tests that Monotone splits parameter is working correctly", {
     ntree = 500,
     nodesizeStrictSpl = 5,
     maxDepth = 10,
+    nthread = 2,
     monotonicConstraints = c(1)
   )
   # Test predictions are monotonic increasing in the first feature
@@ -31,6 +32,7 @@ test_that("Tests that Monotone splits parameter is working correctly", {
     ntree = 500,
     nodesizeStrictSpl = 3,
     maxDepth = 10,
+    nthread = 2,
     monotonicConstraints = c(-1)
   )
   # Test predictions are monotonic decreasing in the first feature

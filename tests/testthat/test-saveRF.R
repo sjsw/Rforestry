@@ -11,6 +11,7 @@ test_that("Tests that saving RF and laoding it works", {
   forest <- forestry(x,
                      y,
                      ntree = 3,
+                     nthread = 2,
                      saveable = FALSE)
   # testthat::expect_equal(forest@processed_dta, list())
   testthat::expect_equal(forest@R_forest, list())
@@ -21,6 +22,7 @@ test_that("Tests that saving RF and laoding it works", {
     sample.fraction = 1,
     splitratio = .03,
     ntree = 3,
+    nthread = 2,
     saveable = TRUE
   )
 
@@ -41,6 +43,7 @@ test_that("Tests that saving RF and laoding it works", {
     sample.fraction = 1,
     splitratio = 1,
     ntree = 3,
+    nthread = 2,
     saveable = TRUE,
     replace = FALSE
   )

@@ -28,7 +28,7 @@
 #' x <- iris_with_missing[,-1]
 #' y <- iris_with_missing[, 1]
 #'
-#' forest <- forestry(x, y, ntree = 500, seed = 2)
+#' forest <- forestry(x, y, ntree = 500, seed = 2,nthread = 2)
 #' imputed_x <- impute_features(forest, x, seed = 2)
 #' @export
 impute_features <- function(object, feature.new,

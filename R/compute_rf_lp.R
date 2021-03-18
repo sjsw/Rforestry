@@ -22,7 +22,7 @@
 #' y_train <- iris[-test_idx, 1]
 #' x_test <- iris[test_idx, -1]
 #'
-#' rf <- forestry(x = x_train, y = y_train)
+#' rf <- forestry(x = x_train, y = y_train,nthread = 2)
 #' predict(rf, x_test)
 #'
 #' # Compute the l2 distances in the "Petal.Length" dimension

@@ -16,7 +16,8 @@
 #' @examples
 #' set.seed(292315)
 #' rf <- forestry(x = iris[,-1],
-#'                y = iris[, 1])
+#'                y = iris[, 1],
+#'                nthread = 2)
 #'
 #' plot(x = rf)
 #' plot(x = rf, tree.id = 2)
@@ -31,6 +32,7 @@
 #'   ntree = 1000,
 #'   minSplitGain = .004,
 #'   linear = TRUE,
+#'   nthread = 2,
 #'   overfitPenalty = 1.65,
 #'   linFeats = 1:2)
 #'

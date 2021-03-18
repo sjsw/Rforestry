@@ -204,7 +204,7 @@ x_train <- iris[-test_idx, -1]
 y_train <- iris[-test_idx, 1]
 x_test <- iris[test_idx, -1]
 
-rf <- forestry(x = x_train, y = y_train)
+rf <- forestry(x = x_train, y = y_train, nthread = 2)
 weights = predict(rf, x_test, aggregation = "weightMatrix")$weightMatrix
 
 weights \%*\% y_train
@@ -227,6 +227,7 @@ forest <- forestry(
           replace = TRUE,
           nodesizeStrictSpl = 5,
           nodesizeStrictAvg = 5,
+          nthread = 2,
           linear = TRUE
           )
 
