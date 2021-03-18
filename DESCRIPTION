@@ -37,7 +37,6 @@ Suggests:
     knitr,
     rmarkdown,
     mvtnorm
-VignetteBuilder: knitr
 Collate:
     'R_preprocessing.R'
     'RcppExports.R'

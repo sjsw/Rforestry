@@ -347,7 +347,7 @@ void splitDataIntoTwoParts(
     double rightMean = trainingData->partitionMean(rightPartitionIndex);
 
     for (const auto& index : naIndices) {
-      if (abs(trainingData->getOutcomePoint(index) - leftMean) < abs(trainingData->getOutcomePoint(index) - rightMean)) {
+      if (std::abs(trainingData->getOutcomePoint(index) - leftMean) < std::abs(trainingData->getOutcomePoint(index) - rightMean)) {
         leftPartitionIndex->push_back(index);
         naLeftCount++;
       } else {
@@ -1286,7 +1286,6 @@ void forestryTree::recursive_reconstruction(
     (*naLeftCounts).erase((*naLeftCounts).begin());
     size_t naRightCount = (*naRightCounts)[0];
     (*naRightCounts).erase((*naRightCounts).begin());
-
 
 
   if(var_id < 0){
