@@ -20,17 +20,16 @@ and Linear Random Forests, with an emphasis on inference and interpretability.
 ## Usage
 
 ```R
-set.seed(292315)
 library(Rforestry)
+
+set.seed(292315)
 test_idx <- sample(nrow(iris), 3)
 x_train <- iris[-test_idx, -1]
 y_train <- iris[-test_idx, 1]
 x_test <- iris[test_idx, -1]
 
 rf <- forestry(x = x_train, y = y_train)
-weights = predict(rf, x_test, aggregation = "weightMatrix")$weightMatrix
 
-weights %*% y_train
 predict(rf, x_test)
 ```
 
@@ -41,16 +40,16 @@ A fast implementation of random forests using ridge penalized splitting and ridg
 Example:
 
   ```R
-set.seed(49)
 library(Rforestry)
 
+set.seed(49)
 n <- c(100)
 a <- rnorm(n)
 b <- rnorm(n)
 c <- rnorm(n)
 y <- 4*a + 5.5*b - .78*c
 x <- data.frame(a,b,c)
-forest <- forestry(x, y, ridgeRF = TRUE)
+forest <- forestry(x, y, linear = TRUE)
 predict(forest, x)
 ```
 
@@ -61,18 +60,19 @@ A parameter controlling monotonic constraints for features in forestry.
 ```R
 library(Rforestry)
 
+set.seed(49)
 x <- rnorm(150)+5
 y <- .15*x + .5*sin(3*x)
 data_train <- data.frame(x1 = x, x2 = rnorm(150)+5, y = y + rnorm(150, sd = .4))
 
-monotone_rf <- forestry(x = data_train %>% select(-y),
+monotone_rf <- forestry(x = data_train[,-3],
                         y = data_train$y,
                         monotonicConstraints = c(-1,-1),
                         nodesizeStrictSpl = 5,
                         nthread = 1,
                         ntree = 25)
-predict(monotone_rf, feature.new = data_train %>% select(-y))
-
+                        
+predict(monotone_rf, feature.new = data_train[,-3])
 ```
 
 
