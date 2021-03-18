@@ -35,11 +35,11 @@ predict(rf, x_test)
 
 ## Ridge Random Forest
 
-A fast implementation of random forests using ridge penalized splitting and ridge regression for predictions.
+A fast implementation of random forests using ridge penalized splitting and 
+ridge regression for predictions. 
+In order to use this version of random forests, set the `linear` option to `TRUE`.
 
-Example:
-
-  ```R
+```R
 library(Rforestry)
 
 set.seed(49)
@@ -55,7 +55,10 @@ predict(forest, x)
 
 ## Monotonic Constraints
 
-A parameter controlling monotonic constraints for features in forestry.
+The parameter `monotonicConstraints` strictly enforces monotonicity of partition 
+averages when evaluating potential splits on the indicated features.
+This parameter can be used to specify both monotone increasing and monotone 
+decreasing constraints.
 
 ```R
 library(Rforestry)
@@ -67,7 +70,7 @@ data_train <- data.frame(x1 = x, x2 = rnorm(150)+5, y = y + rnorm(150, sd = .4))
 
 monotone_rf <- forestry(x = data_train[,-3],
                         y = data_train$y,
-                        monotonicConstraints = c(-1,-1),
+                        monotonicConstraints = c(1,1),
                         nodesizeStrictSpl = 5,
                         nthread = 1,
                         ntree = 25)
@@ -78,11 +81,11 @@ predict(monotone_rf, feature.new = data_train[,-3])
 
 ## OOB Predictions
 
-We can return the predictions for the training dataset using only the trees in
-which each observation was out of bag. Note that when there are few trees, or a
+We can return the predictions for the training data set using only the trees in
+which each observation was out-of-bag. Note that when there are few trees, or a
 high proportion of the observations sampled, there may be some observations
-which are not out of bag for any trees.
-The predictions for these are returned NaN.
+which are not out-of-bag for any trees.
+The predictions for these are returned as `NaN`.
 
 
 ```R
