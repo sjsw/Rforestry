@@ -9,6 +9,9 @@ loadForestry(filename)
 \arguments{
 \item{filename}{a filename in which to store the `forestry` object}
 }
+\value{
+The loaded forest from filename.
+}
 \description{
 This wrapper function checks the forestry object, makes it
  saveable if needed, and then saves it.

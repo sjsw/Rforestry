@@ -14,6 +14,9 @@ testing_data_checker(object, feature.new, hasNas)
 
 \item{hasNas}{TRUE if the there were NAs in the training data FALSE otherwise.}
 }
+\value{
+A feature dataframe if it can be used for new predictions.
+}
 \description{
 Check the testing data to do prediction
 }

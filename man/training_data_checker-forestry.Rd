@@ -108,6 +108,9 @@ sample. This option is not allowed when sampling is done without replacement.}
 
 \item{hasNas}{indicates if there is any missingness in x.}
 }
+\value{
+A list of parameters after checking the selected parameters are valid.
+}
 \description{
 Check the input to forestry constructor
 }

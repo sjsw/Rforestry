@@ -12,6 +12,7 @@
 #' @param beta.char.len The length of the beta values in leaf node
 #' representation.
 #' @param ... additional arguments that are not used.
+#' @return A plot of the specified tree in the forest.
 #' @import glmnet
 #' @examples
 #' set.seed(292315)

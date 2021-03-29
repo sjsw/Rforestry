@@ -9,6 +9,9 @@ forest_checker(object)
 \arguments{
 \item{object}{a forestry object}
 }
+\value{
+A message if the forest does not have a valid C++ pointer.
+}
 \description{
 Checks if forestry object has valid pointer for C++ object.
 }

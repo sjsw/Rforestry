@@ -19,6 +19,9 @@ representation.}
 
 \item{...}{additional arguments that are not used.}
 }
+\value{
+A plot of the specified tree in the forest.
+}
 \description{
 plots a tree in the forest.
 }

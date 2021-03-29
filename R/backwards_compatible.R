@@ -6,6 +6,7 @@
 #' @description This function is deprecated and only exists for backwards
 #'   backwards compatibility. The function you want to use is `forestry`.
 #' @param ... parameters which are passed directly to `forestry`
+#' @return A `forestry` object
 #' @export honestRF
 honestRF <- function(...) forestry(...)
 
@@ -14,6 +15,7 @@ honestRF <- function(...) forestry(...)
 #' @description This function is deprecated and only exists for backwards
 #'   backwards compatibility. The function you want to use is `autoforestry`.
 #' @param ... parameters which are passed directly to `autoforestry`
+#' @return A `forestry` object
 #' @export autohonestRF
 autohonestRF <- function(...) autoforestry(...)
 

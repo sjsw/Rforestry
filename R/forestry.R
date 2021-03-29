@@ -12,6 +12,7 @@ NULL
 #' @param featureWeights weights used when subsampling features for nodes above or at interactionDepth.
 #' @param deepFeatureWeights weights used when subsampling features for nodes below interactionDepth.
 #' @param hasNas indicates if there is any missingness in x.
+#' @return A list of parameters after checking the selected parameters are valid.
 training_data_checker <- function(x,
                                   y,
                                   ntree,
@@ -251,6 +252,7 @@ training_data_checker <- function(x,
 #' @param object A forestry object.
 #' @param feature.new A data frame of testing predictors.
 #' @param hasNas TRUE if the there were NAs in the training data FALSE otherwise.
+#' @return A feature dataframe if it can be used for new predictions.
 testing_data_checker <- function(object, feature.new, hasNas) {
   if(ncol(feature.new) != object@processed_dta$numColumns) {
     stop(paste0("feature.new has ", ncol(feature.new), " but the forest was trained with ",
@@ -294,6 +296,7 @@ nullptr <- new("externalptr")
 forest_checker <- function(object) {
   #' Checks if forestry object has valid pointer for C++ object.
   #' @param object a forestry object
+  #' @return A message if the forest does not have a valid C++ pointer.
   if(identical(object@forest, nullptr)) {
     stop("Forest pointer is null. ",
          "Was the forest saved and loaded incorrectly? ",
@@ -1408,6 +1411,7 @@ getOOBpreds <- function(object,
 #' @note No seed is passed to this function so it is
 #'   not possible in the current implementation to replicate the vector
 #'   permutations used when measuring feature importance.
+#' @return The variable importance of the forest.
 #' @export
 getVI <- function(object,
                            noWarning) {
@@ -1687,6 +1691,7 @@ autoforestry <- function(x,
 #' @param object an object of class `forestry`
 #' @param filename a filename in which to store the `forestry` object
 #' @param ... additional arguments useful for specifying compression type and level
+#' @return Saves the forest into filename.
 #' @export
 saveForestry <- function(object, filename, ...){
   # First we need to make sure the object is saveable
@@ -1700,6 +1705,7 @@ saveForestry <- function(object, filename, ...){
 #' @description This wrapper function checks the forestry object, makes it
 #'  saveable if needed, and then saves it.
 #' @param filename a filename in which to store the `forestry` object
+#' @return The loaded forest from filename.
 #' @export
 loadForestry <- function(filename){
   # First we need to make sure the object is saveable
@@ -1733,6 +1739,7 @@ CppToR_translator <- function(object) {
 #' @description When a `foresty` object is saved and then reloaded the Cpp
 #'   pointers for the data set and the Cpp forest have to be reconstructed
 #' @param object an object of class `forestry` or class `multilayerForestry`
+#' @return Relinks the pointer to the correct C++ object.
 #' @export
 relinkCPP_prt <- function(object) {
     # 1.) reconnect the data.frame to a cpp data.frame
