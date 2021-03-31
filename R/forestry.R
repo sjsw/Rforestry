@@ -471,9 +471,6 @@ setClass(
 #' x_test <- iris[test_idx, -1]
 #'
 #' rf <- forestry(x = x_train, y = y_train, nthread = 2)
-#' weights = predict(rf, x_test, aggregation = "weightMatrix")$weightMatrix
-#'
-#' weights %*% y_train
 #' predict(rf, x_test)
 #'
 #' set.seed(49)
@@ -1874,14 +1871,17 @@ relinkCPP_prt <- function(object) {
 #' y_pred_before <- predict(forest, x)
 #'
 #' forest <- make_savable(forest)
-#' saveForestry(forest, file = "forest.Rda")
+#'
+#' wd <- tempdir()
+#
+#' saveForestry(forest, filename = file.path(wd, "forest.Rda"))
 #' rm(forest)
 #'
-#' forest <- loadForestry("forest.Rda")
+#' forest <- loadForestry(file.path(wd, "forest.Rda"))
 #'
 #' y_pred_after <- predict(forest, x)
-#' testthat::expect_equal(y_pred_before, y_pred_after, tolerance = 0.000001)
-#' file.remove("forest.Rda")
+#'
+#' file.remove(file.path(wd, "forest.Rda"))
 #' @return A list of lists. Each sublist contains the information to span a
 #'   tree.
 #' @aliases make_savable,forestry-method
