@@ -21,7 +21,6 @@ Description: Provides fast implementations of Honest Random Forests,
     Theo F. Saarinen, Edward W. Liu, Jasjeet S. Sekhon (2019) <arXiv:1906.06463>.
 License: GPL (>=3)
 Encoding: UTF-8
-LazyData: true
 Imports:
     Rcpp (>= 0.12.9),
     parallel,
