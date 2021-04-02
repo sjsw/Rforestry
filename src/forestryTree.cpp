@@ -63,18 +63,18 @@ forestryTree::forestryTree(
   * @param maxObs    Max number of observations to split on
   */
  /* Sanity Check */
-  if (minNodeSizeAvg == 0) {
-    throw std::runtime_error("minNodeSizeAvg cannot be set to 0.");
-  }
+  // if (minNodeSizeAvg == 0) {
+  //   throw std::runtime_error("minNodeSizeAvg cannot be set to 0.");
+  // }
   if (minNodeSizeSpt == 0) {
     throw std::runtime_error("minNodeSizeSpt cannot be set to 0.");
   }
   if (minNodeSizeToSplitSpt == 0) {
     throw std::runtime_error("minNodeSizeToSplitSpt cannot be set to 0.");
   }
-  if (minNodeSizeToSplitAvg == 0) {
-    throw std::runtime_error("minNodeSizeToSplitAvg cannot be set to 0.");
-  }
+  // if (minNodeSizeToSplitAvg == 0) {
+  //   throw std::runtime_error("minNodeSizeToSplitAvg cannot be set to 0.");
+  // }
   if (minNodeSizeToSplitAvg > (*averagingSampleIndex).size()) {
     std::ostringstream ostr;
     ostr << "minNodeSizeToSplitAvg cannot exceed total elements in the "

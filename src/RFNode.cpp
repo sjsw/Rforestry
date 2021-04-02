@@ -150,36 +150,36 @@ void RFNode::predict(
 ) {
 
   // If the node is a leaf, aggregate all its averaging data samples
-  if (is_leaf()){// || (this->getLeftChild()->getAverageCount() == 0 && this->getLeftChild()->getAverageCount() == 0)) {
+  if (is_leaf()) {
 
       if (linear) {
 
-      //Use ridgePredict (fit linear model on leaf avging obs + evaluate it)
-      ridgePredict(outputPrediction,
-                   updateIndex,
-                   xNew,
-                   trainingData,
-                   lambda);
+        //Use ridgePredict (fit linear model on leaf avging obs + evaluate it)
+        ridgePredict(outputPrediction,
+                     updateIndex,
+                     xNew,
+                     trainingData,
+                     lambda);
       } else {
 
 
-      double predictedMean;
-      // Calculate the mean of current node
-      if (getAveragingIndex()->size() == 0) {
-        predictedMean = 0;
-      } else {
-        predictedMean = (*trainingData).partitionMean(getAveragingIndex());
-      }
+        double predictedMean;
+        // Calculate the mean of current node
+        if (getAveragingIndex()->size() == 0) {
+          predictedMean = 0;
+        } else {
+          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+        }
 
 
-      // Give all updateIndex the mean of the node as prediction values
-      for (
-        std::vector<size_t>::iterator it = (*updateIndex).begin();
-        it != (*updateIndex).end();
-        ++it
-      ) {
-        outputPrediction[*it] = predictedMean;
-      }
+        // Give all updateIndex the mean of the node as prediction values
+        for (
+          std::vector<size_t>::iterator it = (*updateIndex).begin();
+          it != (*updateIndex).end();
+          ++it
+        ) {
+          outputPrediction[*it] = predictedMean;
+        }
     }
 
     if (weightMatrix){
@@ -324,30 +324,78 @@ void RFNode::predict(
 
     // Recursively get predictions from its children
     if ((*leftPartitionIndex).size() > 0) {
-      (*getLeftChild()).predict(
-        outputPrediction,
-        terminalNodes,
-        leftPartitionIndex,
-        xNew,
-        trainingData,
-        weightMatrix,
-        linear,
-        lambda,
-        seed
-      );
+
+      // Here we want to now make sure the left node has averaging indices,
+      // otherwise we give it predictions from the parent
+      if (getLeftChild()->getAverageCount() == 0) {
+
+        double predictedMean;
+        // Calculate the mean of current node
+        if (getAverageCount() == 0) {
+          predictedMean = 0;
+        } else{
+          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+        }
+
+        // Give all updateIndex the mean of the node as prediction values
+        for (
+            std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
+            it != (*leftPartitionIndex).end();
+            ++it
+        ) {
+          outputPrediction[*it] = predictedMean;
+        }
+      } else {
+        (*getLeftChild()).predict(
+            outputPrediction,
+            terminalNodes,
+            leftPartitionIndex,
+            xNew,
+            trainingData,
+            weightMatrix,
+            linear,
+            lambda,
+            seed
+        );
+      }
+
     }
     if ((*rightPartitionIndex).size() > 0) {
-      (*getRightChild()).predict(
-        outputPrediction,
-        terminalNodes,
-        rightPartitionIndex,
-        xNew,
-        trainingData,
-        weightMatrix,
-        linear,
-        lambda,
-        seed
-      );
+
+      // Here we want to now make sure the right node has averaging indices,
+      // otherwise we give it predictions from the parent
+      if (getRightChild()->getAverageCount() == 0) {
+
+
+        double predictedMean;
+        // Calculate the mean of current node
+        if (getAverageCount() == 0) {
+          predictedMean = 0;
+        } else{
+          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+        }
+
+        //Give all rightPartitionIndex the mean of the node as prediction values
+        for (
+            std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
+            it != (*rightPartitionIndex).end();
+            ++it
+        ) {
+          outputPrediction[*it] = predictedMean;
+        }
+      } else {
+        (*getRightChild()).predict(
+          outputPrediction,
+          terminalNodes,
+          rightPartitionIndex,
+          xNew,
+          trainingData,
+          weightMatrix,
+          linear,
+          lambda,
+          seed
+        );
+      }
     }
 
     delete(leftPartitionIndex);
