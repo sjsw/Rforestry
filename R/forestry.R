@@ -88,14 +88,14 @@ training_data_checker <- function(x,
   if (nodesizeSpl <= 0 || nodesizeSpl %% 1 != 0) {
     stop("nodesizeSpl must be a positive integer.")
   }
-  if (nodesizeAvg <= 0 || nodesizeAvg %% 1 != 0) {
+  if (nodesizeAvg < 0 || nodesizeAvg %% 1 != 0) {
     stop("nodesizeAvg must be a positive integer.")
   }
 
   if (nodesizeStrictSpl <= 0 || nodesizeStrictSpl %% 1 != 0) {
     stop("nodesizeStrictSpl must be a positive integer.")
   }
-  if (nodesizeStrictAvg <= 0 || nodesizeStrictAvg %% 1 != 0) {
+  if (nodesizeStrictAvg < 0 || nodesizeStrictAvg %% 1 != 0) {
     stop("nodesizeStrictAvg must be a positive integer.")
   }
   if (minSplitGain < 0) {

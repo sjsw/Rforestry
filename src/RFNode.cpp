@@ -397,7 +397,10 @@ void RFNode::printSubtree(int indentSpace) {
               << getSplitFeature()
               << ", split value = "
               << getSplitValue()
+              << ", # of average samples = "
+              << getAverageCount()
               << std::endl;
+
     R_FlushConsole();
     R_ProcessEvents();
     // Recursively calling its children
