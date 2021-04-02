@@ -124,12 +124,12 @@ forestry::forestry(
   //
   // std::vector<unsigned int> seeds;
 
-  // forestryTree *currentTree;
-  // for (auto p = 0; p < (*this->getForest()).size(); p++) {
-  //   currentTree = (*this->getForest())[p].get();
-  //
-  //   currentTree->printTree();
-  // }
+  forestryTree *currentTree;
+  for (auto p = 0; p < (*this->getForest()).size(); p++) {
+    currentTree = (*this->getForest())[p].get();
+
+    currentTree->printTree();
+  }
   // std::sort(seeds.begin(), seeds.end());
   // print_vector(seeds);
   //

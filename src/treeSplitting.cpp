@@ -1036,17 +1036,14 @@ void findBestSplitValueNonCategorical(
   std::vector<dataPair>::iterator averagingDataIter = averagingData.begin();
 
   // Initialize the split value to be minimum of first value in two datsets
-  double featureValue = std::min(
-    std::get<0>(*splittingDataIter),
-    std::get<0>(*averagingDataIter)
-  );
+  double featureValue = std::get<0>(*splittingDataIter);
+
 
   double newFeatureValue;
   bool oneValueDistinctFlag = true;
 
   while (
-      splittingDataIter < splittingData.end() ||
-        averagingDataIter < averagingData.end()
+      splittingDataIter < splittingData.end()
   ){
 
     // Exhaust all current feature value in both dataset as partitioning
@@ -1059,20 +1056,11 @@ void findBestSplitValueNonCategorical(
       splittingDataIter++;
     }
 
-    while (
-        averagingDataIter < averagingData.end() &&
-          std::get<0>(*averagingDataIter) == featureValue
-    ) {
-      averagingDataIter++;
-      averageLeftPartitionCount++;
-    }
-
     // Test if the all the values for the feature are the same, then proceed
     if (oneValueDistinctFlag) {
       oneValueDistinctFlag = false;
       if (
-          splittingDataIter == splittingData.end() &&
-            averagingDataIter == averagingData.end()
+          splittingDataIter == splittingData.end()
       ) {
         break;
       }
@@ -1084,19 +1072,12 @@ void findBestSplitValueNonCategorical(
     // array.
     // Get new feature value
     if (
-        splittingDataIter == splittingData.end() &&
-          averagingDataIter == averagingData.end()
+        splittingDataIter == splittingData.end()
     ) {
       break;
-    } else if (splittingDataIter == splittingData.end()) {
-      newFeatureValue = std::get<0>(*averagingDataIter);
-    } else if (averagingDataIter == averagingData.end()) {
-      newFeatureValue = std::get<0>(*splittingDataIter);
     } else {
-      newFeatureValue = std::min(
-        std::get<0>(*splittingDataIter),
-        std::get<0>(*averagingDataIter)
-      );
+      newFeatureValue = std::get<0>(*splittingDataIter);
+
     }
 
     // Check leaf size at least nodesize
@@ -1104,11 +1085,7 @@ void findBestSplitValueNonCategorical(
         std::min(
           splitLeftPartitionCount,
           splitTotalCount - splitLeftPartitionCount
-        ) < splitNodeSize||
-          std::min(
-            averageLeftPartitionCount,
-            averageTotalCount - averageLeftPartitionCount
-          ) < averageNodeSize
+        ) < splitNodeSize
     ) {
       // Update the oldFeature value before proceeding
       featureValue = newFeatureValue;
