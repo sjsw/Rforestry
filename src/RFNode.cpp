@@ -46,19 +46,22 @@ void RFNode::setSplitNode(
   double splitValue,
   std::unique_ptr< RFNode > leftChild,
   std::unique_ptr< RFNode > rightChild,
+  std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
   size_t naLeftCount,
   size_t naRightCount
 ) {
   // Split node constructor
-  _averageCount = 0;
+  _averageCount = (*averagingSampleIndex).size();
   _splitCount = 0;
   _splitFeature = splitFeature;
   _splitValue = splitValue;
+  this->_averagingSampleIndex = std::move(averagingSampleIndex);
   // Give the ownership of the child pointer to the RFNode object
   _leftChild = std::move(leftChild);
   _rightChild = std::move(rightChild);
   _naLeftCount = naLeftCount;
   _naRightCount = naRightCount;
+  _nodeId = -1;
 }
 
 void RFNode::ridgePredict(
@@ -147,7 +150,7 @@ void RFNode::predict(
 ) {
 
   // If the node is a leaf, aggregate all its averaging data samples
-  if (is_leaf()) {
+  if (is_leaf()){// || (this->getLeftChild()->getAverageCount() == 0 && this->getLeftChild()->getAverageCount() == 0)) {
 
       if (linear) {
 
@@ -350,14 +353,15 @@ void RFNode::predict(
 bool RFNode::is_leaf() {
   int ave_ct = getAverageCount();
   int spl_ct = getSplitCount();
-  if (
-      (ave_ct == 0 && spl_ct != 0) ||(ave_ct != 0 && spl_ct == 0)
-  ) {
-    throw std::runtime_error(
-        "Average count or Split count is 0, while the other is not!"
-        );
-  }
-  return !(ave_ct == 0 && spl_ct == 0);
+  // if (
+  //     (ave_ct == 0 && spl_ct != 0) ||(ave_ct != 0 && spl_ct == 0)
+  // ) {
+  //   throw std::runtime_error(
+  //       "Average count or Split count is 0, while the other is not!"
+  //       );
+  // }
+  //return !(ave_ct == 0 && spl_ct == 0);
+  return (this->getNodeId()>0);
 }
 
 size_t RFNode::getAverageCountAlways() {

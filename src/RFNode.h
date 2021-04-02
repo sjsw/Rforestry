@@ -27,6 +27,7 @@ public:
     double splitValue,
     std::unique_ptr< RFNode > leftChild,
     std::unique_ptr< RFNode > rightChild,
+    std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
     size_t naLeftCount,
     size_t naRightCount
   );

@@ -111,7 +111,7 @@ forestry::forestry(
 
   // Create initial trees
   addTrees(ntree);
-  // forestryTree *currentTree;
+
   // Rcpp::Rcout << "Tree seeds:" << std::endl;
   // R_FlushConsole();
   // R_ProcessEvents();
@@ -123,11 +123,13 @@ forestry::forestry(
   // R_CheckUserInterrupt();
   //
   // std::vector<unsigned int> seeds;
-  // for (auto p = 0; p < (*this->getForest()).size(); p++) {
-  //   currentTree = (*this->getForest())[p].get();
-  //   seeds.push_back(currentTree->getSeed());
-  //   //currentTree->printTree();
-  // }
+
+  forestryTree *currentTree;
+  for (auto p = 0; p < (*this->getForest()).size(); p++) {
+    currentTree = (*this->getForest())[p].get();
+
+    currentTree->printTree();
+  }
   // std::sort(seeds.begin(), seeds.end());
   // print_vector(seeds);
   //
