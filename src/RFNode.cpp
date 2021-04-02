@@ -162,8 +162,15 @@ void RFNode::predict(
                    lambda);
       } else {
 
+
+      double predictedMean;
       // Calculate the mean of current node
-      double predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+      if (getAveragingIndex()->size() == 0) {
+        predictedMean = 0;
+      } else {
+        predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+      }
+
 
       // Give all updateIndex the mean of the node as prediction values
       for (
