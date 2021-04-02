@@ -361,7 +361,7 @@ bool RFNode::is_leaf() {
   //       );
   // }
   //return !(ave_ct == 0 && spl_ct == 0);
-  return (this->getNodeId()>0);
+  return !(spl_ct == 0);
 }
 
 size_t RFNode::getAverageCountAlways() {
