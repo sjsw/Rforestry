@@ -169,6 +169,38 @@ void forestry::addTrees(size_t ntree) {
   size_t splitSampleSize = (size_t) (getSplitRatio() * getSampleSize());
   float percent_complete = 0.0;
 
+
+  // Now if we want run with honesty, we split the training samples here.
+  std::mt19937_64 random_number_generator_shuffle;
+  random_number_generator_shuffle.seed(see);
+
+  // Generate a sample index for each tree
+  std::vector<size_t> forestSampleIndex;
+  std::vector<size_t> forestAvgIndex;
+  std::vector<size_t> all_idx;
+
+
+  // Populate index list
+  for (size_t i = 0; i < getNtrain(); i++) {
+    all_idx.push_back(i);
+  }
+  // Shuffle the indices
+  std::shuffle(all_idx.begin(), all_idx.end(), random_number_generator_shuffle);
+  // now split up beween splitting and averaging sets
+  for (
+      std::vector<size_t>::iterator it = all_idx.begin();
+      it != all_idx.end();
+      ++it
+  ) {
+    if (forestSampleIndex.size() < splitSampleSize) {
+      forestSampleIndex.push_back(*it);
+    } else {
+      forestAvgIndex.push_back(*it);
+    }
+  }
+
+
+
   // Rcpp::Rcout << "Training Progress: " << std::endl;
   // R_FlushConsole();
   // R_ProcessEvents();
@@ -224,8 +256,8 @@ void forestry::addTrees(size_t ntree) {
           // }
           std::mt19937_64 random_number_generator;           // was an int with myseed which is an unsigned int
           random_number_generator.seed(myseed);              // Testing a couple of things, this is deterministic with
-                                                            // this->getSeed(), but not with i, or i multuplied.
-                                                            // i Must be changing run to run somehow
+                                                             // this->getSeed(), but not with i, or i multuplied.
+                                                             // i Must be changing run to run somehow
           // std::uniform_real_distribution<double> unif;
 
           // Generate a sample index for each tree
@@ -287,15 +319,72 @@ void forestry::addTrees(size_t ntree) {
             // Generate sample index based on the split ratio
             std::vector<size_t> splitSampleIndex_;
             std::vector<size_t> averageSampleIndex_;
-            for (
-              std::vector<size_t>::iterator it = sampleIndex.begin();
-              it != sampleIndex.end();
-              ++it
-            ) {
-              if (splitSampleIndex_.size() < splitSampleSize) {
-                splitSampleIndex_.push_back(*it);
-              } else {
-                averageSampleIndex_.push_back(*it);
+
+            if (isReplacement()) {
+              // Now we generate a weighted distribution using observationWeights
+              // std::vector<double>* sampleWeights = (this->getTrainingData()->getobservationWeights());
+              // std::discrete_distribution<size_t> sample_dist(
+              //     sampleWeights->begin(), sampleWeights->end()
+              // );
+              std::uniform_int_distribution<size_t> unif_dist_spl(
+                  0, (size_t) splitSampleSize-1
+              );
+
+              // Generate index with replacement
+              while (splitSampleIndex_.size() < splitSampleSize) {
+                size_t randomIndex = unif_dist_spl(random_number_generator);
+                splitSampleIndex_.push_back(forestSampleIndex[randomIndex]);
+              }
+
+              std::uniform_int_distribution<size_t> unif_dist_avg(
+                  0, (size_t) getSampleSize()-splitSampleSize-1
+              );
+
+              // Generate index with replacement
+              while (averageSampleIndex_.size() < getSampleSize()-splitSampleSize) {
+                size_t randomIndex = unif_dist_avg(random_number_generator);
+                averageSampleIndex_.push_back(forestAvgIndex[randomIndex]);
+              }
+
+            } else {
+              // In this case, when we have no replacement, we disregard
+              // observationWeights and use a uniform distribution
+              std::uniform_int_distribution<size_t> unif_dist_spl(
+                  0, (size_t) splitSampleSize - 1
+              );
+              // Generate index without replacement
+              while (splitSampleIndex_.size() < splitSampleSize) {
+                size_t randomIndex = unif_dist_spl(random_number_generator);
+
+                if (
+                    splitSampleIndex_.size() == 0 ||
+                      std::find(
+                        splitSampleIndex_.begin(),
+                        splitSampleIndex_.end(),
+                        randomIndex
+                      ) == splitSampleIndex_.end()
+                ) {
+                  splitSampleIndex_.push_back(forestSampleIndex[randomIndex]);
+                }
+              }
+
+              std::uniform_int_distribution<size_t> unif_dist_avg(
+                  0, (size_t) getSampleSize() - splitSampleSize - 1
+              );
+              // Generate index without replacement
+              while (averageSampleIndex_.size() < getSampleSize()-splitSampleSize) {
+                size_t randomIndex = unif_dist_avg(random_number_generator);
+
+                if (
+                    averageSampleIndex_.size() == 0 ||
+                      std::find(
+                        averageSampleIndex_.begin(),
+                        averageSampleIndex_.end(),
+                        randomIndex
+                      ) == averageSampleIndex_.end()
+                ) {
+                  averageSampleIndex_.push_back(forestAvgIndex[randomIndex]);
+                }
               }
             }
 
