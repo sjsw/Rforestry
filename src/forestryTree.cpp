@@ -1036,28 +1036,28 @@ void forestryTree::getOOBindex(
 ){
 
   // Generate union of splitting and averaging dataset
-  std::sort(
-    (*getSplittingIndex()).begin(),
-    (*getSplittingIndex()).end()
-  );
+  // std::sort(   //For now remove the splitting indices, I only want to
+  //   (*getSplittingIndex()).begin(),
+  //   (*getSplittingIndex()).end()
+  // );
   std::sort(
     (*getAveragingIndex()).begin(),
     (*getAveragingIndex()).end()
   );
 
-  std::vector<size_t> allSampledIndex(
-      (*getSplittingIndex()).size() + (*getAveragingIndex()).size()
-  );
+  // std::vector<size_t> allSampledIndex(
+  //     /* (*getSplittingIndex()).size() + */(*getAveragingIndex()).size()
+  // );
 
-  std::vector<size_t>::iterator it= std::set_union(
-    (*getSplittingIndex()).begin(),
-    (*getSplittingIndex()).end(),
-    (*getAveragingIndex()).begin(),
-    (*getAveragingIndex()).end(),
-    allSampledIndex.begin()
-  );
-
-  allSampledIndex.resize((unsigned long) (it - allSampledIndex.begin()));
+  // std::vector<size_t>::iterator it= std::set_union(
+  //   (*getSplittingIndex()).begin(),
+  //   (*getSplittingIndex()).end(),
+  //   (*getAveragingIndex()).begin(),
+  //   (*getAveragingIndex()).end(),
+  //   allSampledIndex.begin()
+  // );
+  //
+  // allSampledIndex.resize((unsigned long) (it - allSampledIndex.begin()));
 
   // Generate a vector of all index based on nRows
   struct IncGenerator {
@@ -1072,11 +1072,11 @@ void forestryTree::getOOBindex(
   // OOB index is the set difference between sampled index and all index
   std::vector<size_t> OOBIndex(nRows);
 
-  it = std::set_difference (
+  std::vector<size_t>::iterator it = std::set_difference (
     allIndex.begin(),
     allIndex.end(),
-    allSampledIndex.begin(),
-    allSampledIndex.end(),
+    (*getAveragingIndex()).begin(),
+    (*getAveragingIndex()).end(),
     OOBIndex.begin()
   );
   OOBIndex.resize((unsigned long) (it - OOBIndex.begin()));
