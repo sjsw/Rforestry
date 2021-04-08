@@ -1037,8 +1037,8 @@ void forestryTree::getOOBindex(
 
   // Generate union of splitting and averaging dataset
   // std::sort(   //For now remove the splitting indices, I only want to
-  //   (*getSplittingIndex()).begin(),
-  //   (*getSplittingIndex()).end()
+  //   getSplittingIndex()->begin(),
+  //   getSplittingIndex()->end()
   // );
   std::sort(
     (*getAveragingIndex()).begin(),
@@ -1059,7 +1059,6 @@ void forestryTree::getOOBindex(
   //
   // allSampledIndex.resize((unsigned long) (it - allSampledIndex.begin()));
 
-  // Generate a vector of all index based on nRows
   struct IncGenerator {
     size_t current_;
     IncGenerator(size_t start): current_(start) {}
@@ -1075,8 +1074,8 @@ void forestryTree::getOOBindex(
   std::vector<size_t>::iterator it = std::set_difference (
     allIndex.begin(),
     allIndex.end(),
-    (*getAveragingIndex()).begin(),
-    (*getAveragingIndex()).end(),
+    getAveragingIndex()->begin(),
+    getAveragingIndex()->end(),
     OOBIndex.begin()
   );
   OOBIndex.resize((unsigned long) (it - OOBIndex.begin()));
@@ -1102,6 +1101,11 @@ void forestryTree::getOOBPrediction(
                                                      // might be too slow
                                                      // we should test this
 
+  std::vector<double> currentTreePrediction(OOBIndex.size());
+  std::vector<int>* currentTreeTerminalNodes = nullptr;
+  // Now get trainingData observations for OOB index set
+  std::vector< std::vector<double> > xNewOOB;
+
   for (
       std::vector<size_t>::iterator it=OOBIndex.begin();
       it!=OOBIndex.end();
@@ -1109,31 +1113,27 @@ void forestryTree::getOOBPrediction(
   ) {
 
     size_t OOBSampleIndex = *it;
-
-    // Predict current oob sample
-    std::vector<double> currentTreePrediction(1);
-    std::vector<int>* currentTreeTerminalNodes = nullptr;
+    // Add current OOB sample to the Xnew of OOB samples
     std::vector<double> OOBSampleObservation((*trainingData).getNumColumns());
     (*trainingData).getObservationData(OOBSampleObservation, OOBSampleIndex);
+    xNewOOB.push_back(OOBSampleObservation);
 
-    std::vector< std::vector<double> > OOBSampleObservation_;
-    for (size_t k=0; k<(*trainingData).getNumColumns(); k++){
-      std::vector<double> OOBSampleObservation_iter(1);
-      OOBSampleObservation_iter[0] = OOBSampleObservation[k];
-      OOBSampleObservation_.push_back(OOBSampleObservation_iter);
-    }
-
-    predict(
-      currentTreePrediction,
-      currentTreeTerminalNodes,
-      &OOBSampleObservation_,
-      trainingData
-    );
-
-    // Update the global OOB vector
-    outputOOBPrediction[OOBSampleIndex] += currentTreePrediction[0];
-    outputOOBCount[OOBSampleIndex] += 1;
   }
+
+  // Run prediction for current tree using the OOB sample Xnew
+  predict(
+    currentTreePrediction,
+    currentTreeTerminalNodes,
+    &xNewOOB,
+    trainingData
+  );
+
+  for (size_t i = 0; i < OOBIndex.size(); i++)
+    {
+      // Update the global OOB vector
+      outputOOBPrediction[OOBIndex[i]] += currentTreePrediction[i];
+      outputOOBCount[OOBIndex[i]] += 1;
+    }
 }
 
 void forestryTree::getShuffledOOBPrediction(
