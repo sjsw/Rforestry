@@ -14,8 +14,8 @@ forestry::forestry():
   _trainingData(nullptr), _ntree(0), _replace(0), _sampSize(0),
   _splitRatio(0), _mtry(0), _minNodeSizeSpt(0), _minNodeSizeAvg(0),
   _minNodeSizeToSplitSpt(0), _minNodeSizeToSplitAvg(0), _minSplitGain(0),
-  _maxDepth(0), _interactionDepth(0), _forest(nullptr), _seed(0), _verbose(0), _nthread(0),
-  _OOBError(0), _splitMiddle(0), _doubleTree(0){};
+  _maxDepth(0), _interactionDepth(0), _forest(nullptr), _seed(0), _verbose(0),
+  _nthread(0), _OOBError(0), _splitMiddle(0), _doubleTree(0){};
 
 forestry::~forestry(){
 //  for (std::vector<forestryTree*>::iterator it = (*_forest).begin();
@@ -167,37 +167,7 @@ void forestry::addTrees(size_t ntree) {
   const unsigned int see = this->getSeed();
 
   size_t splitSampleSize = (size_t) (getSplitRatio() * getSampleSize());
-  float percent_complete = 0.0;
-
-
-  // Now if we want run with honesty, we split the training samples here.
-  std::mt19937_64 random_number_generator_shuffle;
-  random_number_generator_shuffle.seed(see);
-
-  // Generate a sample index for each tree
-  std::vector<size_t> forestSampleIndex;
-  std::vector<size_t> forestAvgIndex;
-  std::vector<size_t> all_idx;
-
-
-  // Populate index list
-  for (size_t i = 0; i < getNtrain(); i++) {
-    all_idx.push_back(i);
-  }
-  // Shuffle the indices
-  std::shuffle(all_idx.begin(), all_idx.end(), random_number_generator_shuffle);
-  // now split up beween splitting and averaging sets
-  for (
-      std::vector<size_t>::iterator it = all_idx.begin();
-      it != all_idx.end();
-      ++it
-  ) {
-    if (forestSampleIndex.size() < splitSampleSize) {
-      forestSampleIndex.push_back(*it);
-    } else {
-      forestAvgIndex.push_back(*it);
-    }
-  }
+  //float percent_complete = 0.0;
 
 
 
@@ -321,29 +291,23 @@ void forestry::addTrees(size_t ntree) {
             std::vector<size_t> averageSampleIndex_;
 
             if (isReplacement()) {
-              // Now we generate a weighted distribution using observationWeights
-              // std::vector<double>* sampleWeights = (this->getTrainingData()->getobservationWeights());
-              // std::discrete_distribution<size_t> sample_dist(
-              //     sampleWeights->begin(), sampleWeights->end()
-              // );
-              std::uniform_int_distribution<size_t> unif_dist_spl(
-                  0, (size_t) splitSampleSize-1
-              );
+              // In this new scheme, we let the splitSampleIndex_ be the already
+              // populated sampleIndex, and the take averageSampleIndex_ to be
+              // the out of bag observations i.e. indices in 1:n not in
+              // splitSampleIndex_
+              splitSampleIndex_ = sampleIndex;
 
-              // Generate index with replacement
-              while (splitSampleIndex_.size() < splitSampleSize) {
-                size_t randomIndex = unif_dist_spl(random_number_generator);
-                splitSampleIndex_.push_back(forestSampleIndex[randomIndex]);
-              }
-
-              std::uniform_int_distribution<size_t> unif_dist_avg(
-                  0, (size_t) getSampleSize()-splitSampleSize-1
-              );
-
-              // Generate index with replacement
-              while (averageSampleIndex_.size() < getSampleSize()-splitSampleSize) {
-                size_t randomIndex = unif_dist_avg(random_number_generator);
-                averageSampleIndex_.push_back(forestAvgIndex[randomIndex]);
+              for (size_t i = 0; i < getSampleSize(); i++) {
+                // Check all indices, if i not in splitSampleIndex_ it is okay
+                // to use in averaging sample
+                if (  std::find(
+                        splitSampleIndex_.begin(),
+                        splitSampleIndex_.end(),
+                        i
+                      ) == splitSampleIndex_.end()
+                ) {
+                  averageSampleIndex_.push_back(i);
+                }
               }
 
             } else {
@@ -364,7 +328,7 @@ void forestry::addTrees(size_t ntree) {
                         randomIndex
                       ) == splitSampleIndex_.end()
                 ) {
-                  splitSampleIndex_.push_back(forestSampleIndex[randomIndex]);
+                  splitSampleIndex_.push_back(randomIndex);
                 }
               }
 
@@ -383,7 +347,7 @@ void forestry::addTrees(size_t ntree) {
                         randomIndex
                       ) == averageSampleIndex_.end()
                 ) {
-                  averageSampleIndex_.push_back(forestAvgIndex[randomIndex]);
+                  averageSampleIndex_.push_back(randomIndex);
                 }
               }
             }
