@@ -1098,7 +1098,9 @@ void forestryTree::getOOBPrediction(
 ){
 
   std::vector<size_t> OOBIndex;
-  getOOBindex(OOBIndex, trainingData->getNumRows());
+  getOOBindex(OOBIndex, trainingData->getNumRows()); // I think this function
+                                                     // might be too slow
+                                                     // we should test this
 
   for (
       std::vector<size_t>::iterator it=OOBIndex.begin();
