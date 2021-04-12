@@ -27,6 +27,7 @@ training_data_checker <- function(x,
                                   maxDepth,
                                   interactionDepth,
                                   splitratio,
+                                  OOBhonest,
                                   nthread,
                                   middleSplit,
                                   doubleTree,
@@ -199,6 +200,18 @@ training_data_checker <- function(x,
     stop("splitratio must in between 0 and 1.")
   }
 
+  if (OOBhonest && ((splitratio != 0 ) || (splitratio != 1))) {
+    warning("OOBhonest is set to true, so we will run OOBhonesty rather
+            than standard honesty")
+    splitratio <- 1
+  }
+
+  if (OOBhonest && replace == FALSE) {
+    warning("replace must be set to TRUE to use OOBhonesty, setting this to
+            TRUE now")
+    replace <- TRUE
+  }
+
   if (nthread < 0 || nthread %% 1 != 0) {
     stop("nthread must be a nonegative integer.")
   }
@@ -235,6 +248,7 @@ training_data_checker <- function(x,
               "maxDepth" = maxDepth,
               "interactionDepth" = interactionDepth,
               "splitratio" = splitratio,
+              "OOBhonest" = OOBhonest,
               "nthread" = nthread,
               "middleSplit" = middleSplit,
               "doubleTree" = doubleTree,
@@ -326,6 +340,7 @@ setClass(
     maxDepth = "numeric",
     interactionDepth = "numeric",
     splitratio = "numeric",
+    OOBhonest = "logical",
     middleSplit = "logical",
     y = "vector",
     maxObs = "numeric",
@@ -367,6 +382,7 @@ setClass(
     maxDepth = "numeric",
     interactionDepth = "numeric",
     splitratio = "numeric",
+    OOBhonest = "logical",
     middleSplit = "logical",
     y = "vector",
     maxObs = "numeric",
@@ -429,6 +445,12 @@ setClass(
 #'   dataset is empty. If the ratio is 0, then the splitting data set is empty
 #'   and all the data is used for the averaging data set (This is not a good
 #'   usage however since there will be no data available for splitting).
+#' @param OOBhonest This is an experimental method of enforcing honesty. In this
+#'   version of honesty, the out-of-bag examples for each tree are used as the
+#'   honest set. Then for out of sample predictions, predictions are done with
+#'   every tree in the forest, and for in sample predictions, only the trees
+#'   which didn't use an observation in the averaging set (technically the in bag)
+#'   are used to predict for that example.
 #' @param seed random seed
 #' @param verbose if training process in verbose mode
 #' @param nthread Number of threads to train and predict the forest. The default
@@ -559,6 +581,7 @@ forestry <- function(x,
                      deepFeatureWeights = NULL,
                      observationWeights = NULL,
                      splitratio = 1,
+                     OOBhonest = FALSE,
                      seed = as.integer(runif(1) * 1000),
                      verbose = FALSE,
                      nthread = 0,
@@ -622,6 +645,7 @@ forestry <- function(x,
       maxDepth = maxDepth,
       interactionDepth = interactionDepth,
       splitratio = splitratio,
+      OOBhonest = OOBhonest,
       nthread = nthread,
       middleSplit = middleSplit,
       doubleTree = doubleTree,
@@ -696,6 +720,7 @@ forestry <- function(x,
         sampsize,
         mtry,
         splitratio,
+        OOBhonest,
         nodesizeSpl,
         nodesizeAvg,
         nodesizeStrictSpl,
@@ -753,6 +778,7 @@ forestry <- function(x,
           maxDepth = maxDepth,
           interactionDepth = interactionDepth,
           splitratio = splitratio,
+          OOBhonest = OOBhonest,
           middleSplit = middleSplit,
           maxObs = maxObs,
           featureWeights = featureWeights,
@@ -804,6 +830,7 @@ forestry <- function(x,
         sampsize,
         mtry,
         splitratio,
+        OOBhonest,
         nodesizeSpl,
         nodesizeAvg,
         nodesizeStrictSpl,
@@ -851,6 +878,7 @@ forestry <- function(x,
           maxDepth = maxDepth,
           interactionDepth = interactionDepth,
           splitratio = splitratio,
+          OOBhonest = OOBhonest,
           middleSplit = middleSplit,
           maxObs = maxObs,
           featureWeights = featureWeights,
@@ -902,6 +930,7 @@ multilayerForestry <- function(x,
                      minSplitGain = 0,
                      maxDepth = 99,
                      splitratio = 1,
+                     OOBhonest = FALSE,
                      seed = as.integer(runif(1) * 1000),
                      verbose = FALSE,
                      nthread = 0,
@@ -966,6 +995,7 @@ multilayerForestry <- function(x,
       maxDepth = maxDepth,
       interactionDepth = maxDepth, # Make maxdepth for multilayer
       splitratio = splitratio,
+      OOBhonest = OOBhonest,
       nthread = nthread,
       middleSplit = middleSplit,
       doubleTree = doubleTree,
@@ -1041,6 +1071,7 @@ multilayerForestry <- function(x,
         sampsize,
         mtry,
         splitratio,
+        OOBhonest,
         nodesizeSpl,
         nodesizeAvg,
         nodesizeStrictSpl,
@@ -1099,6 +1130,7 @@ multilayerForestry <- function(x,
           minSplitGain = minSplitGain,
           maxDepth = maxDepth,
           splitratio = splitratio,
+          OOBhonest = OOBhonest,
           middleSplit = middleSplit,
           maxObs = maxObs,
           featureWeights = featureWeights,
@@ -1150,6 +1182,7 @@ multilayerForestry <- function(x,
         sampsize,
         mtry,
         splitratio,
+        OOBhonest,
         nodesizeSpl,
         nodesizeAvg,
         nodesizeStrictSpl,
@@ -1192,6 +1225,7 @@ multilayerForestry <- function(x,
           minSplitGain = minSplitGain,
           maxDepth = maxDepth,
           splitratio = splitratio,
+          OOBhonest = OOBhonest,
           middleSplit = middleSplit,
           maxObs = maxObs,
           featureWeights = featureWeights,
@@ -1762,6 +1796,7 @@ relinkCPP_prt <- function(object) {
           replace = object@replace,
           sampsize = object@sampsize,
           splitratio = object@splitratio,
+          OOBhonest = object@OOBhonest,
           mtry = object@mtry,
           nodesizeSpl = object@nodesizeSpl,
           nodesizeAvg = object@nodesizeAvg,
@@ -1809,6 +1844,7 @@ relinkCPP_prt <- function(object) {
           replace = object@replace,
           sampsize = object@sampsize,
           splitratio = object@splitratio,
+          OOBhonest = object@OOBhonest,
           mtry = object@mtry,
           nodesizeSpl = object@nodesizeSpl,
           nodesizeAvg = object@nodesizeAvg,

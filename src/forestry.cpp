@@ -12,7 +12,7 @@
 
 forestry::forestry():
   _trainingData(nullptr), _ntree(0), _replace(0), _sampSize(0),
-  _splitRatio(0), _mtry(0), _minNodeSizeSpt(0), _minNodeSizeAvg(0),
+  _splitRatio(0),_OOBhonest(0),_mtry(0), _minNodeSizeSpt(0), _minNodeSizeAvg(0),
   _minNodeSizeToSplitSpt(0), _minNodeSizeToSplitAvg(0), _minSplitGain(0),
   _maxDepth(0), _interactionDepth(0), _forest(nullptr), _seed(0), _verbose(0),
   _nthread(0), _OOBError(0), _splitMiddle(0), _doubleTree(0){};
@@ -32,6 +32,7 @@ forestry::forestry(
   bool replace,
   size_t sampSize,
   double splitRatio,
+  bool OOBhonest,
   size_t mtry,
   size_t minNodeSizeSpt,
   size_t minNodeSizeAvg,
@@ -55,6 +56,7 @@ forestry::forestry(
   this->_replace = replace;
   this->_sampSize = sampSize;
   this->_splitRatio = splitRatio;
+  this->_OOBhonest = OOBhonest;
   this->_mtry = mtry;
   this->_minNodeSizeAvg = minNodeSizeAvg;
   this->_minNodeSizeSpt = minNodeSizeSpt;

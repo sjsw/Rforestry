@@ -26,6 +26,7 @@ public:
     bool replace,
     size_t sampSize,
     double splitRatio,
+    bool OOBhonest,
     size_t mtry,
     size_t minNodeSizeSpt,
     size_t minNodeSizeAvg,
@@ -113,6 +114,10 @@ public:
     return _splitRatio;
   }
 
+  bool getOOBhonest() {
+    return _OOBhonest;
+  }
+
   bool isReplacement() {
     return _replace;
   }
@@ -171,6 +176,7 @@ private:
   bool _replace;
   size_t _sampSize;
   double _splitRatio;
+  bool _OOBhonest;
   size_t _mtry;
   size_t _minNodeSizeSpt;
   size_t _minNodeSizeAvg;
