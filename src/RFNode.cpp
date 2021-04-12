@@ -407,7 +407,7 @@ void RFNode::predict(
 
 bool RFNode::is_leaf() {
   // int ave_ct = getAverageCount();
-  // int spl_ct = getSplitCount();
+  int spl_ct = getSplitCount();
   // if (
   //     (ave_ct == 0 && spl_ct != 0) ||(ave_ct != 0 && spl_ct == 0)
   // ) {
