@@ -749,7 +749,8 @@ void forestry::calculateOOBError() {
             (*currentTree).getOOBPrediction(
               outputOOBPrediction_iteration,
               outputOOBCount_iteration,
-              getTrainingData()
+              getTrainingData(),
+              getOOBhonest()
             );
 
             #if DOPARELLEL

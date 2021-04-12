@@ -156,10 +156,16 @@ public:
     size_t nRows
   );
 
+  void getOOBhonestIndex(
+      std::vector<size_t> &outputOOBIndex,
+      size_t nRows
+  );
+
   void getOOBPrediction(
     std::vector<double> &outputOOBPrediction,
     std::vector<size_t> &outputOOBCount,
-    DataFrame* trainingData
+    DataFrame* trainingData,
+    bool OOBhonest
   );
 
   void getShuffledOOBPrediction(

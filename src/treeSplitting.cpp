@@ -1026,14 +1026,11 @@ void findBestSplitValueNonCategorical(
   );
 
   size_t splitLeftPartitionCount = 0;
-  size_t averageLeftPartitionCount = 0;
   size_t splitTotalCount = splittingData.size();
-  size_t averageTotalCount = averagingData.size();
 
   double splitLeftPartitionRunningSum = 0;
 
   std::vector<dataPair>::iterator splittingDataIter = splittingData.begin();
-  std::vector<dataPair>::iterator averagingDataIter = averagingData.begin();
 
   // Initialize the split value to be minimum of first value in two datsets
   double featureValue = std::get<0>(*splittingDataIter);
