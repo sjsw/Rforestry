@@ -169,31 +169,7 @@ void forestry::addTrees(size_t ntree) {
   const unsigned int see = this->getSeed();
 
   size_t splitSampleSize = (size_t) (getSplitRatio() * getSampleSize());
-  //float percent_complete = 0.0;
 
-
-
-  // Rcpp::Rcout << "Training Progress: " << std::endl;
-  // R_FlushConsole();
-  // R_ProcessEvents();
-  //
-  // Rcpp::Rcout << "|";
-  // for (size_t y = 0; y < 98;y++) {
-  //   Rcpp::Rcout << " ";
-  //   R_FlushConsole();
-  //   R_ProcessEvents();
-  // }
-  // Rcpp::Rcout << "|" << std::endl;
-
-  // std::vector<unsigned int> seeds;
-  // for (unsigned int k = newStartingTreeNumber; k < newEndingTreeNumber; k++) {
-  //   seeds.push_back((k+1)*see);
-  //   Rcpp::Rcout << (k+1)*see << ", ";
-  //   R_FlushConsole();
-  //   R_ProcessEvents();
-  //   R_CheckUserInterrupt();
-  // }
-  //print_vector(seeds);
 
   #if DOPARELLEL
   if (isVerbose()) {
@@ -222,28 +198,21 @@ void forestry::addTrees(size_t ntree) {
   for (unsigned int i=newStartingTreeNumber; i<newEndingTreeNumber; i++) {
   #endif
 
-          const unsigned int myseed = (i+1)*see;   // This line is bad, we are multiplying i, which previously
-          // if (myseed > 90 || myseed < 1) {
-          //   myseed = 1000;
-          // }
-          std::mt19937_64 random_number_generator;           // was an int with myseed which is an unsigned int
-          random_number_generator.seed(myseed);              // Testing a couple of things, this is deterministic with
-                                                             // this->getSeed(), but not with i, or i multuplied.
-                                                             // i Must be changing run to run somehow
-          // std::uniform_real_distribution<double> unif;
+          const unsigned int myseed = (i+1)*see;
+
+          std::mt19937_64 random_number_generator;
+          random_number_generator.seed(myseed);
+
 
           // Generate a sample index for each tree
           std::vector<size_t> sampleIndex;
 
           if (isReplacement()) {
-            // std::uniform_int_distribution<size_t> unif_dist(
-            //   0, (size_t) (*getTrainingData()).getNumRows() - 1
-            // );
 
             // Now we generate a weighted distribution using observationWeights
             std::vector<double>* sampleWeights = (this->getTrainingData()->getobservationWeights());
             std::discrete_distribution<size_t> sample_dist(
-              sampleWeights->begin(), sampleWeights->end()
+                sampleWeights->begin(), sampleWeights->end()
             );
 
             // Generate index with replacement
@@ -255,19 +224,20 @@ void forestry::addTrees(size_t ntree) {
             // In this case, when we have no replacement, we disregard
             // observationWeights and use a uniform distribution
             std::uniform_int_distribution<size_t> unif_dist(
-              0, (size_t) (*getTrainingData()).getNumRows() - 1
+                0, (size_t) (*getTrainingData()).getNumRows() - 1
             );
+
             // Generate index without replacement
             while (sampleIndex.size() < getSampleSize()) {
               size_t randomIndex = unif_dist(random_number_generator);
 
               if (
-                sampleIndex.size() == 0 ||
-                std::find(
-                  sampleIndex.begin(),
-                  sampleIndex.end(),
-                  randomIndex
-                ) == sampleIndex.end()
+                  sampleIndex.size() == 0 ||
+                    std::find(
+                      sampleIndex.begin(),
+                      sampleIndex.end(),
+                      randomIndex
+                    ) == sampleIndex.end()
               ) {
                 sampleIndex.push_back(randomIndex);
               }
@@ -280,7 +250,59 @@ void forestry::addTrees(size_t ntree) {
           std::unique_ptr<std::vector<size_t> > splitSampleIndex2;
           std::unique_ptr<std::vector<size_t> > averageSampleIndex2;
 
-          if (getSplitRatio() == 1 || getSplitRatio() == 0) {
+          // If OOBhonest is true, we generate the averaging set based
+          // on the OOB set
+          if (getOOBhonest()) {
+            // Generate sample index based on the split ratio
+            std::vector<size_t> splitSampleIndex_;
+            std::vector<size_t> averageSampleIndex_;
+
+            std::sort(
+              sampleIndex.begin(),
+              sampleIndex.end()
+            );
+
+            std::vector<size_t> allIndex;
+            for (size_t i = 0; i < getSampleSize(); i++) {
+              allIndex.push_back(i);
+            }
+
+            std::vector<size_t> OOBIndex(getSampleSize());
+
+            // OOB index is the set difference between sampleIndex and all_idx
+            std::vector<size_t>::iterator it = std::set_difference (
+              allIndex.begin(),
+              allIndex.end(),
+              sampleIndex.begin(),
+              sampleIndex.end(),
+              OOBIndex.begin()
+            );
+
+            // resize OOB index
+            OOBIndex.resize((unsigned long) (it - OOBIndex.begin()));
+
+            // Now set the splitting indices and averaging indices
+            splitSampleIndex_ = sampleIndex;
+            averageSampleIndex_ = OOBIndex;
+
+            // Give split and avg sample indices the right indices
+            splitSampleIndex.reset(
+              new std::vector<size_t>(splitSampleIndex_)
+            );
+            averageSampleIndex.reset(
+              new std::vector<size_t>(averageSampleIndex_)
+            );
+
+            // If we are doing doubleTree, swap the indices and make two trees
+            if (_doubleTree) {
+              splitSampleIndex2.reset(
+                new std::vector<size_t>(splitSampleIndex_)
+              );
+              averageSampleIndex2.reset(
+                new std::vector<size_t>(averageSampleIndex_)
+              );
+            }
+          } else if (getSplitRatio() == 1 || getSplitRatio() == 0) {
 
             // Treat it as normal RF
             splitSampleIndex.reset(new std::vector<size_t>(sampleIndex));
@@ -291,66 +313,15 @@ void forestry::addTrees(size_t ntree) {
             // Generate sample index based on the split ratio
             std::vector<size_t> splitSampleIndex_;
             std::vector<size_t> averageSampleIndex_;
-
-            if (isReplacement()) {
-              // In this new scheme, we let the splitSampleIndex_ be the already
-              // populated sampleIndex, and the take averageSampleIndex_ to be
-              // the out of bag observations i.e. indices in 1:n not in
-              // splitSampleIndex_
-              splitSampleIndex_ = sampleIndex;
-
-              for (size_t i = 0; i < getSampleSize(); i++) {
-                // Check all indices, if i not in splitSampleIndex_ it is okay
-                // to use in averaging sample
-                if (  std::find(
-                        splitSampleIndex_.begin(),
-                        splitSampleIndex_.end(),
-                        i
-                      ) == splitSampleIndex_.end()
-                ) {
-                  averageSampleIndex_.push_back(i);
-                }
-              }
-
-            } else {
-              // In this case, when we have no replacement, we disregard
-              // observationWeights and use a uniform distribution
-              std::uniform_int_distribution<size_t> unif_dist_spl(
-                  0, (size_t) splitSampleSize - 1
-              );
-              // Generate index without replacement
-              while (splitSampleIndex_.size() < splitSampleSize) {
-                size_t randomIndex = unif_dist_spl(random_number_generator);
-
-                if (
-                    splitSampleIndex_.size() == 0 ||
-                      std::find(
-                        splitSampleIndex_.begin(),
-                        splitSampleIndex_.end(),
-                        randomIndex
-                      ) == splitSampleIndex_.end()
-                ) {
-                  splitSampleIndex_.push_back(randomIndex);
-                }
-              }
-
-              std::uniform_int_distribution<size_t> unif_dist_avg(
-                  0, (size_t) getSampleSize() - splitSampleSize - 1
-              );
-              // Generate index without replacement
-              while (averageSampleIndex_.size() < getSampleSize()-splitSampleSize) {
-                size_t randomIndex = unif_dist_avg(random_number_generator);
-
-                if (
-                    averageSampleIndex_.size() == 0 ||
-                      std::find(
-                        averageSampleIndex_.begin(),
-                        averageSampleIndex_.end(),
-                        randomIndex
-                      ) == averageSampleIndex_.end()
-                ) {
-                  averageSampleIndex_.push_back(randomIndex);
-                }
+            for (
+                std::vector<size_t>::iterator it = sampleIndex.begin();
+                it != sampleIndex.end();
+                ++it
+            ) {
+              if (splitSampleIndex_.size() < splitSampleSize) {
+                splitSampleIndex_.push_back(*it);
+              } else {
+                averageSampleIndex_.push_back(*it);
               }
             }
 
@@ -361,6 +332,7 @@ void forestry::addTrees(size_t ntree) {
               new std::vector<size_t>(averageSampleIndex_)
             );
 
+            // If we are doing doubleTree, swap the indices and make two trees
             if (_doubleTree) {
               splitSampleIndex2.reset(
                 new std::vector<size_t>(splitSampleIndex_)
@@ -372,10 +344,7 @@ void forestry::addTrees(size_t ntree) {
           }
 
           try{
-            // Rcpp::Rcout << "Tree seed is " << getSeed() << std::endl;
-            // R_FlushConsole();
-            // R_ProcessEvents();
-            // R_CheckUserInterrupt();
+
             forestryTree *oneTree(
               new forestryTree(
                 getTrainingData(),
@@ -395,7 +364,7 @@ void forestry::addTrees(size_t ntree) {
                 gethasNas(),
                 getlinear(),
                 getOverfitPenalty(),
-                myseed // getSeed()
+                myseed
               )
             );
 

@@ -200,7 +200,7 @@ training_data_checker <- function(x,
     stop("splitratio must in between 0 and 1.")
   }
 
-  if (OOBhonest && ((splitratio != 0 ) || (splitratio != 1))) {
+  if (OOBhonest && (splitratio != 1)) {
     warning("OOBhonest is set to true, so we will run OOBhonesty rather
             than standard honesty")
     splitratio <- 1
