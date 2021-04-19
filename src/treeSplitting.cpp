@@ -1079,7 +1079,7 @@ void findBestSplitValueNonCategorical(
 
     // If we are using monotonic constraints, we need to work out whether
     // the monotone constraints will reject a split
-    if (monotone_splits && (monotone_details.monotonic_constraints[currentFeature] != 0)) {
+    if (monotone_splits) {
       bool keepMonotoneSplit = acceptMonotoneSplit(monotone_details,
                                                    currentFeature,
                                                    splitLeftPartitionRunningSum / splitLeftPartitionCount,
@@ -1320,7 +1320,7 @@ void findBestSplitImpute(
 
     // For now we enforce monotonicity before accounting for the misisng observations
     // we might want to change this later
-    if (monotone_splits && (monotone_details.monotonic_constraints[currentFeature] != 0)) {
+    if (monotone_splits) {
       bool keepMonotoneSplit = acceptMonotoneSplit(monotone_details,
                                                    currentFeature,
                                                    leftPartitionMean,
@@ -1633,6 +1633,13 @@ bool acceptMonotoneSplit(
     return false;
   } else if ((monotone_direction == -1) && (leftPartitionMean > upper_bound)) {
     return false;
+  } else if (monotone_direction == 0) {
+    if (std::min(leftPartitionMean, rightPartitionMean) < lower_bound ||
+        std::max(leftPartitionMean, rightPartitionMean) > upper_bound) {
+      return false;
+    } else {
+      return true;
+    }
   } else {
     return true;
   }
