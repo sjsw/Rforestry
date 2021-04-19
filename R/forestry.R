@@ -1274,7 +1274,10 @@ multilayerForestry <- function(x,
 #' @export
 predict.forestry <- function(object,
                              feature.new,
-                             aggregation = "average", seed = as.integer(runif(1) * 10000), ...) {
+                             aggregation = "average",
+                             seed = as.integer(runif(1) * 10000),
+                             nthread = 0,
+                             ...) {
   # Preprocess the data. We only run the data checker if ridge is turned on, because even in the case where there were no NAs in train, we still want to predict.
   forest_checker(object)
   feature.new <- testing_data_checker(object, feature.new, object@hasNas)
@@ -1286,7 +1289,11 @@ predict.forestry <- function(object,
 
   # If option set to terminalNodes, we need to make matrix of ID's
   rcppPrediction <- tryCatch({
-    rcpp_cppPredictInterface(object@forest, processed_x, aggregation, seed = seed)
+    rcpp_cppPredictInterface(object@forest,
+                             processed_x,
+                             aggregation,
+                             seed = seed,
+                             nthread = nthread)
   }, error = function(err) {
     print(err)
     return(NULL)

@@ -440,7 +440,8 @@ Rcpp::List rcpp_cppPredictInterface(
   SEXP forest,
   Rcpp::List x,
   std::string aggregation,
-  int seed
+  int seed,
+  int nthread
 ){
   try {
 
@@ -454,6 +455,14 @@ Rcpp::List rcpp_cppPredictInterface(
     // then we inialize the empty weight matrix
     arma::Mat<double> weightMatrix;
     arma::Mat<int> terminalNodes;
+
+    int threads_to_use;
+    if (nthread == 0) {
+      threads_to_use = testFullForest->getNthread();
+    } else {
+      threads_to_use = nthread;
+    }
+
     if(aggregation == "weightMatrix") {
       size_t nrow = featureData[0].size(); // number of features to be predicted
       size_t ncol = (*testFullForest).getNtrain(); // number of train data
@@ -467,6 +476,7 @@ Rcpp::List rcpp_cppPredictInterface(
       nrow = featureData[1].size()+1;   // Total feature.new observations
                                         // Bottom row is the total node count/tree
 
+
       terminalNodes.resize(nrow, ncol);
       terminalNodes.zeros(nrow, ncol);
       // The idea is that, if the weightMatrix is point to NULL it won't be
@@ -475,13 +485,13 @@ Rcpp::List rcpp_cppPredictInterface(
                                                        &weightMatrix,
                                                        &terminalNodes,
                                                        seed,
-                                                       testFullForest->getNthread());
+                                                       threads_to_use);
     } else {
       testForestPrediction = (*testFullForest).predict(&featureData,
                                                        NULL,
                                                        NULL,
                                                        seed,
-                                                       testFullForest->getNthread());
+                                                       threads_to_use);
     }
 
     std::vector<double>* testForestPrediction_ =
