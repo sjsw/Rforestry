@@ -1350,7 +1350,8 @@ predict.multilayerForestry <- function(object,
                                       object@categoricalFeatureMapping)
 
     rcppPrediction <- tryCatch({
-      rcpp_cppMultilayerPredictInterface(object@forest, processed_x, aggregation, seed)
+      rcpp_cppMultilayerPredictInterface(object@forest, processed_x,
+                                         aggregation, seed, nthread)
     }, error = function(err) {
       print(err)
       return(NULL)
