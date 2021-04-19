@@ -1318,21 +1318,6 @@ void findBestSplitImpute(
       (splitTotalSum - splitLeftPartitionRunningSum)
       / (splitTotalCount - splitLeftPartitionCount);
 
-    // For now we enforce monotonicity before accounting for the misisng observations
-    // we might want to change this later
-    if (monotone_splits) {
-      bool keepMonotoneSplit = acceptMonotoneSplit(monotone_details,
-                                                   currentFeature,
-                                                   leftPartitionMean,
-                                                   rightPartitionMean);
-
-      if (!keepMonotoneSplit) {
-        // Update the oldFeature value before proceeding
-        featureValue = newFeatureValue;
-        continue;
-      }
-    }
-
     double currentSplitValue;
     if (splitMiddle) {
       currentSplitValue = (newFeatureValue + featureValue) / 2.0;
@@ -1367,6 +1352,22 @@ void findBestSplitImpute(
       if (std::abs(currOutcome - leftPartitionMean) < std::abs(currOutcome - rightPartitionMean)) {
         LeftPartitionNaSum += currOutcome;
         leftPartitionNaCount++;
+      }
+    }
+
+    // For now we enforce monotonicity after accounting for the misisng observations
+    if (monotone_splits) {
+      bool keepMonotoneSplit = acceptMonotoneSplit(monotone_details,
+                                                   currentFeature,
+                                                   (splitLeftPartitionRunningSum + LeftPartitionNaSum) /
+                                                     (splitLeftPartitionCount + leftPartitionNaCount),
+                                                     (splitTotalSum - splitLeftPartitionRunningSum + naTotalSum - LeftPartitionNaSum)
+                                                     / (splitTotalCount - splitLeftPartitionCount + missingSplit.size() - leftPartitionNaCount));
+
+      if (!keepMonotoneSplit) {
+        // Update the oldFeature value before proceeding
+        featureValue = newFeatureValue;
+        continue;
       }
     }
 
