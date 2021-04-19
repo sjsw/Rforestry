@@ -226,7 +226,8 @@ void multilayerForestry::addForests(size_t ntree) {
 std::unique_ptr< std::vector<double> > multilayerForestry::predict(
     std::vector< std::vector<double> >* xNew,
     arma::Mat<double>* weightMatrix,
-    int seed
+    int seed,
+    size_t nthread
 ) {
   std::vector< forestry* > multilayerForests = *getMultilayerForests();
   std::vector<double> gammas = getGammas();
@@ -239,7 +240,7 @@ std::unique_ptr< std::vector<double> > multilayerForestry::predict(
                                   weightMatrix,
                                   NULL,
                                   seed,
-                                  this->getNthread());
+                                  nthread);
 
   std::vector<double> prediction(initialPrediction->size(), getMeanOutcome());
 
@@ -256,7 +257,7 @@ std::unique_ptr< std::vector<double> > multilayerForestry::predict(
                                     weightMatrix,
                                     NULL,
                                     seed,
-                                    this->getNthread());
+                                    nthread);
 
     std::transform(predictedResiduals->begin(), predictedResiduals->end(),
                    predictedResiduals->begin(), std::bind(std::multiplies<double>(), gammas[i], std::placeholders::_1));

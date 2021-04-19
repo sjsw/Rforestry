@@ -17,8 +17,8 @@ rcpp_cppPredictInterface <- function(forest, x, aggregation, seed, nthread) {
     .Call(`_Rforestry_rcpp_cppPredictInterface`, forest, x, aggregation, seed, nthread)
 }
 
-rcpp_cppMultilayerPredictInterface <- function(multilayerForest, x, aggregation, seed) {
-    .Call(`_Rforestry_rcpp_cppMultilayerPredictInterface`, multilayerForest, x, aggregation, seed)
+rcpp_cppMultilayerPredictInterface <- function(multilayerForest, x, aggregation, seed, nthread) {
+    .Call(`_Rforestry_rcpp_cppMultilayerPredictInterface`, multilayerForest, x, aggregation, seed, nthread)
 }
 
 rcpp_OBBPredictInterface <- function(forest) {

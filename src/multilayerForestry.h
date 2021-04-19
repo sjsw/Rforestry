@@ -49,7 +49,8 @@ public:
   std::unique_ptr< std::vector<double> > predict(
       std::vector< std::vector<double> >* xNew,
       arma::Mat<double>* weightMatrix,
-      int seed
+      int seed,
+      size_t nthread
   );
 
   void reconstructForests(

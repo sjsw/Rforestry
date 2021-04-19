@@ -456,11 +456,11 @@ Rcpp::List rcpp_cppPredictInterface(
     arma::Mat<double> weightMatrix;
     arma::Mat<int> terminalNodes;
 
-    int threads_to_use;
+    size_t threads_to_use;
     if (nthread == 0) {
       threads_to_use = testFullForest->getNthread();
     } else {
-      threads_to_use = nthread;
+      threads_to_use = (size_t) nthread;
     }
 
     if(aggregation == "weightMatrix") {
@@ -518,7 +518,8 @@ Rcpp::List rcpp_cppMultilayerPredictInterface(
     SEXP multilayerForest,
     Rcpp::List x,
     std::string aggregation,
-    int seed
+    int seed,
+    int nthread
 ){
   try {
 
@@ -528,6 +529,13 @@ Rcpp::List rcpp_cppMultilayerPredictInterface(
       Rcpp::as< std::vector< std::vector<double> > >(x);
 
     std::unique_ptr< std::vector<double> > testMultiForestPrediction;
+
+    size_t threads_to_use;
+    if (nthread == 0) {
+      threads_to_use = testMultiForest->getNthread();
+    } else {
+      threads_to_use = (size_t) nthread;
+    }
     // We always initialize the weightMatrix. If the aggregation is weightMatrix
     // then we inialize the empty weight matrix
     arma::Mat<double> weightMatrix;
@@ -539,9 +547,11 @@ Rcpp::List rcpp_cppMultilayerPredictInterface(
 
       // The idea is that, if the weightMatrix is point to NULL it won't be
       // be updated, but otherwise it will be updated:
-      testMultiForestPrediction = (*testMultiForest).predict(&featureData, &weightMatrix, seed);
+      testMultiForestPrediction = (*testMultiForest).predict(&featureData,
+                                   &weightMatrix, seed, threads_to_use);
     } else {
-      testMultiForestPrediction = (*testMultiForest).predict(&featureData, NULL, seed);
+      testMultiForestPrediction = (*testMultiForest).predict(&featureData,
+                                   NULL, seed, threads_to_use);
     }
 
     std::vector<double>* testMultiForestPrediction_ =

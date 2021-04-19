@@ -1337,6 +1337,7 @@ predict.forestry <- function(object,
 predict.multilayerForestry <- function(object,
                              feature.new,
                              aggregation = "average", seed = as.integer(runif(1) * 10000),
+                             nthread = 0,
                              ...) {
   forest_checker(object)
    # Preprocess the data. We only run the data checker if ridge is turned on, because even in the case where there were no NAs in train, we still want to predict.
