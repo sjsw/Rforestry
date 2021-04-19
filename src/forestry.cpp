@@ -474,12 +474,7 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   }
 
   #if DOPARELLEL
-  size_t nthreadToUse;
-  if (nthread == 1) {
-    nthreadToUse = 1;
-  } else {
-    nthreadToUse = getNthread();
-  }
+  size_t nthreadToUse = nthread;
 
   if (nthreadToUse == 0) {
     // Use all threads
