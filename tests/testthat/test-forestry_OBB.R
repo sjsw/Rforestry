@@ -9,7 +9,7 @@ test_that("Tests if OOB calculation is working correctly", {
   forest <- forestry(
     x,
     y,
-    ntree = 500,
+    ntree = 1,
     replace = TRUE,
     sampsize = nrow(x),
     mtry = 3,
@@ -17,7 +17,8 @@ test_that("Tests if OOB calculation is working correctly", {
     nthread = 2,
     splitrule = "variance",
     splitratio = 1,
-    nodesizeStrictAvg = 5
+    OOBhonest = TRUE,
+    nodesizeStrictAvg = 0
   )
 
   # Test OOB

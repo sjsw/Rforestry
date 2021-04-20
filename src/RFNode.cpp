@@ -166,7 +166,7 @@ void RFNode::predict(
         double predictedMean;
         // Calculate the mean of current node
         if (getAveragingIndex()->size() == 0) {
-          predictedMean = 0;
+          predictedMean = std::numeric_limits<double>::quiet_NaN();
         } else {
           predictedMean = (*trainingData).partitionMean(getAveragingIndex());
         }
@@ -332,7 +332,7 @@ void RFNode::predict(
         double predictedMean;
         // Calculate the mean of current node
         if (getAverageCount() == 0) {
-          predictedMean = 0;
+          predictedMean = std::numeric_limits<double>::quiet_NaN();;
         } else{
           predictedMean = (*trainingData).partitionMean(getAveragingIndex());
         }
@@ -370,7 +370,7 @@ void RFNode::predict(
         double predictedMean;
         // Calculate the mean of current node
         if (getAverageCount() == 0) {
-          predictedMean = 0;
+          predictedMean = std::numeric_limits<double>::quiet_NaN();;
         } else{
           predictedMean = (*trainingData).partitionMean(getAveragingIndex());
         }
