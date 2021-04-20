@@ -1378,6 +1378,20 @@ void forestryTree::recursive_reconstruction(
     std::unique_ptr< RFNode > leftChild ( new RFNode() );
     std::unique_ptr< RFNode > rightChild ( new RFNode() );
 
+    // We need to populate the current node averaging index
+    // before we recurse the reconstruction. This is due to the fact that we
+    // delete indices when we get to leaf nodes, so we want to copy them all
+    // before we hit any leaf nodes.
+
+    std::unique_ptr<std::vector<size_t> > averagingSampleIndex_(
+        new std::vector<size_t>
+    );
+
+    for(size_t i=0; i < leafAveidxs->size(); i++){
+      averagingSampleIndex_->push_back((*leafAveidxs)[i] - 1);
+    }
+
+
     recursive_reconstruction(
       leftChild.get(),
       var_ids,
@@ -1398,19 +1412,16 @@ void forestryTree::recursive_reconstruction(
       naRightCounts
     );
 
-    std::unique_ptr<std::vector<size_t> > averagingSampleIndex_(
-        new std::vector<size_t>
+    (*currentNode).setSplitNode(
+        (size_t) var_id - 1,
+        split_val,
+        std::move(leftChild),
+        std::move(rightChild),
+        std::move(averagingSampleIndex_),
+        naLeftCount,
+        naRightCount
     );
 
-    (*currentNode).setSplitNode(
-      (size_t) var_id - 1,
-      split_val,
-      std::move(leftChild),
-      std::move(rightChild),
-      std::move(averagingSampleIndex_),
-      naLeftCount,
-      naRightCount
-      );
     return;
   }
 }
