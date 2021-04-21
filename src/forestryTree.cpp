@@ -1141,6 +1141,9 @@ void forestryTree::getOOBPrediction(
 
   std::vector<size_t> OOBIndex;
 
+  // OOB with and without using the OOB set as the averaging set requires
+  // different sets of trees to be used (we want the set of trees)
+  // without the averaging set
   if (OOBhonest) {
     getOOBhonestIndex(OOBIndex, trainingData->getNumRows());
   } else {
@@ -1148,39 +1151,44 @@ void forestryTree::getOOBPrediction(
   }
 
 
+  // Xnew has first access being the feature selection and second access being
+  // the observation selection.
 
-  for (
-      std::vector<size_t>::iterator it=OOBIndex.begin();
-      it!=OOBIndex.end();
-      ++it
-  ) {
+  // Holds observations from training data corresponding to the OOB observations
+  // for this tree.
+  std::vector< std::vector<double> > OOBSampleObservations_;
 
-    size_t OOBSampleIndex = *it;
+  std::vector<double> currentTreePrediction(OOBIndex.size());
+  std::vector<int>* currentTreeTerminalNodes = nullptr;
 
-    // Predict current oob sample
-    std::vector<double> currentTreePrediction(OOBIndex.size());
-    std::vector<int>* currentTreeTerminalNodes = nullptr;
+  for (size_t k = 0; k < trainingData->getNumColumns(); k++)
+    {
+      // Empty vector to hold Kth feature
+      std::vector<double> OOBSampleColumn(OOBIndex.size());
 
-    std::vector<double> OOBSampleObservation((*trainingData).getNumColumns());
-    (*trainingData).getObservationData(OOBSampleObservation, OOBSampleIndex);
-
-    std::vector< std::vector<double> > OOBSampleObservation_;
-    for (size_t k=0; k<(*trainingData).getNumColumns(); k++){
-      std::vector<double> OOBSampleObservation_iter(1);
-      OOBSampleObservation_iter[0] = OOBSampleObservation[k];
-      OOBSampleObservation_.push_back(OOBSampleObservation_iter);
+      // Populate all values of the Kth feature
+      for (
+          std::vector<size_t>::iterator it=OOBIndex.begin();
+          it!=OOBIndex.end();
+          ++it
+      ) {
+        OOBSampleColumn.push_back(trainingData->getPoint(*it, k));
+      }
+      // Add the current column to the dataframe
+      OOBSampleObservations_.push_back(OOBSampleColumn);
     }
 
-    predict(
-      currentTreePrediction,
-      currentTreeTerminalNodes,
-      &OOBSampleObservation_,
-      trainingData
-    );
+  predict(
+    currentTreePrediction,
+    currentTreeTerminalNodes,
+    &OOBSampleObservations_,
+    trainingData
+  );
 
+  for (size_t i = 0; i < OOBIndex.size(); i++) {
     // Update the global OOB vector
-    outputOOBPrediction[OOBSampleIndex] += currentTreePrediction[0];
-    outputOOBCount[OOBSampleIndex] += 1;
+    outputOOBPrediction[OOBIndex[i]] += currentTreePrediction[i];
+    outputOOBCount[OOBIndex[i]] += 1;
   }
 }
 
