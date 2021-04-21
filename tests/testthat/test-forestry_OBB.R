@@ -23,7 +23,7 @@ test_that("Tests if OOB calculation is working correctly", {
   )
 
   # Test OOB
-  expect_lt(mean((getOOB(forest) - 15.79849)^2), .1)
+  expect_lt(mean((getOOB(forest) - 12.73149)^2), .1)
 
   # Test a very extreme setting
   forest <- forestry(
