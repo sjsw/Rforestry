@@ -1156,32 +1156,30 @@ void forestryTree::getOOBPrediction(
 
   // Holds observations from training data corresponding to the OOB observations
   // for this tree.
-  std::vector< std::vector<double> > OOBSampleObservations_;
+  std::vector< std::vector<double> >* OOBSampleObservations_ = trainingData->getAllFeatureData();
 
   std::vector<double> currentTreePrediction(OOBIndex.size());
   std::vector<int>* currentTreeTerminalNodes = nullptr;
 
+  std::vector< std::vector<double> > xnew(trainingData->getNumColumns());
+
   for (size_t k = 0; k < trainingData->getNumColumns(); k++)
     {
-      // Empty vector to hold Kth feature
-      std::vector<double> OOBSampleColumn(OOBIndex.size());
-
       // Populate all values of the Kth feature
       for (
           std::vector<size_t>::iterator it=OOBIndex.begin();
           it!=OOBIndex.end();
           ++it
       ) {
-        OOBSampleColumn.push_back(trainingData->getPoint(*it, k));
+        xnew[k].push_back((*OOBSampleObservations_)[k][*it]);
       }
-      // Add the current column to the dataframe
-      OOBSampleObservations_.push_back(OOBSampleColumn);
     }
 
+  // Run predict on the new feature corresponding to all out of bag observations
   predict(
     currentTreePrediction,
     currentTreeTerminalNodes,
-    &OOBSampleObservations_,
+    &xnew,
     trainingData
   );
 
