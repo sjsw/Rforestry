@@ -1147,10 +1147,7 @@ void forestryTree::getOOBPrediction(
     getOOBindex(OOBIndex, trainingData->getNumRows());
   }
 
-  std::vector<double> currentTreePrediction(OOBIndex.size());
-  std::vector<int>* currentTreeTerminalNodes = nullptr;
-  // Now get trainingData observations for OOB index set
-  std::vector< std::vector<double> > xNewOOB;
+
 
   for (
       std::vector<size_t>::iterator it=OOBIndex.begin();
@@ -1159,27 +1156,32 @@ void forestryTree::getOOBPrediction(
   ) {
 
     size_t OOBSampleIndex = *it;
-    // Add current OOB sample to the Xnew of OOB samples
-    std::vector<double> OOBSampleObservation(trainingData->getNumColumns());
+
+    // Predict current oob sample
+    std::vector<double> currentTreePrediction(OOBIndex.size());
+    std::vector<int>* currentTreeTerminalNodes = nullptr;
+
+    std::vector<double> OOBSampleObservation((*trainingData).getNumColumns());
     (*trainingData).getObservationData(OOBSampleObservation, OOBSampleIndex);
-    xNewOOB.push_back(OOBSampleObservation);
 
-  }
-
-  // Run prediction for current tree using the OOB sample Xnew
-  predict(
-    currentTreePrediction,
-    currentTreeTerminalNodes,
-    &xNewOOB,
-    trainingData
-  );
-
-  for (size_t i = 0; i < OOBIndex.size(); i++)
-    {
-      // Update the global OOB vector
-      outputOOBPrediction[OOBIndex[i]] += currentTreePrediction[i];
-      outputOOBCount[OOBIndex[i]] += 1;
+    std::vector< std::vector<double> > OOBSampleObservation_;
+    for (size_t k=0; k<(*trainingData).getNumColumns(); k++){
+      std::vector<double> OOBSampleObservation_iter(1);
+      OOBSampleObservation_iter[0] = OOBSampleObservation[k];
+      OOBSampleObservation_.push_back(OOBSampleObservation_iter);
     }
+
+    predict(
+      currentTreePrediction,
+      currentTreeTerminalNodes,
+      &OOBSampleObservation_,
+      trainingData
+    );
+
+    // Update the global OOB vector
+    outputOOBPrediction[OOBSampleIndex] += currentTreePrediction[0];
+    outputOOBCount[OOBSampleIndex] += 1;
+  }
 }
 
 void forestryTree::getShuffledOOBPrediction(
