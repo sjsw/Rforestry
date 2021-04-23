@@ -24,6 +24,7 @@ forestry(
   deepFeatureWeights = NULL,
   observationWeights = NULL,
   splitratio = 1,
+  OOBhonest = FALSE,
   seed = as.integer(runif(1) * 1000),
   verbose = FALSE,
   nthread = 0,
@@ -101,6 +102,13 @@ splitting dataset becomes the total entire sampled set and the averaging
 dataset is empty. If the ratio is 0, then the splitting data set is empty
 and all the data is used for the averaging data set (This is not a good
 usage however since there will be no data available for splitting).}
+
+\item{OOBhonest}{This is an experimental method of enforcing honesty. In this
+version of honesty, the out-of-bag examples for each tree are used as the
+honest set. Then for out of sample predictions, predictions are done with
+every tree in the forest, and for in sample predictions, only the trees
+which didn't use an observation in the averaging set (technically the in bag)
+are used to predict for that example.}
 
 \item{seed}{random seed}
 
@@ -205,9 +213,6 @@ y_train <- iris[-test_idx, 1]
 x_test <- iris[test_idx, -1]
 
 rf <- forestry(x = x_train, y = y_train, nthread = 2)
-weights = predict(rf, x_test, aggregation = "weightMatrix")$weightMatrix
-
-weights \%*\% y_train
 predict(rf, x_test)
 
 set.seed(49)

@@ -33,12 +33,14 @@ forest <- forestry(x, y, ntree = 3, nthread = 2)
 y_pred_before <- predict(forest, x)
 
 forest <- make_savable(forest)
-saveForestry(forest, file = "forest.Rda")
+
+wd <- tempdir()
+saveForestry(forest, filename = file.path(wd, "forest.Rda"))
 rm(forest)
 
-forest <- loadForestry("forest.Rda")
+forest <- loadForestry(file.path(wd, "forest.Rda"))
 
 y_pred_after <- predict(forest, x)
-testthat::expect_equal(y_pred_before, y_pred_after, tolerance = 0.000001)
-file.remove("forest.Rda")
+
+file.remove(file.path(wd, "forest.Rda"))
 }

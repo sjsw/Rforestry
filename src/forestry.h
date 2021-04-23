@@ -49,7 +49,8 @@ public:
     arma::Mat<double>* weightMatrix,
     arma::Mat<int>* terminalNodes,
     unsigned int seed,
-    size_t nthread
+    size_t nthread,
+    bool exact
   );
 
   void fillinTreeInfo(

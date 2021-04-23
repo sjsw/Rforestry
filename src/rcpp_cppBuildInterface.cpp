@@ -441,7 +441,8 @@ Rcpp::List rcpp_cppPredictInterface(
   Rcpp::List x,
   std::string aggregation,
   int seed,
-  int nthread
+  int nthread,
+  bool exact
 ){
   try {
 
@@ -485,13 +486,15 @@ Rcpp::List rcpp_cppPredictInterface(
                                                        &weightMatrix,
                                                        &terminalNodes,
                                                        seed,
-                                                       threads_to_use);
+                                                       threads_to_use,
+                                                       exact);
     } else {
       testForestPrediction = (*testFullForest).predict(&featureData,
                                                        NULL,
                                                        NULL,
                                                        seed,
-                                                       threads_to_use);
+                                                       threads_to_use,
+                                                       exact);
     }
 
     std::vector<double>* testForestPrediction_ =
@@ -519,7 +522,8 @@ Rcpp::List rcpp_cppMultilayerPredictInterface(
     Rcpp::List x,
     std::string aggregation,
     int seed,
-    int nthread
+    int nthread,
+    bool exact
 ){
   try {
 
@@ -548,10 +552,16 @@ Rcpp::List rcpp_cppMultilayerPredictInterface(
       // The idea is that, if the weightMatrix is point to NULL it won't be
       // be updated, but otherwise it will be updated:
       testMultiForestPrediction = (*testMultiForest).predict(&featureData,
-                                   &weightMatrix, seed, threads_to_use);
+                                                             &weightMatrix,
+                                                             seed,
+                                                             threads_to_use,
+                                                             exact);
     } else {
       testMultiForestPrediction = (*testMultiForest).predict(&featureData,
-                                   NULL, seed, threads_to_use);
+                                                             NULL,
+                                                             seed,
+                                                             threads_to_use,
+                                                             exact);
     }
 
     std::vector<double>* testMultiForestPrediction_ =
@@ -1565,7 +1575,8 @@ std::vector< std::vector<double> > rcpp_cppImputeInterface(
                                                    &weightMatrix,
                                                    NULL,
                                                    seed,
-                                                   testFullForest->getNthread());
+                                                   testFullForest->getNthread(),
+                                                   false);
 
   std::vector<double>* testForestPrediction_ =
     new std::vector<double>(*testForestPrediction.get());

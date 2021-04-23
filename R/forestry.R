@@ -1269,6 +1269,15 @@ multilayerForestry <- function(x,
 #'   first tree has 5 leaves, the sixth column of the "sparse" matrix corresponds
 #'   to the first leaf in the second tree.
 #' @param seed random seed
+#' @param nthread The number of threads with which to run the predictions with.
+#'   This will default to the number of threads with which the forest was trained
+#'   with.
+#' @param exact This specifies whether the forest predictions should be aggregated
+#'   in a reproducible ordering. Due to the non-associativity of floating point
+#'   addition, when we predict in parallel, predictions will be aggregated in
+#'   varied orders as different threads finish at different times.
+#'   By default, exact is TRUE unless N > 100,000 or a custom aggregation
+#'   function is used.
 #' @param ... additional arguments.
 #' @return A vector of predicted responses.
 #' @export
@@ -1277,6 +1286,7 @@ predict.forestry <- function(object,
                              aggregation = "average",
                              seed = as.integer(runif(1) * 10000),
                              nthread = 0,
+                             exact = NULL,
                              ...) {
   # Preprocess the data. We only run the data checker if ridge is turned on, because even in the case where there were no NAs in train, we still want to predict.
   forest_checker(object)
@@ -1287,13 +1297,23 @@ predict.forestry <- function(object,
                                     object@categoricalFeatureCols,
                                     object@categoricalFeatureMapping)
 
+  # Set exact aggregation method if nobs < 100,000 and average aggregation
+  if (is.null(exact)) {
+    if (nrow(feature.new) > 1e5 || aggregation != "average") {
+      exact = FALSE
+    } else {
+      exact = TRUE
+    }
+  }
+
   # If option set to terminalNodes, we need to make matrix of ID's
   rcppPrediction <- tryCatch({
     rcpp_cppPredictInterface(object@forest,
                              processed_x,
                              aggregation,
                              seed = seed,
-                             nthread = nthread)
+                             nthread = nthread,
+                             exact = exact)
   }, error = function(err) {
     print(err)
     return(NULL)
@@ -1331,16 +1351,37 @@ predict.forestry <- function(object,
 #' @param aggregation How shall the leaf be aggregated. The default is to return
 #'   the mean of the leave `average`. Other options are `weightMatrix`.
 #' @param seed random seed
+#' @param nthread The number of threads with which to run the predictions with.
+#'   This will default to the number of threads with which the forest was trained
+#'   with.
+#' @param exact This specifies whether the forest predictions should be aggregated
+#'   in a reproducible ordering. Due to the non-associativity of floating point
+#'   addition, when we predict in parallel, predictions will be aggregated in
+#'   varied orders as different threads finish at different times.
+#'   By default, exact is TRUE unless N > 100,000 or a custom aggregation
+#'   function is used.
 #' @param ... additional arguments.
 #' @return A vector of predicted responses.
 #' @export
 predict.multilayerForestry <- function(object,
                              feature.new,
-                             aggregation = "average", seed = as.integer(runif(1) * 10000),
+                             aggregation = "average",
+                             seed = as.integer(runif(1) * 10000),
                              nthread = 0,
+                             exact = NULL,
                              ...) {
-  forest_checker(object)
-   # Preprocess the data. We only run the data checker if ridge is turned on, because even in the case where there were no NAs in train, we still want to predict.
+    forest_checker(object)
+
+    if (is.null(exact)) {
+      if (nrow(feature.new) > 1e5 || aggregation != "average") {
+        exact = FALSE
+      } else {
+        exact = TRUE
+      }
+    }
+
+   # Preprocess the data. We only run the data checker if ridge is turned on,
+   # because even in the case where there were no NAs in train, we still want to predict.
     if(object@linear) {
       testing_data_checker(feature.new, FALSE)
     }
@@ -1351,7 +1392,7 @@ predict.multilayerForestry <- function(object,
 
     rcppPrediction <- tryCatch({
       rcpp_cppMultilayerPredictInterface(object@forest, processed_x,
-                                         aggregation, seed, nthread)
+                                         aggregation, seed, nthread, exact)
     }, error = function(err) {
       print(err)
       return(NULL)

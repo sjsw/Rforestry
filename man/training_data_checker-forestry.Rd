@@ -19,6 +19,7 @@ training_data_checker(
   maxDepth,
   interactionDepth,
   splitratio,
+  OOBhonest,
   nthread,
   middleSplit,
   doubleTree,
@@ -76,6 +77,13 @@ splitting dataset becomes the total entire sampled set and the averaging
 dataset is empty. If the ratio is 0, then the splitting data set is empty
 and all the data is used for the averaging data set (This is not a good
 usage however since there will be no data available for splitting).}
+
+\item{OOBhonest}{This is an experimental method of enforcing honesty. In this
+version of honesty, the out-of-bag examples for each tree are used as the
+honest set. Then for out of sample predictions, predictions are done with
+every tree in the forest, and for in sample predictions, only the trees
+which didn't use an observation in the averaging set (technically the in bag)
+are used to predict for that example.}
 
 \item{nthread}{Number of threads to train and predict the forest. The default
 number is 0 which represents using all cores.}

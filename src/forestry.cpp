@@ -465,13 +465,20 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   arma::Mat<double>* weightMatrix,
   arma::Mat<int>* terminalNodes,
   unsigned int seed,
-  size_t nthread
+  size_t nthread,
+  bool exact
 ){
   std::vector<double> prediction;
   size_t numObservations = (*xNew)[0].size();
   for (size_t j=0; j<numObservations; j++) {
     prediction.push_back(0);
   }
+
+  // Only needed if exact = TRUE, vector for storing each tree's predictions
+  std::vector< std::vector<double> > tree_preds;
+  std::vector< std::vector<int> > tree_nodes;
+  std::vector<size_t> tree_seeds;
+  std::vector<size_t> tree_total_nodes;
 
   #if DOPARELLEL
   size_t nthreadToUse = nthread;
@@ -527,15 +534,24 @@ std::unique_ptr< std::vector<double> > forestry::predict(
             std::lock_guard<std::mutex> lock(threadLock);
             # endif
 
-            for (size_t j = 0; j < numObservations; j++) {
-              prediction[j] += currentTreePrediction[j];
-            }
-
-            if (terminalNodes) {
-              for (size_t k = 0; k < numObservations; k++) {
-                (*terminalNodes)(k, i) = currentTreeTerminalNodes[k];
+            // If we need to use the exact seeding order we save the tree
+            // predictions and the tree seeds
+            if (exact) {
+              tree_preds.push_back(currentTreePrediction);
+              tree_nodes.push_back(currentTreeTerminalNodes);
+              tree_seeds.push_back(currentTree->getSeed());
+              tree_total_nodes.push_back(currentTree->getNodeCount());
+            } else {
+              for (size_t j = 0; j < numObservations; j++) {
+                prediction[j] += currentTreePrediction[j];
               }
-              (*terminalNodes)(numObservations, i) = (*currentTree).getNodeCount();
+
+              if (terminalNodes) {
+                for (size_t k = 0; k < numObservations; k++) {
+                  (*terminalNodes)(k, i) = currentTreeTerminalNodes[k];
+                }
+                (*terminalNodes)(numObservations, i) = (*currentTree).getNodeCount();
+              }
             }
 
           } catch (std::runtime_error &err) {
@@ -560,6 +576,36 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   );
   #endif
 
+  // If exact, we need to aggregate the predictions by tree seed order.
+  if (exact) {
+    std::vector<size_t> indices(tree_seeds.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    // Order the indices by the seeds of the corresponding trees
+    std::sort(indices.begin(), indices.end(),
+              [&](size_t a, size_t b) -> bool {
+                return tree_seeds[a] > tree_seeds[b];
+              });
+
+    // Now aggregate using the new index ordering
+    for(std::vector<size_t>::iterator iter = indices.begin();
+        iter != indices.end();
+        ++iter)
+    {
+        size_t cur_index  = *iter;
+        // Aggregate all predictions for current tree
+        for (size_t j = 0; j < numObservations; j++) {
+          prediction[j] += tree_preds[cur_index][j];
+        }
+
+        if (terminalNodes) {
+          for (size_t k = 0; k < numObservations; k++) {
+            (*terminalNodes)(k, cur_index) = tree_nodes[cur_index][k];
+          }
+          (*terminalNodes)(numObservations, cur_index) = tree_total_nodes[cur_index];
+        }
+    }
+  }
+
   for (size_t j=0; j<numObservations; j++){
     prediction[j] /= getNtree();
   }
@@ -567,7 +613,6 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   std::unique_ptr< std::vector<double> > prediction_ (
     new std::vector<double>(prediction)
   );
-
 
   // If we also update the weight matrix, we now have to divide every entry
   // by the number of trees:

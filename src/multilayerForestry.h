@@ -50,7 +50,8 @@ public:
       std::vector< std::vector<double> >* xNew,
       arma::Mat<double>* weightMatrix,
       int seed,
-      size_t nthread
+      size_t nthread,
+      bool exact
   );
 
   void reconstructForests(
