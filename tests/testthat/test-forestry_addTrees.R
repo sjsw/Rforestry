@@ -24,7 +24,7 @@ test_that("Tests adding more trees", {
 
   # Test add more trees
   forest <- addTrees(forest, 100)
-  expect_equal(forest@ntree, 600, tolerance=1e-4)
+  expect_equal(forest@ntree, 600L, tolerance=0)
 
   # Test predict
   y_pred <- predict(forest, x)

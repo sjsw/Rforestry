@@ -26,8 +26,8 @@ test_that("Tests large node size", {
   y_pred <- predict(forest, x)
 
   # Mean Square Error
-  sum((y_pred - y) ^ 2)
-  expect_equal(sum((y_pred - y) ^ 2), 102.1684, tolerance=1e-4)
+  #sum((y_pred - y) ^ 2) %>% dput
+  expect_equal(sum((y_pred - y) ^ 2), 102.16933076160000, tolerance=1e-12)
 
 })
 

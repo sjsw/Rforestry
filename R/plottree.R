@@ -5,20 +5,20 @@
 #' @name plot-forestry
 #' @title visualize a tree
 #' @rdname plot-forestry
-#' @description Plots a single tree in the forest.
-#' @param x A trained model object of class "forestry".
-#' @param tree.id Specifies the tree number that should be visualized
+#' @description plots a tree in the forest.
+#' @param x A forestry x.
+#' @param tree.id Specifies the tree number that should be visulaized.
 #' @param print.meta_dta Should the data for the plot be printed?
 #' @param beta.char.len The length of the beta values in leaf node
 #' representation.
-#' @param return.plot.dta If TRUE no plot will be generated, but instead a list
-#'   with all the plot data is returned.
 #' @param ... additional arguments that are not used.
+#' @return A plot of the specified tree in the forest.
 #' @import glmnet
 #' @examples
 #' set.seed(292315)
 #' rf <- forestry(x = iris[,-1],
-#'                y = iris[, 1])
+#'                y = iris[, 1],
+#'                nthread = 2)
 #'
 #' plot(x = rf)
 #' plot(x = rf, tree.id = 2)
@@ -33,6 +33,7 @@
 #'   ntree = 1000,
 #'   minSplitGain = .004,
 #'   linear = TRUE,
+#'   nthread = 2,
 #'   overfitPenalty = 1.65,
 #'   linFeats = 1:2)
 #'
@@ -43,7 +44,7 @@
 #' @export
 #' @import visNetwork
 plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
-                          beta.char.len = 30, return.plot.dta = FALSE, ...) {
+                          beta.char.len = 30, ...) {
   if (x@ntree < tree.id | 1 > tree.id) {
     stop("tree.id is too large or too small.")
   }
@@ -160,7 +161,7 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
           (!is.na(node_info$split_feat))
 
         node_info$cat_split_value[nodes_with_this_split] <-
-          as.character(sort(cat_feat_map[[i]]$uniqueFeatureValues)[
+          as.character(cat_feat_map[[i]]$uniqueFeatureValues[
             node_info$split_val[nodes_with_this_split]])
       }
     }
@@ -232,46 +233,27 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
   dta_x <- forestry_tree@processed_dta$processed_x
   dta_y <- forestry_tree@processed_dta$y
 
-  glmn_coefs <- list()
+
   if (forestry_tree@linear) {
     # ridge forest
     for (leaf_id in node_info$node_id[node_info$is_leaf]) {
-      # leaf_id = 1
+      # leaf_id = 5
       ###
       this_ds <- dta_x[leaf_idx[[leaf_id]],
-                       forestry_tree@linFeats + 1, drop = FALSE]
+                       forestry_tree@linFeats + 1]
       encoder <- onehot::onehot(this_ds)
       remat <- predict(encoder, this_ds)
       ###
-      dta_y_leaf <- dta_y[leaf_idx[[leaf_id]]]
-      if (length(unique(dta_y_leaf)) == 1) {
-        plm_pred <- c(dta_y_leaf[1], rep(0, ncol(remat)))
-        r_squared = 1
-      } else {
+      y_leaf <- dta_y[leaf_idx[[leaf_id]]]
+      plm <- glmnet::glmnet(x = remat,
+                            y = y_leaf,
+                            lambda = forestry_tree@overfitPenalty * sd(y_leaf)/nrow(remat),
+                            alpha	= 0)
 
-        remat.is.of.dim.one <- FALSE
-        if (ncol(remat) == 1) {
-          remat.is.of.dim.one <- TRUE
-          remat <- as.matrix(data.frame(dummy = 1, remat))
-        }
-        plm <- glmnet::glmnet(x = remat,
-                              y = dta_y_leaf,
-                              lambda = forestry_tree@overfitPenalty,
-                              alpha	= 0)
-        plm_pred <- predict(plm, type = "coef")
-        if (remat.is.of.dim.one) {
-          remat <- remat[,-1, drop = FALSE]
-          plm_pred <- plm_pred[-2,]
-        }
-        glmn_coefs[[as.character(leaf_id)]] <- plm_pred
-
-        r_squared = plm$dev.ratio
-      }
-
+      plm_pred <- predict(plm, type = "coef")
       plm_pred_names <- c("interc", colnames(remat))
 
       return_char <- character()
-
       for (i in 1:length(plm_pred)) {
         return_char <- paste0(return_char,
                               substr(plm_pred_names[i], 1, beta.char.len), " ",
@@ -279,12 +261,12 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
       }
       nodes$title[leaf_id] <- paste0(nodes$label[leaf_id],
                                      "<br> R2 = ",
-                                     r_squared,
+                                     plm$dev.ratio,
                                      "<br>========<br>",
                                      return_char)
       nodes$label[leaf_id] <- paste0(nodes$label[leaf_id],
                                      "\n R2 = ",
-                                     round(r_squared, 3),
+                                     round(plm$dev.ratio, 3),
                                      "\n=======\nm = ",
                                      round(mean(dta_y[leaf_idx[[leaf_id]]]), 5))
     }
@@ -297,39 +279,26 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
   }
 
   # defines a colors -----------------------------------------------------------
-  # split_feat <- node_info$split_feat
-  # split_feat <- ifelse(is.na(split_feat), 0, split_feat)
-  # split_feat <- factor(split_feat)
-  # color_code <- grDevices::terrain.colors(n = length(feat_names) + 1,
-  #                                         alpha = .7)
-  # names(color_code) <- as.character(0:(length(feat_names)))
-
-  potential_split_feats <- colnames(forestry_tree@processed_dta$processed_x)
-  color_code <- grDevices::terrain.colors(n = length(potential_split_feats) + 1,
+  split_vals <- node_info$split_feat
+  split_vals <- ifelse(is.na(split_vals), 0, split_vals)
+  split_vals <- factor(split_vals)
+  color_code <- grDevices::terrain.colors(n = length(feat_names) + 1,
                                           alpha = .7)
-  names(color_code) <- c(potential_split_feats, NA)
+  names(color_code) <- as.character(0:(length(feat_names)))
+  nodes$color <- color_code[split_vals]
 
-  nodes$color <- color_code[node_info$feat_nm][1:length(node_info$feat_nm)]
-  nodes$color[is.na(nodes$color)] <- color_code[length(color_code)]
   # Plot the actual node -------------------------------------------------------
-  if (return.plot.dta) {
-    return(list(
-      node_info, nodes, edges, glmn_coefs, tree.id
-    ))
-  } else {
-    (p1 <-
-       visNetwork(
-         nodes,
-         edges,
-         width = "100%",
-         height = "800px",
-         main = paste("Tree", tree.id)
-       ) %>%
-       visEdges(arrows = "to") %>%
-       visHierarchicalLayout() %>% visExport(type = "pdf", name = "ridge_tree"))
+  (p1 <-
+    visNetwork(
+      nodes,
+      edges,
+      width = "100%",
+      height = "800px",
+      main = paste("Tree", tree.id)
+    ) %>%
+    visEdges(arrows = "to") %>%
+    visHierarchicalLayout() %>% visExport(type = "pdf", name = "ridge_tree"))
 
-    if (print.meta_dta)
-      print(node_info)
-    return(p1)
-  }
+  if (print.meta_dta) print(node_info)
+  return(p1)
 }

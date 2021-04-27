@@ -1,34 +1,49 @@
 Package: Rforestry
 Type: Package
-Title: RForestry
-Version: 0.8.2.0
-Author: Sören Künzel, Theo Saarinen, Simon Walter, Edward Liu, Allen Tang, Jasjeet Sekhon
-Maintainer: Theo Saarinen <theo_s@berkeley.edu>, Jasjeet Sekhon <jasjeet.sekhon@yale.edu>, Sören Künzel <srk@berkeley.edu>
-Description: Random Forests, Linear Trees, and Gradient Boosting for inference and interpretability.
-License: GPL (>=3) | file LICENSE
+Title: Random Forests, Linear Trees, and Gradient Boosting for Inference and Interpretability
+Version: 0.9.0.5
+Authors@R: c(
+    person("Sören", "Künzel", role = "aut"),
+    person("Theo", "Saarinen", role = c("aut","cre"), email = "theo_s@berkeley.edu"),
+    person("Simon", "Walter", role = "aut"),
+    person("Edward", "Liu", role = "aut"),
+    person("Allen", "Tang", role = "aut"),
+    person("Jasjeet", "Sekhon", role = "aut")
+    )
+Maintainer: Theo Saarinen <theo_s@berkeley.edu>
+BugReports: https://github.com/forestry-labs/Rforestry/issues
+URL: https://github.com/forestry-labs/Rforestry
+Description: Provides fast implementations of Honest Random Forests, 
+    Gradient Boosting, and Linear Random Forests, with an emphasis on inference 
+    and interpretability. Additionally contains methods for variable 
+    importance, out-of-bag prediction, regression monotonicity, and
+    several methods for missing data imputation. Soren R. Kunzel, 
+    Theo F. Saarinen, Edward W. Liu, Jasjeet S. Sekhon (2019) <arXiv:1906.06463>.
+License: GPL (>=3)
 Encoding: UTF-8
-LazyData: true
 Imports:
     Rcpp (>= 0.12.9),
     parallel,
-    plyr,
     methods,
     visNetwork, 
     glmnet, 
     grDevices,
     onehot
 LinkingTo: Rcpp,
-  RcppArmadillo
+  RcppArmadillo,
+  RcppThread
 RoxygenNote: 7.1.1
 SystemRequirements: C++11
 Suggests:
     testthat,
     knitr,
-    rmarkdown
-VignetteBuilder: knitr
+    rmarkdown,
+    mvtnorm
 Collate:
     'R_preprocessing.R'
     'RcppExports.R'
     'forestry.R'
+    'backwards_compatible.R'
     'compute_rf_lp.R'
+    'neighborhood_imputation.R'
     'plottree.R'

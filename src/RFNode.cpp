@@ -1,5 +1,8 @@
+// [[Rcpp::depends(RcppThread)]]
+// [[Rcpp::plugins(cpp11)]]
 #include "RFNode.h"
 #include <RcppArmadillo.h>
+#include <RcppThread.h>
 #include <mutex>
 #include <thread>
 #include "utils.h"
@@ -11,15 +14,16 @@ RFNode::RFNode():
   _averagingSampleIndex(nullptr), _splittingSampleIndex(nullptr),
   _splitFeature(0), _splitValue(0),
   _leftChild(nullptr), _rightChild(nullptr),
-  _averageCount(0), _splitCount(0) {}
+  _naLeftCount(0), _naRightCount(0), _averageCount(0), _splitCount(0) {}
 
 RFNode::~RFNode() {
-  //  Rcpp::Rcout << "RFNode() destructor is called." << std::endl;
+  //  std::cout << "RFNode() destructor is called." << std::endl;
 };
 
 void RFNode::setLeafNode(
   std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
-  std::unique_ptr< std::vector<size_t> > splittingSampleIndex
+  std::unique_ptr< std::vector<size_t> > splittingSampleIndex,
+  size_t nodeId
 ) {
   if (
       (*averagingSampleIndex).size() == 0 &&
@@ -28,6 +32,9 @@ void RFNode::setLeafNode(
     throw std::runtime_error("Intend to create an empty node.");
   }
   // Give the ownership of the index pointer to the RFNode object
+  this->_naLeftCount = 0;
+  this->_naRightCount = 0;
+  this->_nodeId = nodeId;
   this->_averagingSampleIndex = std::move(averagingSampleIndex);
   this->_averageCount = (*_averagingSampleIndex).size();
   this->_splittingSampleIndex = std::move(splittingSampleIndex);
@@ -38,25 +45,31 @@ void RFNode::setSplitNode(
   size_t splitFeature,
   double splitValue,
   std::unique_ptr< RFNode > leftChild,
-  std::unique_ptr< RFNode > rightChild
+  std::unique_ptr< RFNode > rightChild,
+  std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
+  size_t naLeftCount,
+  size_t naRightCount
 ) {
   // Split node constructor
-  _averageCount = 0;
+  _averageCount = (*averagingSampleIndex).size();
   _splitCount = 0;
   _splitFeature = splitFeature;
   _splitValue = splitValue;
+  this->_averagingSampleIndex = std::move(averagingSampleIndex);
   // Give the ownership of the child pointer to the RFNode object
   _leftChild = std::move(leftChild);
   _rightChild = std::move(rightChild);
+  _naLeftCount = naLeftCount;
+  _naRightCount = naRightCount;
+  _nodeId = -1;
 }
 
 void RFNode::ridgePredict(
-  std::vector<float> &outputPrediction,
-  std::vector< std::vector<float> > &outputCoefficients,
+  std::vector<double> &outputPrediction,
   std::vector<size_t>* updateIndex,
-  std::vector< std::vector<float> >* xNew,
+  std::vector< std::vector<double> >* xNew,
   DataFrame* trainingData,
-  float lambda
+  double lambda
 ) {
 
 
@@ -76,8 +89,8 @@ void RFNode::ridgePredict(
   //Don't penalize intercept
   identity(dimension, dimension) = 0.0;
 
-  std::vector<float> outcomePoints;
-  std::vector<float> currentObservation;
+  std::vector<double> outcomePoints;
+  std::vector<double> currentObservation;
 
   //Contruct X and outcome vector
   for (size_t i = 0; i < leafObs->size(); i++) {
@@ -106,7 +119,7 @@ void RFNode::ridgePredict(
        it != updateIndex->end();
        ++it) {
 
-    std::vector<float> newObservation;
+    std::vector<double> newObservation;
     for (size_t i = 0; i < dimension; i++) {
       newObservation.push_back((*xNew)[i][*it]);
     }
@@ -119,31 +132,21 @@ void RFNode::ridgePredict(
   //Multiply xNew * coefficients = result
   arma::Mat<double> predictions = xn * coefficients;
 
-  // Want coefficients vector
-  std::vector<float> c_vector = arma::conv_to< std::vector<float> >::from(coefficients.col(0));
-
   for (size_t i = 0; i < updateIndex->size(); i++) {
     outputPrediction[(*updateIndex)[i]] = predictions(i, 0);
-  }
-
-
-  // The coefficeints only entered if coefficent vector initialized
-  if (!(outputCoefficients.empty())) {
-    for (size_t k = 0; k < updateIndex->size(); k++) {
-      outputCoefficients[(*updateIndex)[k]] = c_vector;
-    }
   }
 }
 
 void RFNode::predict(
-  std::vector<float> &outputPrediction,
-  std::vector< std::vector<float> > &outputCoefficients,
+  std::vector<double> &outputPrediction,
+  std::vector<int>* terminalNodes,
   std::vector<size_t>* updateIndex,
-  std::vector< std::vector<float> >* xNew,
+  std::vector< std::vector<double> >* xNew,
   DataFrame* trainingData,
-  arma::Mat<float>* weightMatrix,
+  arma::Mat<double>* weightMatrix,
   bool linear,
-  float lambda
+  double lambda,
+  unsigned int seed
 ) {
 
   // If the node is a leaf, aggregate all its averaging data samples
@@ -151,29 +154,35 @@ void RFNode::predict(
 
       if (linear) {
 
-      //Use ridgePredict (fit linear model on leaf avging obs + evaluate it)
-      ridgePredict(outputPrediction,
-                   outputCoefficients,
-                   updateIndex,
-                   xNew,
-                   trainingData,
-                   lambda);
+        //Use ridgePredict (fit linear model on leaf avging obs + evaluate it)
+        ridgePredict(outputPrediction,
+                     updateIndex,
+                     xNew,
+                     trainingData,
+                     lambda);
       } else {
 
-      // Calculate the mean of current node
-      float predictedMean = (*trainingData).partitionMean(getAveragingIndex());
 
-      // Give all updateIndex the mean of the node as prediction values
-      for (
-        std::vector<size_t>::iterator it = (*updateIndex).begin();
-        it != (*updateIndex).end();
-        ++it
-      ) {
-        outputPrediction[*it] = predictedMean;
-      }
+        double predictedMean;
+        // Calculate the mean of current node
+        if (getAveragingIndex()->size() == 0) {
+          predictedMean = std::numeric_limits<double>::quiet_NaN();
+        } else {
+          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+        }
+
+
+        // Give all updateIndex the mean of the node as prediction values
+        for (
+          std::vector<size_t>::iterator it = (*updateIndex).begin();
+          it != (*updateIndex).end();
+          ++it
+        ) {
+          outputPrediction[*it] = predictedMean;
+        }
     }
 
-    if(weightMatrix){
+    if (weightMatrix){
       // If weightMatrix is not a NULL pointer, then we want to update it,
       // because we have choosen aggregation = "weightmatrix".
       std::vector<size_t> idx_in_leaf =
@@ -192,11 +201,42 @@ void RFNode::predict(
       }
     }
 
+    if (terminalNodes) {
+      // If terminalNodes not a NULLPTR, set the terminal node for all X in this
+      // leaf to be the leaf node_id
+      size_t node_id = getNodeId();
+      for (
+          std::vector<size_t>::iterator it = (*updateIndex).begin();
+          it != (*updateIndex).end();
+          ++it
+      ) {
+        (*terminalNodes)[*it] = node_id;
+      }
+    }
+
   } else {
 
     // Separate prediction tasks to two children
     std::vector<size_t>* leftPartitionIndex = new std::vector<size_t>();
     std::vector<size_t>* rightPartitionIndex = new std::vector<size_t>();
+
+    size_t naLeftCount = getNaLeftCount();
+    size_t naRightCount = getNaRightCount();
+
+    std::vector<size_t> naSampling {naLeftCount, naRightCount};
+    //std::vector<size_t> naSampling_no_miss {1, 1};
+    std::vector<size_t> naSampling_no_miss {
+      (*getLeftChild()).getAverageCountAlways(),
+      (*getRightChild()).getAverageCountAlways()};
+
+    std::discrete_distribution<size_t> discrete_dist(
+        naSampling.begin(), naSampling.end()
+    );
+    std::discrete_distribution<size_t> discrete_dist_nonmissing(
+        naSampling_no_miss.begin(), naSampling_no_miss.end()
+    );
+    std::mt19937_64 random_number_generator;
+    random_number_generator.seed(seed);
 
     // Test if the splitting feature is categorical
     std::vector<size_t> categorialCols = *(*trainingData).getCatCols();
@@ -214,7 +254,28 @@ void RFNode::predict(
         it != (*updateIndex).end();
         ++it
       ) {
-        if ((*xNew)[getSplitFeature()][*it] == getSplitValue()) {
+        double currentValue = (*xNew)[getSplitFeature()][*it];
+
+        if (std::isnan(currentValue)) {
+          size_t draw;
+
+          // If we have a missing feature value, if no NAs were observed when
+          // splitting send to left/right with probability proportional to
+          // number of observations in left/right child node else send
+          // right/left with probability in proportion to NA's which went
+          // left/right when splitting
+          if ((naLeftCount == 0) && (naRightCount == 0)) {
+            draw = discrete_dist_nonmissing(random_number_generator);
+          } else {
+            draw = discrete_dist(random_number_generator);
+          }
+
+          if (draw == 0) {
+            (*leftPartitionIndex).push_back(*it);
+          } else {
+            (*rightPartitionIndex).push_back(*it);
+          }
+        } else if (currentValue == getSplitValue()) {
           (*leftPartitionIndex).push_back(*it);
         } else {
           (*rightPartitionIndex).push_back(*it);
@@ -230,7 +291,29 @@ void RFNode::predict(
         it != (*updateIndex).end();
         ++it
       ) {
-        if ((*xNew)[getSplitFeature()][*it] < getSplitValue()) {
+        double currentValue = (*xNew)[getSplitFeature()][*it];
+
+        if (std::isnan(currentValue)) {
+          size_t draw;
+
+          // If we have a missing feature value, if no NAs were observed when
+          // splitting send to left/right with probability proportional to
+          // number of observations in left/right child node else send
+          // right/left with probability in proportion to NA's which went
+          // left/right when splitting
+          if ((naLeftCount == 0) && (naRightCount == 0)) {
+            draw = discrete_dist_nonmissing(random_number_generator);
+          } else {
+            draw = discrete_dist(random_number_generator);
+          }
+
+          if (draw == 0) {
+            (*leftPartitionIndex).push_back(*it);
+          } else {
+            (*rightPartitionIndex).push_back(*it);
+          }
+
+        } else if (currentValue < getSplitValue()) {
           (*leftPartitionIndex).push_back(*it);
         } else {
           (*rightPartitionIndex).push_back(*it);
@@ -241,28 +324,78 @@ void RFNode::predict(
 
     // Recursively get predictions from its children
     if ((*leftPartitionIndex).size() > 0) {
-      (*getLeftChild()).predict(
-        outputPrediction,
-        outputCoefficients,
-        leftPartitionIndex,
-        xNew,
-        trainingData,
-        weightMatrix,
-        linear,
-        lambda
-      );
+
+      // Here we want to now make sure the left node has averaging indices,
+      // otherwise we give it predictions from the parent
+      if (getLeftChild()->getAverageCount() == 0) {
+
+        double predictedMean;
+        // Calculate the mean of current node
+        if (getAverageCount() == 0) {
+          predictedMean = std::numeric_limits<double>::quiet_NaN();;
+        } else{
+          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+        }
+
+        // Give all updateIndex the mean of the node as prediction values
+        for (
+            std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
+            it != (*leftPartitionIndex).end();
+            ++it
+        ) {
+          outputPrediction[*it] = predictedMean;
+        }
+      } else {
+        (*getLeftChild()).predict(
+            outputPrediction,
+            terminalNodes,
+            leftPartitionIndex,
+            xNew,
+            trainingData,
+            weightMatrix,
+            linear,
+            lambda,
+            seed
+        );
+      }
+
     }
     if ((*rightPartitionIndex).size() > 0) {
-      (*getRightChild()).predict(
-        outputPrediction,
-        outputCoefficients,
-        rightPartitionIndex,
-        xNew,
-        trainingData,
-        weightMatrix,
-        linear,
-        lambda
-      );
+
+      // Here we want to now make sure the right node has averaging indices,
+      // otherwise we give it predictions from the parent
+      if (getRightChild()->getAverageCount() == 0) {
+
+
+        double predictedMean;
+        // Calculate the mean of current node
+        if (getAverageCount() == 0) {
+          predictedMean = std::numeric_limits<double>::quiet_NaN();;
+        } else{
+          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+        }
+
+        //Give all rightPartitionIndex the mean of the node as prediction values
+        for (
+            std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
+            it != (*rightPartitionIndex).end();
+            ++it
+        ) {
+          outputPrediction[*it] = predictedMean;
+        }
+      } else {
+        (*getRightChild()).predict(
+          outputPrediction,
+          terminalNodes,
+          rightPartitionIndex,
+          xNew,
+          trainingData,
+          weightMatrix,
+          linear,
+          lambda,
+          seed
+        );
+      }
     }
 
     delete(leftPartitionIndex);
@@ -273,16 +406,27 @@ void RFNode::predict(
 }
 
 bool RFNode::is_leaf() {
-  int ave_ct = getAverageCount();
+  // int ave_ct = getAverageCount();
   int spl_ct = getSplitCount();
-  if (
-      (ave_ct == 0 && spl_ct != 0) ||(ave_ct != 0 && spl_ct == 0)
-  ) {
-    throw std::runtime_error(
-        "Average count or Split count is 0, while the other is not!"
-        );
+  // if (
+  //     (ave_ct == 0 && spl_ct != 0) ||(ave_ct != 0 && spl_ct == 0)
+  // ) {
+  //   throw std::runtime_error(
+  //       "Average count or Split count is 0, while the other is not!"
+  //       );
+  // }
+  //return !(ave_ct == 0 && spl_ct == 0);
+  return !(spl_ct == 0);
+}
+
+size_t RFNode::getAverageCountAlways() {
+  if(is_leaf()) {
+    return _averageCount;
   }
-  return !(ave_ct == 0 && spl_ct == 0);
+  else {
+    return (*getRightChild()).getAverageCountAlways() +
+      (*getLeftChild()).getAverageCountAlways();
+  }
 }
 
 void RFNode::printSubtree(int indentSpace) {
@@ -291,22 +435,29 @@ void RFNode::printSubtree(int indentSpace) {
   if (is_leaf()) {
 
     // Print count of samples in the leaf node
-    Rcpp::Rcout << std::string((unsigned long) indentSpace, ' ')
+    RcppThread::Rcout << std::string((unsigned long) indentSpace, ' ')
               << "Leaf Node: # of split samples = "
               << getSplitCount()
               << ", # of average samples = "
               << getAverageCount()
               << std::endl;
+    R_FlushConsole();
+    R_ProcessEvents();
 
   } else {
 
     // Print split feature and split value
-    Rcpp::Rcout << std::string((unsigned long) indentSpace, ' ')
+    RcppThread::Rcout << std::string((unsigned long) indentSpace, ' ')
               << "Tree Node: split feature = "
               << getSplitFeature()
               << ", split value = "
               << getSplitValue()
+              << ", # of average samples = "
+              << getAverageCount()
               << std::endl;
+
+    R_FlushConsole();
+    R_ProcessEvents();
     // Recursively calling its children
     (*getLeftChild()).printSubtree(indentSpace+2);
     (*getRightChild()).printSubtree(indentSpace+2);
@@ -325,6 +476,9 @@ void RFNode::write_node_info(
     treeInfo->var_id.push_back(-getAveragingIndex()->size());
     treeInfo->var_id.push_back(-getSplittingIndex()->size());
     treeInfo->split_val.push_back(0);
+    treeInfo->naLeftCount.push_back(-1);
+    treeInfo->naRightCount.push_back(-1);
+
 
     std::vector<size_t> idx_in_leaf_Ave = *getAveragingIndex();
     for (size_t i = 0; i<idx_in_leaf_Ave.size(); i++) {
@@ -342,6 +496,9 @@ void RFNode::write_node_info(
     // call write_node_info on the left and the right child.
     treeInfo->var_id.push_back(getSplitFeature() + 1);
     treeInfo->split_val.push_back(getSplitValue());
+    treeInfo->naLeftCount.push_back(getNaLeftCount());
+    treeInfo->naRightCount.push_back(getNaRightCount());
+
 
     getLeftChild()->write_node_info(treeInfo, trainingData);
     getRightChild()->write_node_info(treeInfo, trainingData);

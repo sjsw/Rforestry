@@ -5,7 +5,15 @@
 \alias{predict.multilayerForestry}
 \title{predict-multilayer-forestry}
 \usage{
-\method{predict}{multilayerForestry}(object, feature.new, aggregation = "average", ...)
+\method{predict}{multilayerForestry}(
+  object,
+  feature.new,
+  aggregation = "average",
+  seed = as.integer(runif(1) * 10000),
+  nthread = 0,
+  exact = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{A `multilayerForestry` object.}
@@ -15,6 +23,19 @@
 \item{aggregation}{How shall the leaf be aggregated. The default is to return
 the mean of the leave `average`. Other options are `weightMatrix`.}
 
+\item{seed}{random seed}
+
+\item{nthread}{The number of threads with which to run the predictions with.
+This will default to the number of threads with which the forest was trained
+with.}
+
+\item{exact}{This specifies whether the forest predictions should be aggregated
+in a reproducible ordering. Due to the non-associativity of floating point
+addition, when we predict in parallel, predictions will be aggregated in
+varied orders as different threads finish at different times.
+By default, exact is TRUE unless N > 200,000 or a custom aggregation
+function is used.}
+
 \item{...}{additional arguments.}
 }
 \value{
@@ -22,7 +43,4 @@ A vector of predicted responses.
 }
 \description{
 Return the prediction from the forest.
-}
-\seealso{
-\code{\link{forestry}}
 }

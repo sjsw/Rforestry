@@ -18,34 +18,38 @@ public:
 
   void setLeafNode(
     std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
-    std::unique_ptr< std::vector<size_t> > splittingSampleIndex
+    std::unique_ptr< std::vector<size_t> > splittingSampleIndex,
+    size_t nodeId
   );
 
   void setSplitNode(
     size_t splitFeature,
     double splitValue,
     std::unique_ptr< RFNode > leftChild,
-    std::unique_ptr< RFNode > rightChild
+    std::unique_ptr< RFNode > rightChild,
+    std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
+    size_t naLeftCount,
+    size_t naRightCount
   );
 
   void ridgePredict(
-      std::vector<float> &outputPrediction,
-      std::vector< std::vector<float> > &outputCoefficients,
+      std::vector<double> &outputPrediction,
       std::vector<size_t>* updateIndex,
-      std::vector< std::vector<float> >* xNew,
+      std::vector< std::vector<double> >* xNew,
       DataFrame* trainingData,
-      float lambda
+      double lambda
   );
 
   void predict(
-    std::vector<float> &outputPrediction,
-    std::vector< std::vector<float> > &outputCoefficients,
+    std::vector<double> &outputPrediction,
+    std::vector<int>* terminalNodes,
     std::vector<size_t>* updateIndex,
-    std::vector< std::vector<float> >* xNew,
+    std::vector< std::vector<double> >* xNew,
     DataFrame* trainingData,
-    arma::Mat<float>* weightMatrix,
+    arma::Mat<double>* weightMatrix,
     bool linear,
-    float lambda
+    double lambda,
+    unsigned int seed
   );
 
   void write_node_info(
@@ -97,6 +101,18 @@ public:
     return _averageCount;
   }
 
+  size_t getAverageCountAlways();
+
+  size_t getNaLeftCount() {
+    return _naLeftCount;
+  }
+  size_t getNaRightCount() {
+    return _naRightCount;
+  }
+  size_t getNodeId() {
+    return _nodeId;
+  }
+
   std::vector<size_t>* getAveragingIndex() {
     return _averagingSampleIndex.get();
   }
@@ -112,8 +128,11 @@ private:
   double _splitValue;
   std::unique_ptr< RFNode > _leftChild;
   std::unique_ptr< RFNode > _rightChild;
+  size_t _naLeftCount;
+  size_t _naRightCount;
   size_t _averageCount;
   size_t _splitCount;
+  size_t _nodeId;
 };
 
 

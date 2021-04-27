@@ -15,11 +15,12 @@ test_that("Tests that Monotone splits parameter is working correctly", {
     ntree = 500,
     nodesizeStrictSpl = 5,
     maxDepth = 10,
+    nthread = 2,
     monotonicConstraints = c(1)
   )
   # Test predictions are monotonic increasing in the first feature
   pred_means <- sapply(c(1:9), function(x) {mean(predict(monotone_forest,
-                                                    feature.new = data.frame(V1 = rep(x, 100))))})
+                                                         feature.new = data.frame(V1 = rep(x, 100))))})
 
   # Mean Square Error
   expect_equal(all.equal(order(pred_means), 1:9), TRUE)
@@ -31,11 +32,12 @@ test_that("Tests that Monotone splits parameter is working correctly", {
     ntree = 500,
     nodesizeStrictSpl = 3,
     maxDepth = 10,
+    nthread = 2,
     monotonicConstraints = c(-1)
   )
-  # Test predictions are monotonic increasing in the first feature
+  # Test predictions are monotonic decreasing in the first feature
   pred_means <- sapply(c(1,3,5,9), function(x) {mean(predict(monotone_forest,
-                                                         feature.new = data.frame(V1 = rep(x, 100))))})
+                                                             feature.new = data.frame(V1 = rep(x, 100))))})
 
   # Mean Square Error
   # expect_equal(all.equal(order(pred_means), 4:1), TRUE)

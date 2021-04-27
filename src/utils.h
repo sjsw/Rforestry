@@ -10,9 +10,18 @@ void print_vector(
   std::vector<size_t> v
 );
 
-int add_vector(
-  std::vector<int>* v
+void print_vector(
+    std::vector<unsigned int> v
 );
+
+void print_vector(
+    std::vector<double> v
+);
+
+int add_vector(
+    std::vector<int>* v
+);
+
 
 struct tree_info {
   std::vector< int > var_id;
@@ -28,6 +37,12 @@ struct tree_info {
   // contains the indices of the average set.
   std::vector< int > splittingSampleIndex;
   // contains the indices of the splitting set.
+  std::vector< int > naLeftCount;
+  // Contains the count of NA's which fell to the left for each split value
+  // (-1 indicates leaf node, 0 indicates no NA's fell that way)
+  std::vector< int > naRightCount;
+  // Contains the count of NA's which fell to the right for each split value
+  // (-1 indicates leaf node, 0 indicates no NA's fell that way)
 };
 
 // Contains the information to help with monotonic constraints on splitting

@@ -5,8 +5,8 @@
 #' @name compute_lp-forestry
 #' @title compute lp distances
 #' @rdname compute_lp-forestry
-#' @description Return lp distances of selected test observations.
-#' @param object A trained model object of class "forestry".
+#' @description return lp ditances of selected test observations.
+#' @param object A `forestry` object.
 #' @param feature.new A data frame of testing predictors.
 #' @param feature A string denoting the dimension for computing lp distances.
 #' @param p A positive real number determining the norm p-norm used.
@@ -22,7 +22,7 @@
 #' y_train <- iris[-test_idx, 1]
 #' x_test <- iris[test_idx, -1]
 #'
-#' rf <- forestry(x = x_train, y = y_train)
+#' rf <- forestry(x = x_train, y = y_train,nthread = 2)
 #' predict(rf, x_test)
 #'
 #' # Compute the l2 distances in the "Petal.Length" dimension

@@ -5,37 +5,31 @@
 \alias{plot.forestry}
 \title{visualize a tree}
 \usage{
-\method{plot}{forestry}(
-  x,
-  tree.id = 1,
-  print.meta_dta = FALSE,
-  beta.char.len = 30,
-  return.plot.dta = FALSE,
-  ...
-)
+\method{plot}{forestry}(x, tree.id = 1, print.meta_dta = FALSE, beta.char.len = 30, ...)
 }
 \arguments{
-\item{x}{A trained model object of class "forestry".}
+\item{x}{A forestry x.}
 
-\item{tree.id}{Specifies the tree number that should be visualized}
+\item{tree.id}{Specifies the tree number that should be visulaized.}
 
 \item{print.meta_dta}{Should the data for the plot be printed?}
 
 \item{beta.char.len}{The length of the beta values in leaf node
 representation.}
 
-\item{return.plot.dta}{If TRUE no plot will be generated, but instead a list
-with all the plot data is returned.}
-
 \item{...}{additional arguments that are not used.}
 }
+\value{
+A plot of the specified tree in the forest.
+}
 \description{
-Plots a single tree in the forest.
+plots a tree in the forest.
 }
 \examples{
 set.seed(292315)
 rf <- forestry(x = iris[,-1],
-               y = iris[, 1])
+               y = iris[, 1],
+               nthread = 2)
 
 plot(x = rf)
 plot(x = rf, tree.id = 2)
@@ -50,6 +44,7 @@ ridge_rf <- forestry(
   ntree = 1000,
   minSplitGain = .004,
   linear = TRUE,
+  nthread = 2,
   overfitPenalty = 1.65,
   linFeats = 1:2)
 

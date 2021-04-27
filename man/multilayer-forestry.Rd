@@ -22,22 +22,24 @@ multilayerForestry(
   minSplitGain = 0,
   maxDepth = 99,
   splitratio = 1,
+  OOBhonest = FALSE,
   seed = as.integer(runif(1) * 1000),
   verbose = FALSE,
   nthread = 0,
   splitrule = "variance",
   middleSplit = TRUE,
   maxObs = length(y),
-  maxProp = 1,
   linear = FALSE,
-  splitFeats = 1:(ncol(x)),
-  linFeats = 1:(ncol(x)),
+  linFeats = 0:(ncol(x) - 1),
   monotonicConstraints = rep(0, ncol(x)),
-  sampleWeights = rep((1/ncol(x)), ncol(x)),
+  featureWeights = rep(1, ncol(x)),
+  deepFeatureWeights = featureWeights,
+  observationWeights = NULL,
   overfitPenalty = 1,
   doubleTree = FALSE,
   reuseforestry = NULL,
-  saveable = TRUE
+  savable = TRUE,
+  saveable = saveable
 )
 }
 \arguments{
@@ -60,7 +62,7 @@ sampling with replacement, the default value is the length of the training
 data. If samplying without replacement, the default value is two-third of
 the length of the training data.}
 
-\item{sample.fraction}{If this is given, then sampsize is ignored and set to
+\item{sample.fraction}{if this is given, then sampsize is ignored and set to
 be round(length(y) * sample.fraction). It must be a real number between 0
 and 1}
 
@@ -80,9 +82,7 @@ nodes. The default value is 1.}
 \item{nodesizeStrictAvg}{Minimum size of terminal nodes for averaging dataset
 to follow strictly. The default value is 1.}
 
-\item{minSplitGain}{Minimum loss reduction to split a node further in a tree.
-specifically this is the percentage R squared increase which each potential
-split must give to be considered. The default value is 0.}
+\item{minSplitGain}{Minimum loss reduction to split a node further in a tree.}
 
 \item{maxDepth}{Maximum depth of a tree. The default value is 99.}
 
@@ -93,41 +93,31 @@ dataset is empty. If the ratio is 0, then the splitting data set is empty
 and all the data is used for the averaging data set (This is not a good
 usage however since there will be no data available for splitting).}
 
-\item{seed}{Seed for random number generator.}
+\item{OOBhonest}{This is an experimental method of enforcing honesty. In this
+version of honesty, the out-of-bag examples for each tree are used as the
+honest set. Then for out of sample predictions, predictions are done with
+every tree in the forest, and for in sample predictions, only the trees
+which didn't use an observation in the averaging set (technically the in bag)
+are used to predict for that example.}
 
-\item{verbose}{Flag to indicate if training process is verbose.}
+\item{seed}{random seed}
+
+\item{verbose}{if training process in verbose mode}
 
 \item{nthread}{Number of threads to train and predict the forest. The default
 number is 0 which represents using all cores.}
 
-\item{splitrule}{Only variance is implemented at this point and it
+\item{splitrule}{only variance is implemented at this point and it contains
 specifies the loss function according to which the splits of random forest
-should be made.}
+should be made}
 
-\item{middleSplit}{Flag to indicate whether the split value takes the average
-of two feature values. If false, it will take a point based on a uniform
-distribution between two feature values. The default value is FALSE.}
+\item{middleSplit}{if the split value is taking the average of two feature
+values. If false, it will take a point based on a uniform distribution
+between two feature values. (Default = FALSE)}
 
-\item{maxObs}{The max number of observations to split on. If set to a number
-less than nrow(x), at each split point, maxObs split points will be
-randomly sampled to test as potential splitting points instead of every
-feature value (default).}
+\item{maxObs}{The max number of observations to split on}
 
-\item{maxProp}{A complementary option to `maxObs`, `maxProp` allows one to
-specify the proportion of possible split points which are downsampled at
-each point to test potential splitting points. For example, a value of .35
-will randomly select 35% of the possible splitting points to be potential
-splitting poimts at each split. If values of `maxProp` and `maxObs` are
-both supplied, the value of `maxProp` will take precedent.
-At the lower levels of the tree, we will select
-Max(`maxProp`* n, nodesizeSpl) splitting observations.}
-
-\item{linear}{Fit the model with a split function optimizing for a linear
-aggregation function instead of a constant aggregation function. The default
-value is FALSE.}
-
-\item{splitFeats}{Specify which features to split on when creating a tree
-(defaults to use all features).}
+\item{linear}{Fit the model with a ridge regression or not}
 
 \item{linFeats}{Specify which features to split linearly on when using
 linear (defaults to use all numerical features)}
@@ -138,32 +128,35 @@ entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
 -1 indicating a decreasing monotonic relationship, and 0 indicating no
 relationship. Constraints supplied for categorical will be ignored.}
 
-\item{sampleWeights}{Specify weights for weighted uniform distribution used
-to randomly sample features.}
+\item{featureWeights}{weights used when subsampling features for nodes above or at interactionDepth.}
+
+\item{deepFeatureWeights}{weights used when subsampling features for nodes below interactionDepth.}
+
+\item{observationWeights}{These denote the weights for each training observation
+which determines how likely the observation is to be selected in each bootstrap
+sample. This option is not allowed when sampling is done without replacement.}
 
 \item{overfitPenalty}{Value to determine how much to penalize magnitude of
-coefficients in ridge regression when using linear. The default value is 1.}
+coefficients in ridge regression}
 
-\item{doubleTree}{Indicate whether the number of tree is doubled as averaging
-and splitting data can be exchanged to create decorrelated trees.
-The default value is FALSE.}
+\item{doubleTree}{if the number of tree is doubled as averaging and splitting
+data can be exchanged to create decorrelated trees. (Default = FALSE)}
 
-\item{reuseforestry}{Pass in a `forestry` object which will recycle the
+\item{reuseforestry}{pass in an `forestry` object which will recycle the
 dataframe the old object created. It will save some space working on the
 same dataset.}
 
-\item{saveable}{If TRUE, then RF is created in such a way that it can be
+\item{savable}{If TRUE, then RF is created in such a way that it can be
 saved and loaded using save(...) and load(...). Setting it to TRUE
 (default) will, however, take longer and it will use more memory. When
 training many RF, it makes a lot of sense to set this to FALSE to save
 time and memory.}
+
+\item{saveable}{deprecated. Do not use.}
 }
 \value{
-A trained model object of class "multilayerForestry".
+A `multilayerForestry` object.
 }
 \description{
-Constructs a gradient boosted random forest.
-}
-\seealso{
-\code{\link{forestry}}
+Construct a gradient boosted random forest.
 }

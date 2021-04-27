@@ -8,7 +8,7 @@
 compute_lp(object, feature.new, feature, p)
 }
 \arguments{
-\item{object}{A trained model object of class "forestry".}
+\item{object}{A `forestry` object.}
 
 \item{feature.new}{A data frame of testing predictors.}
 
@@ -20,7 +20,7 @@ compute_lp(object, feature.new, feature, p)
 A vector lp distances.
 }
 \description{
-Return lp distances of selected test observations.
+return lp ditances of selected test observations.
 }
 \examples{
 
@@ -33,7 +33,7 @@ x_train <- iris[-test_idx, -1]
 y_train <- iris[-test_idx, 1]
 x_test <- iris[test_idx, -1]
 
-rf <- forestry(x = x_train, y = y_train)
+rf <- forestry(x = x_train, y = y_train,nthread = 2)
 predict(rf, x_test)
 
 # Compute the l2 distances in the "Petal.Length" dimension
