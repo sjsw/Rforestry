@@ -49,7 +49,8 @@ public:
     arma::Mat<double>* weightMatrix,
     bool linear,
     double lambda,
-    unsigned int seed
+    unsigned int seed,
+    size_t nodesizeStrictAvg
   );
 
   void write_node_info(

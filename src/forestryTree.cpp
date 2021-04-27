@@ -227,7 +227,8 @@ void forestryTree::predict(
     DataFrame* trainingData,
     arma::Mat<double>* weightMatrix,
     bool linear,
-    unsigned int seed
+    unsigned int seed,
+    size_t nodesizeStrictAvg
 ){
   // If we are estimating the average in each leaf:
   struct rangeGenerator {
@@ -240,7 +241,7 @@ void forestryTree::predict(
   rangeGenerator _rangeGenerator(0);
   std::generate(updateIndex.begin(), updateIndex.end(), _rangeGenerator);
   (*getRoot()).predict(outputPrediction, terminalNodes, &updateIndex, xNew, trainingData,
-   weightMatrix, linear, getOverfitPenalty(), seed);
+   weightMatrix, linear, getOverfitPenalty(), seed, nodesizeStrictAvg);
   //Rcpp::Rcout << "Seed is" << seed << ".\n";
 }
 

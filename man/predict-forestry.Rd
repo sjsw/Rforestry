@@ -44,7 +44,7 @@ with.}
 in a reproducible ordering. Due to the non-associativity of floating point
 addition, when we predict in parallel, predictions will be aggregated in
 varied orders as different threads finish at different times.
-By default, exact is TRUE unless N > 200,000 or a custom aggregation
+By default, exact is TRUE unless N > 100,000 or a custom aggregation
 function is used.}
 
 \item{...}{additional arguments.}
