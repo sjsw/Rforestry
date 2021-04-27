@@ -80,7 +80,12 @@ default value is 3.}
 nodes. The default value is 1.}
 
 \item{nodesizeStrictAvg}{Minimum size of terminal nodes for averaging dataset
-to follow strictly. The default value is 1.}
+to follow strictly when predicting. In new version of honesty, where the
+averaging dataset is not used in tree construction, a prediction for a new
+observation is done by circulating the observation down each tree until it
+reaches the final node with at least nodesizeStrictAvg averaging
+observations. This node's set of averaging observations is then used to
+predict for the new observation. The default value is 1.}
 
 \item{minSplitGain}{Minimum loss reduction to split a node further in a tree.}
 

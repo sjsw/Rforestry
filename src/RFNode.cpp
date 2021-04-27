@@ -146,7 +146,8 @@ void RFNode::predict(
   arma::Mat<double>* weightMatrix,
   bool linear,
   double lambda,
-  unsigned int seed
+  unsigned int seed,
+  size_t nodesizeStrictAvg
 ) {
 
   // If the node is a leaf, aggregate all its averaging data samples
@@ -327,7 +328,7 @@ void RFNode::predict(
 
       // Here we want to now make sure the left node has averaging indices,
       // otherwise we give it predictions from the parent
-      if (getLeftChild()->getAverageCount() == 0) {
+      if (getLeftChild()->getAverageCount() < std::max(nodesizeStrictAvg, (size_t) 1)) {
 
         double predictedMean;
         // Calculate the mean of current node
@@ -345,6 +346,39 @@ void RFNode::predict(
         ) {
           outputPrediction[*it] = predictedMean;
         }
+
+        if (weightMatrix){
+          // If weightMatrix is not a NULL pointer, then we want to update it,
+          // because we have choosen aggregation = "weightmatrix".
+          std::vector<size_t> idx_in_leaf =
+            (*trainingData).get_all_row_idx(getAveragingIndex());
+          // The following will lock the access to weightMatrix
+          std::lock_guard<std::mutex> lock(mutex_weightMatrix);
+          for (
+              std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
+              it != (*leftPartitionIndex).end();
+              ++it ) {
+            for (size_t i = 0; i<idx_in_leaf.size(); i++) {
+              (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
+                (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
+                (double) 1.0 / idx_in_leaf.size();
+            }
+          }
+        }
+
+        if (terminalNodes) {
+          // If terminalNodes not a NULLPTR, set the terminal node for all X in this
+          // leaf to be the leaf node_id
+          size_t node_id = getNodeId();
+          for (
+              std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
+              it != (*leftPartitionIndex).end();
+              ++it
+          ) {
+            (*terminalNodes)[*it] = node_id;
+          }
+        }
+
       } else {
         (*getLeftChild()).predict(
             outputPrediction,
@@ -355,7 +389,8 @@ void RFNode::predict(
             weightMatrix,
             linear,
             lambda,
-            seed
+            seed,
+            nodesizeStrictAvg
         );
       }
 
@@ -364,7 +399,7 @@ void RFNode::predict(
 
       // Here we want to now make sure the right node has averaging indices,
       // otherwise we give it predictions from the parent
-      if (getRightChild()->getAverageCount() == 0) {
+      if (getRightChild()->getAverageCount() < std::max(nodesizeStrictAvg,(size_t) 1)) {
 
 
         double predictedMean;
@@ -383,6 +418,38 @@ void RFNode::predict(
         ) {
           outputPrediction[*it] = predictedMean;
         }
+
+        if (weightMatrix){
+          // If weightMatrix is not a NULL pointer, then we want to update it,
+          // because we have choosen aggregation = "weightmatrix".
+          std::vector<size_t> idx_in_leaf =
+            (*trainingData).get_all_row_idx(getAveragingIndex());
+          // The following will lock the access to weightMatrix
+          std::lock_guard<std::mutex> lock(mutex_weightMatrix);
+          for (
+              std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
+              it != (*rightPartitionIndex).end();
+              ++it ) {
+            for (size_t i = 0; i<idx_in_leaf.size(); i++) {
+              (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
+                (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
+                (double) 1.0 / idx_in_leaf.size();
+            }
+          }
+        }
+
+        if (terminalNodes) {
+          // If terminalNodes not a NULLPTR, set the terminal node for all X in this
+          // leaf to be the leaf node_id
+          size_t node_id = getNodeId();
+          for (
+              std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
+              it != (*rightPartitionIndex).end();
+              ++it
+          ) {
+            (*terminalNodes)[*it] = node_id;
+          }
+        }
       } else {
         (*getRightChild()).predict(
           outputPrediction,
@@ -393,7 +460,8 @@ void RFNode::predict(
           weightMatrix,
           linear,
           lambda,
-          seed
+          seed,
+          nodesizeStrictAvg
         );
       }
     }

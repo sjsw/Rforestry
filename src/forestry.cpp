@@ -522,7 +522,8 @@ std::unique_ptr< std::vector<double> > forestry::predict(
               getTrainingData(),
               weightMatrix,
               getlinear(),
-              seed + i
+              seed + i,
+              getMinNodeSizeToSplitAvg()
             );
 
 
@@ -618,10 +619,10 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   // by the number of trees:
 
   if (weightMatrix) {
-    size_t nrow = (*xNew)[0].size(); // number of features to be predicted
-    size_t ncol = getNtrain(); // number of train data
-    for ( size_t i = 0; i < nrow; i++){
-      for (size_t j = 0; j < ncol; j++){
+    size_t nrow = (*xNew)[0].size();      // number of features to be predicted
+    size_t ncol = getNtrain();            // number of train data
+    for ( size_t i = 0; i < nrow; i++) {
+      for (size_t j = 0; j < ncol; j++) {
         (*weightMatrix)(i,j) = (*weightMatrix)(i,j) / _ntree;
       }
     }

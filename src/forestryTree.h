@@ -60,7 +60,8 @@ public:
     DataFrame* trainingData,
     arma::Mat<double>* weightMatrix = NULL,
     bool linear = false,
-    unsigned int seed = 44
+    unsigned int seed = 44,
+    size_t nodesizeStrictAvg = 1
   );
 
   std::unique_ptr<tree_info> getTreeInfo(
