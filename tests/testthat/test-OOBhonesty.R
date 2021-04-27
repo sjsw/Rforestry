@@ -23,6 +23,7 @@ test_that("Tests if OOB Honesty is working correctly", {
   )
 
   # Test OOB
+  skip_if_not_mac()
   expect_lt(mean((getOOB(forest) - 12.73149)^2), .1)
 
   # Test what happens when we specify splitratio as well as OOBhonest
@@ -42,6 +43,7 @@ test_that("Tests if OOB Honesty is working correctly", {
   ),"OOBhonest is set to true, so we will run OOBhonesty rather
             than standard honesty"
   )
+  skip_if_not_mac()
   expect_equal(getOOBpreds(forest)[1:3], c(5.050230, 4.704259, 4.710998), tolerance = 1e-6)
 
 
