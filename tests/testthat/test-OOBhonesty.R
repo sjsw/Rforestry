@@ -65,6 +65,7 @@ test_that("Tests if OOB Honesty is working correctly", {
   )
   forest <- make_savable(forest)
 
+  skip_if_not_mac()
   # OOB preds should be for only observations in the splitting set for the tree
   expect_equal(sort(which(!is.nan(getOOBpreds(forest)))),
                sort(unique(forest@R_forest[[1]]$splittingSampleIndex)))
@@ -92,6 +93,7 @@ test_that("Tests if OOB Honesty is working correctly", {
                        union(forest@R_forest[[1]]$splittingSampleIndex,
                              forest@R_forest[[1]]$averagingSampleIndex))
 
+  skip_if_not_mac()
   expect_equal(sort(which(!is.nan(getOOBpreds(forest)))),
                sort(oob_index))
 
