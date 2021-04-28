@@ -166,7 +166,8 @@ public:
     std::vector<double> &outputOOBPrediction,
     std::vector<size_t> &outputOOBCount,
     DataFrame* trainingData,
-    bool OOBhonest
+    bool OOBhonest,
+    size_t nodesizeStrictAvg
   );
 
   void getShuffledOOBPrediction(
@@ -174,7 +175,8 @@ public:
       std::vector<size_t> &outputOOBCount,
       DataFrame* trainingData,
       size_t shuffleFeature,
-      std::mt19937_64& random_number_generator
+      std::mt19937_64& random_number_generator,
+      size_t nodesizeStrictAvg
   );
 
   size_t getMtry() {

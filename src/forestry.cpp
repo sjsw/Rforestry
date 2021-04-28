@@ -691,7 +691,8 @@ void forestry::calculateVariableImportance() {
               outputOOBCount_iteration,
               getTrainingData(),
               featNum,
-              random_number_generator
+              random_number_generator,
+              getMinNodeSizeToSplitAvg()
           );
           #if DOPARELLEL
           std::lock_guard<std::mutex> lock(threadLock);
@@ -791,7 +792,8 @@ void forestry::calculateOOBError() {
               outputOOBPrediction_iteration,
               outputOOBCount_iteration,
               getTrainingData(),
-              getOOBhonest()
+              getOOBhonest(),
+              getMinNodeSizeToSplitAvg()
             );
 
             #if DOPARELLEL
