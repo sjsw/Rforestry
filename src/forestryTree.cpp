@@ -1137,7 +1137,8 @@ void forestryTree::getOOBPrediction(
     std::vector<double> &outputOOBPrediction,
     std::vector<size_t> &outputOOBCount,
     DataFrame* trainingData,
-    bool OOBhonest
+    bool OOBhonest,
+    size_t nodesizeStrictAvg
 ){
 
   std::vector<size_t> OOBIndex;
@@ -1181,7 +1182,11 @@ void forestryTree::getOOBPrediction(
     currentTreePrediction,
     currentTreeTerminalNodes,
     &xnew,
-    trainingData
+    trainingData,
+    NULL,
+    false,
+    44,
+    nodesizeStrictAvg
   );
 
   for (size_t i = 0; i < OOBIndex.size(); i++) {
@@ -1196,7 +1201,8 @@ void forestryTree::getShuffledOOBPrediction(
     std::vector<size_t> &outputOOBCount,
     DataFrame* trainingData,
     size_t shuffleFeature,
-    std::mt19937_64& random_number_generator
+    std::mt19937_64& random_number_generator,
+    size_t nodesizeStrictAvg
 ){
   // Gives OOB prediction with shuffleFeature premuted randomly
   // For use in determining variable importance
@@ -1236,7 +1242,11 @@ void forestryTree::getShuffledOOBPrediction(
       currentTreePrediction,
       currentTreeTerminalNodes,
       &OOBSampleObservation_,
-      trainingData
+      trainingData,
+      NULL,
+      false,
+      44,
+      nodesizeStrictAvg
     );
 
     // Update the global OOB vector

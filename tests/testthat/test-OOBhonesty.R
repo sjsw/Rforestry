@@ -37,7 +37,7 @@ test_that("Tests if OOB Honesty is working correctly", {
     nodesizeStrictSpl = 5,
     nthread = 2,
     splitrule = "variance",
-    nodesizeStrictAvg = 5,
+    nodesizeStrictAvg = 1,
     splitratio = .4,
     OOBhonest = TRUE
   ),"OOBhonest is set to true, so we will run OOBhonesty rather
