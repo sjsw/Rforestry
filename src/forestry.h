@@ -53,6 +53,10 @@ public:
     bool exact
   );
 
+  std::vector<double> predictOOB(
+    std::vector< std::vector<double> >* xNew
+  );
+
   void fillinTreeInfo(
       std::unique_ptr< std::vector< tree_info > > & forest_dta
   );

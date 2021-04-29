@@ -602,19 +602,40 @@ double rcpp_OBBPredictInterface(
 
 // [[Rcpp::export]]
 Rcpp::NumericVector rcpp_OBBPredictionsInterface(
-    SEXP forest
+    SEXP forest,
+    Rcpp::List x,
+    bool existing_df
 ){
+  // Then we predict with the feature.new data
+  if (existing_df) {
+    std::vector< std::vector<double> > featureData =
+      Rcpp::as< std::vector< std::vector<double> > >(x);
 
-  try {
-    Rcpp::XPtr< forestry > testFullForest(forest) ;
-    std::vector<double> OOBpreds = (*testFullForest).getOOBpreds();
-    Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
-    return wrapped_preds;
-  } catch(std::runtime_error const& err) {
-    forward_exception_to_r(err);
-  } catch(...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    try {
+      Rcpp::XPtr< forestry > testFullForest(forest) ;
+      std::vector<double> OOBpreds = (*testFullForest).predictOOB(&featureData);
+      Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
+      return wrapped_preds;
+    } catch(std::runtime_error const& err) {
+      forward_exception_to_r(err);
+    } catch(...) {
+      ::Rf_error("c++ exception (unknown reason)");
+    }
+
+  // Otherwise we predict with just the in sample data
+  } else {
+    try {
+      Rcpp::XPtr< forestry > testFullForest(forest) ;
+      std::vector<double> OOBpreds = (*testFullForest).getOOBpreds();
+      Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
+      return wrapped_preds;
+    } catch(std::runtime_error const& err) {
+      forward_exception_to_r(err);
+    } catch(...) {
+      ::Rf_error("c++ exception (unknown reason)");
+    }
   }
+
   return Rcpp::NumericVector::get_na() ;
 }
 

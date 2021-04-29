@@ -167,7 +167,8 @@ public:
     std::vector<size_t> &outputOOBCount,
     DataFrame* trainingData,
     bool OOBhonest,
-    size_t nodesizeStrictAvg
+    size_t nodesizeStrictAvg,
+    std::vector< std::vector<double> >* xNew
   );
 
   void getShuffledOOBPrediction(
