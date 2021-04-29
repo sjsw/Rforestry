@@ -425,13 +425,14 @@ setClass(
 #'   default value is 3.
 #' @param nodesizeStrictSpl Minimum observations to follow strictly in terminal
 #'   nodes. The default value is 1.
-#' @param nodesizeStrictAvg Minimum size of terminal nodes for averaging dataset
-#'   to follow strictly when predicting. In new version of honesty, where the
-#'   averaging dataset is not used in tree construction, a prediction for a new
-#'   observation is done by circulating the observation down each tree until it
-#'   reaches the final node with at least nodesizeStrictAvg averaging
-#'   observations. This node's set of averaging observations is then used to
-#'   predict for the new observation. The default value is 1.
+#' @param nodesizeStrictAvg Minimum size of terminal nodes for averaging data set
+#'   to follow strictly when predicting. As of version 0.9.0.8, this parameter
+#'   has been reverted to enforce overlap of the averaging data set while
+#'   training the forest rather than after training. This means that when using
+#'   either version of honesty, splits which leave less than nodesizeStrictAvg
+#'   averaging observations in either child node will be rejected, ensuring every
+#'   leaf node also has at least nodesizeStrictAvg averaging observations.
+#'   The default value is 1.
 #' @param minSplitGain Minimum loss reduction to split a node further in a tree.
 #' @param maxDepth Maximum depth of a tree. The default value is 99.
 #' @param interactionDepth All splits at or above interaction depth must be on variables
