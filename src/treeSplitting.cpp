@@ -556,6 +556,7 @@ void findBestSplitValueCategorical(
   std::set<double> all_categories;
   double splitTotalSum = 0;
   size_t splitTotalCount = 0;
+  size_t averageTotalCount = 0;
 
   //EDITED
   //Move indices to vectors so we can downsample if needed
@@ -599,8 +600,16 @@ void findBestSplitValueCategorical(
     splitTotalCount++;
   }
 
+  for (size_t j=0; j<averagingIndices.size(); j++) {
+    all_categories.insert(
+      (*trainingData).getPoint(averagingIndices[j], currentFeature)
+    );
+    averageTotalCount++;
+  }
+
   // Create map to track the count and sum of y squares
   std::map<double, size_t> splittingCategoryCount;
+  std::map<double, size_t> averagingCategoryCount;
   std::map<double, double> splittingCategoryYSum;
 
   for (
@@ -609,6 +618,7 @@ void findBestSplitValueCategorical(
       ++it
   ) {
     splittingCategoryCount[*it] = 0;
+    averagingCategoryCount[*it] = 0;
     splittingCategoryYSum[*it] = 0;
   }
 
@@ -619,6 +629,12 @@ void findBestSplitValueCategorical(
     getOutcomePoint((*splittingSampleIndex)[j]);
     splittingCategoryCount[currentXValue] += 1;
     splittingCategoryYSum[currentXValue] += currentYValue;
+  }
+
+  for (size_t j=0; j<(*averagingSampleIndex).size(); j++) {
+    double currentXValue = (*trainingData).
+    getPoint((*averagingSampleIndex)[j], currentFeature);
+    averagingCategoryCount[currentXValue] += 1;
   }
 
   // Go through the sums and determine the best partition
@@ -632,7 +648,11 @@ void findBestSplitValueCategorical(
         std::min(
           splittingCategoryCount[*it],
                                 splitTotalCount - splittingCategoryCount[*it]
-        ) < splitNodeSize
+        ) < splitNodeSize ||
+        std::min(
+          averagingCategoryCount[*it],
+                                averageTotalCount - averagingCategoryCount[*it]
+        ) < averageNodeSize
     ) {
       continue;
     }
@@ -954,6 +974,8 @@ void findBestSplitValueNonCategorical(
     );
   }
 
+
+
   for (size_t j=0; j<(*averagingSampleIndex).size(); j++){
     // Retrieve the current feature value
     double tmpFeatureValue = (*trainingData).
@@ -1007,24 +1029,30 @@ void findBestSplitValueNonCategorical(
   );
 
   size_t splitLeftPartitionCount = 0;
+  size_t averageLeftPartitionCount = 0;
   size_t splitTotalCount = splittingData.size();
+  size_t averageTotalCount = averagingData.size();
 
   double splitLeftPartitionRunningSum = 0;
 
   std::vector<dataPair>::iterator splittingDataIter = splittingData.begin();
+  std::vector<dataPair>::iterator averagingDataIter = averagingData.begin();
 
-  // Initialize the split value to be minimum of first value in two datsets
-  double featureValue = std::get<0>(*splittingDataIter);
-
+  // Initialize the split value to be minimum of first value in two datasets
+  double featureValue = std::min(
+    std::get<0>(*splittingDataIter),
+    std::get<0>(*averagingDataIter)
+  );
 
   double newFeatureValue;
   bool oneValueDistinctFlag = true;
 
   while (
-      splittingDataIter < splittingData.end()
+      splittingDataIter < splittingData.end() ||
+        averagingDataIter < averagingData.end()
   ){
 
-    // Exhaust all current feature value in both dataset as partitioning
+    // Exhaust all current feature value in both datasets as partitioning
     while (
         splittingDataIter < splittingData.end() &&
           std::get<0>(*splittingDataIter) == featureValue
@@ -1034,11 +1062,20 @@ void findBestSplitValueNonCategorical(
       splittingDataIter++;
     }
 
+    while (
+        averagingDataIter < averagingData.end() &&
+          std::get<0>(*averagingDataIter) == featureValue
+    ) {
+      averagingDataIter++;
+      averageLeftPartitionCount++;
+    }
+
     // Test if the all the values for the feature are the same, then proceed
     if (oneValueDistinctFlag) {
       oneValueDistinctFlag = false;
       if (
-          splittingDataIter == splittingData.end()
+          splittingDataIter == splittingData.end() &&
+            averagingDataIter == averagingData.end()
       ) {
         break;
       }
@@ -1050,12 +1087,19 @@ void findBestSplitValueNonCategorical(
     // array.
     // Get new feature value
     if (
-        splittingDataIter == splittingData.end()
+        splittingDataIter == splittingData.end() &&
+          averagingDataIter == averagingData.end()
     ) {
       break;
-    } else {
+    } else if (splittingDataIter == splittingData.end()) {
+      newFeatureValue = std::get<0>(*averagingDataIter);
+    } else if (averagingDataIter == averagingData.end()) {
       newFeatureValue = std::get<0>(*splittingDataIter);
-
+    } else {
+      newFeatureValue = std::min(
+        std::get<0>(*splittingDataIter),
+        std::get<0>(*averagingDataIter)
+      );
     }
 
     // Check leaf size at least nodesize
@@ -1063,7 +1107,11 @@ void findBestSplitValueNonCategorical(
         std::min(
           splitLeftPartitionCount,
           splitTotalCount - splitLeftPartitionCount
-        ) < splitNodeSize
+        ) < splitNodeSize ||
+          std::min(
+            averageLeftPartitionCount,
+            averageTotalCount - averageLeftPartitionCount
+          ) < averageNodeSize
     ) {
       // Update the oldFeature value before proceeding
       featureValue = newFeatureValue;
@@ -1177,7 +1225,7 @@ void findBestSplitImpute(
       missingSplit.push_back(
         std::make_tuple(
           (*splittingSampleIndex)[j],
-                                 tmpOutcomeValue
+          tmpOutcomeValue
         )
       );
     } else {
@@ -1204,7 +1252,7 @@ void findBestSplitImpute(
       missingAvg.push_back(
         std::make_tuple(
           (*averagingSampleIndex)[j],
-                                 tmpOutcomeValue
+          tmpOutcomeValue
         )
       );
     } else {
@@ -1219,7 +1267,7 @@ void findBestSplitImpute(
   }
 
   // return if we have no data
-  if( (splittingData.size() < 1) )
+  if ( (splittingData.size() < 1) || (averagingData.size() < 1) )
   {
     return;
   }
@@ -1229,15 +1277,20 @@ void findBestSplitImpute(
   if (maxObs < splittingData.size()) {
 
     std::vector<dataPair> newSplittingData;
+    std::vector<dataPair> newAveragingData;
 
     std::shuffle(splittingData.begin(), splittingData.end(),
+                 random_number_generator);
+    std::shuffle(averagingData.begin(), averagingData.end(),
                  random_number_generator);
 
     for (size_t q = 0; q < maxObs; q++) {
       newSplittingData.push_back(splittingData[q]);
+      newAveragingData.push_back(averagingData[q]);
     }
 
     std::swap(newSplittingData, splittingData);
+    std::swap(newAveragingData, averagingData);
   }
 
   // Sort both splitting and averaging dataset
@@ -1249,21 +1302,36 @@ void findBestSplitImpute(
     }
   );
 
+  sort(
+    averagingData.begin(),
+    averagingData.end(),
+    [](const dataPair &lhs, const dataPair &rhs) {
+      return std::get<0>(lhs) < std::get<0>(rhs);
+    }
+  );
+
   size_t splitLeftPartitionCount = 0;
+  size_t averageLeftPartitionCount = 0;
   size_t splitTotalCount = splittingData.size();
+  size_t averageTotalCount = averagingData.size();
 
   double splitLeftPartitionRunningSum = 0;
 
   std::vector<dataPair>::iterator splittingDataIter = splittingData.begin();
+  std::vector<dataPair>::iterator averagingDataIter = averagingData.begin();
 
   // Initialize the split value to be minimum of first value in two datsets
-  double featureValue = std::get<0>(*splittingDataIter);
+  double featureValue = std::min(
+    std::get<0>(*splittingDataIter),
+    std::get<0>(*averagingDataIter)
+  );
 
   double newFeatureValue;
   bool oneValueDistinctFlag = true;
 
   while (
-      splittingDataIter < splittingData.end()
+      splittingDataIter < splittingData.end() ||
+        averagingDataIter < averagingData.end()
   ) {
 
     // Exhaust all current feature value in both dataset as partitioning
@@ -1274,6 +1342,14 @@ void findBestSplitImpute(
       splitLeftPartitionCount++;
       splitLeftPartitionRunningSum += std::get<1>(*splittingDataIter);
       splittingDataIter++;
+    }
+
+    while (
+        averagingDataIter < averagingData.end() &&
+          std::get<0>(*averagingDataIter) == featureValue
+    ) {
+      averagingDataIter++;
+      averageLeftPartitionCount++;
     }
 
     // Test if the all the values for the feature are the same, then proceed
@@ -1292,11 +1368,19 @@ void findBestSplitImpute(
     // array.
     // Get new feature value
     if (
-        splittingDataIter == splittingData.end()
+        splittingDataIter == splittingData.end() &&
+          averagingDataIter == averagingData.end()
     ) {
       break;
-    } else {
+    } else if (splittingDataIter == splittingData.end()) {
+      newFeatureValue = std::get<0>(*averagingDataIter);
+    } else if (averagingDataIter == averagingData.end()) {
       newFeatureValue = std::get<0>(*splittingDataIter);
+    } else {
+      newFeatureValue = std::min(
+        std::get<0>(*splittingDataIter),
+        std::get<0>(*averagingDataIter)
+      );
     }
 
     // Check leaf size at least nodesize
@@ -1304,7 +1388,11 @@ void findBestSplitImpute(
         std::min(
           splitLeftPartitionCount,
           splitTotalCount - splitLeftPartitionCount
-        ) < splitNodeSize
+        ) < splitNodeSize ||
+          std::min(
+            averageLeftPartitionCount,
+            averageTotalCount - averageLeftPartitionCount
+          ) < averageNodeSize
     ) {
       // Update the oldFeature value before proceeding
       featureValue = newFeatureValue;
@@ -1338,7 +1426,6 @@ void findBestSplitImpute(
 
     // If split is satisfactory, take into account outcome values of NaN data
     // for making the split loss calculation
-
     double LeftPartitionNaSum = 0.0;
     size_t leftPartitionNaCount = 0;
     //double middleY = (leftPartitionMean + rightPartitionMean) / 2.0
@@ -1417,6 +1504,7 @@ void findBestSplitImputeCategorical(
   double splitTotalSum = 0;
   double naTotalSum = 0;
   size_t splitTotalCount = 0;
+  size_t averageTotalCount = 0;
   size_t totalNaCount = 0;
 
   typedef std::tuple<size_t, double> naPair;
@@ -1427,26 +1515,37 @@ void findBestSplitImputeCategorical(
   //EDITED
   //Move indices to vectors so we can downsample if needed
   std::vector<size_t> splittingIndices;
+  std::vector<size_t> averagingIndices;
 
   for (size_t y = 0; y < (*splittingSampleIndex).size(); y++) {
     splittingIndices.push_back((*splittingSampleIndex)[y]);
+  }
+
+  for (size_t y = 0; y < (*averagingSampleIndex).size(); y++) {
+    averagingIndices.push_back((*averagingSampleIndex)[y]);
   }
 
 
   //If maxObs is smaller, randomly downsample
   if (maxObs < (*splittingSampleIndex).size()) {
     std::vector<size_t> newSplittingIndices;
+    std::vector<size_t> newAveragingIndices;
 
     std::shuffle(splittingIndices.begin(), splittingIndices.end(),
+                 random_number_generator);
+    std::shuffle(averagingIndices.begin(), averagingIndices.end(),
                  random_number_generator);
 
     for (size_t q = 0; q < maxObs; q++) {
       newSplittingIndices.push_back(splittingIndices[q]);
+      newAveragingIndices.push_back(averagingIndices[q]);
     }
 
     std::swap(newSplittingIndices, splittingIndices);
+    std::swap(newAveragingIndices, averagingIndices);
   }
 
+  // Keep track of all categories and counts in both splitting and Avg datasets
   for (size_t j=0; j<splittingIndices.size(); j++) {
     all_categories.insert(
       (*trainingData).getPoint(splittingIndices[j], currentFeature)
@@ -1455,10 +1554,17 @@ void findBestSplitImputeCategorical(
       (*trainingData).getOutcomePoint(splittingIndices[j]);
     splitTotalCount++;
   }
+  for (size_t j=0; j<averagingIndices.size(); j++) {
+    all_categories.insert(
+      (*trainingData).getPoint(averagingIndices[j], currentFeature)
+    );
+    averageTotalCount++;
+  }
 
 
   // Create map to track the count and sum of y squares
   std::map<double, size_t> splittingCategoryCount;
+  std::map<double, size_t> averagingCategoryCount;
   std::map<double, double> splittingCategoryYSum;
 
   for (
@@ -1467,6 +1573,7 @@ void findBestSplitImputeCategorical(
       ++it
   ) {
     splittingCategoryCount[*it] = 0;
+    averagingCategoryCount[*it] = 0;
     splittingCategoryYSum[*it] = 0;
   }
 
@@ -1492,6 +1599,15 @@ void findBestSplitImputeCategorical(
     }
   }
 
+  for (size_t j=0; j<(*averagingSampleIndex).size(); j++) {
+    double currentXValue = (*trainingData).
+    getPoint((*averagingSampleIndex)[j], currentFeature);
+
+    if (!std::isnan(currentXValue)) {
+      averagingCategoryCount[currentXValue] += 1;
+    }
+  }
+
   // Go through the sums and determine the best partition
   for (
       std::set<double>::iterator it=all_categories.begin();
@@ -1503,7 +1619,11 @@ void findBestSplitImputeCategorical(
         std::min(
           splittingCategoryCount[*it],
                                 splitTotalCount - splittingCategoryCount[*it]
-        ) < splitNodeSize
+        ) < splitNodeSize ||
+          std::min(
+            averagingCategoryCount[*it],
+                                  averageTotalCount - averagingCategoryCount[*it]
+          ) < averageNodeSize
     ) {
       continue;
     }
