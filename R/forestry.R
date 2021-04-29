@@ -425,13 +425,14 @@ setClass(
 #'   default value is 3.
 #' @param nodesizeStrictSpl Minimum observations to follow strictly in terminal
 #'   nodes. The default value is 1.
-#' @param nodesizeStrictAvg Minimum size of terminal nodes for averaging dataset
-#'   to follow strictly when predicting. In new version of honesty, where the
-#'   averaging dataset is not used in tree construction, a prediction for a new
-#'   observation is done by circulating the observation down each tree until it
-#'   reaches the final node with at least nodesizeStrictAvg averaging
-#'   observations. This node's set of averaging observations is then used to
-#'   predict for the new observation. The default value is 1.
+#' @param nodesizeStrictAvg Minimum size of terminal nodes for averaging data set
+#'   to follow strictly when predicting. As of version 0.9.0.8, this parameter
+#'   has been reverted to enforce overlap of the averaging data set while
+#'   training the forest rather than after training. This means that when using
+#'   either version of honesty, splits which leave less than nodesizeStrictAvg
+#'   averaging observations in either child node will be rejected, ensuring every
+#'   leaf node also has at least nodesizeStrictAvg averaging observations.
+#'   The default value is 1.
 #' @param minSplitGain Minimum loss reduction to split a node further in a tree.
 #' @param maxDepth Maximum depth of a tree. The default value is 99.
 #' @param interactionDepth All splits at or above interaction depth must be on variables
@@ -1456,6 +1457,10 @@ getOOB <- function(object,
 #' @description Calculate the out-of-bag predictions of a given forest.
 #' @param object A trained model object of class "forestry".
 #' @param noWarning Flag to not display warnings.
+#' @param feature.new A possible new data frame on which to run out of bag
+#'  predictions. If this is not NULL, we assume that the indices of
+#'  feature.new are the same as the indices of the training set, and will use
+#'  these to find which trees the observation is considered in/out of bag for.
 #' @return The vector of all training observations, with their out of bag
 #'  predictions. Note each observation is out of bag for different trees, and so
 #'  the predictions will be more or less stable based on the observation. Some
@@ -1464,7 +1469,8 @@ getOOB <- function(object,
 #' @seealso \code{\link{forestry}}
 #' @export
 getOOBpreds <- function(object,
-                        noWarning) {
+                        noWarning,
+                        feature.new = NULL) {
 
   if (!object@replace &&
       object@ntree * (rcpp_getObservationSizeInterface(object@dataframe) -
@@ -1478,8 +1484,33 @@ getOOBpreds <- function(object,
     return(NA)
   }
 
+
+  if (!is.null(feature.new) && (object@sampsize != nrow(feature.new))) {
+    warning(paste(
+      "Attempting to do OOB predictions on a dataset which doesn't match the",
+      "training data!"
+    ))
+    return(NA)
+  }
+
+  if (!is.null(feature.new)) {
+    feature.new <- testing_data_checker(object, feature.new, object@hasNas)
+    feature.new <- as.data.frame(feature.new)
+
+    processed_x <- preprocess_testing(feature.new,
+                                      object@categoricalFeatureCols,
+                                      object@categoricalFeatureMapping)
+
+    existing_df = TRUE
+  } else {
+    existing_df = FALSE
+    processed_x = NULL
+  }
+
   rcppOOBpreds <- tryCatch({
-    return(rcpp_OBBPredictionsInterface(object@forest))
+    return(rcpp_OBBPredictionsInterface(object@forest,
+                                        processed_x,
+                                        existing_df))
   }, error = function(err) {
     print(err)
     return(NA)

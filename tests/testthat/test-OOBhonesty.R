@@ -43,8 +43,9 @@ test_that("Tests if OOB Honesty is working correctly", {
   ),"OOBhonest is set to true, so we will run OOBhonesty rather
             than standard honesty"
   )
+
   skip_if_not_mac()
-  expect_equal(getOOBpreds(forest)[1:3], c(5.050230, 4.704259, 4.710998), tolerance = 1e-6)
+  expect_equal(getOOBpreds(forest)[1:3], c(5.048432, 4.698436, 4.698634), tolerance = 1e-3)
 
 
   context('Test OOB Honesty vs honest OOB set')

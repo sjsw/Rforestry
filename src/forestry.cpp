@@ -631,6 +631,103 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   return prediction_;
 }
 
+
+std::vector<double> forestry::predictOOB(
+    std::vector< std::vector<double> >* xNew
+) {
+
+  size_t numObservations = getTrainingData()->getNumRows();
+  std::vector<double> outputOOBPrediction(numObservations);
+  std::vector<size_t> outputOOBCount(numObservations);
+
+  for (size_t i=0; i<numObservations; i++) {
+    outputOOBPrediction[i] = 0;
+    outputOOBCount[i] = 0;
+  }
+
+    #if DOPARELLEL
+      size_t nthreadToUse = getNthread();
+      if (nthreadToUse == 0) {
+        // Use all threads
+        nthreadToUse = std::thread::hardware_concurrency();
+      }
+      if (isVerbose()) {
+        RcppThread::Rcout << "Calculating OOB parallel using " << nthreadToUse << " threads"
+                          << std::endl;
+      }
+      std::vector<std::thread> allThreads(nthreadToUse);
+      std::mutex threadLock;
+
+      // For each thread, assign a sequence of tree numbers that the thread
+      // is responsible for handling
+      for (size_t t = 0; t < nthreadToUse; t++) {
+        auto dummyThread = std::bind(
+          [&](const int iStart, const int iEnd, const int t_) {
+            // loop over all items
+            for (int i=iStart; i < iEnd; i++) {
+    #else
+              // For non-parallel version, just simply iterate all trees serially
+              for(int i=0; i<((int) getNtree()); i++ ) {
+    #endif
+                try {
+                  std::vector<double> outputOOBPrediction_iteration(numObservations);
+                  std::vector<size_t> outputOOBCount_iteration(numObservations);
+                  for (size_t j=0; j<numObservations; j++) {
+                    outputOOBPrediction_iteration[j] = 0;
+                    outputOOBCount_iteration[j] = 0;
+                  }
+                  forestryTree *currentTree = (*getForest())[i].get();
+                  (*currentTree).getOOBPrediction(
+                      outputOOBPrediction_iteration,
+                      outputOOBCount_iteration,
+                      getTrainingData(),
+                      getOOBhonest(),
+                      getMinNodeSizeToSplitAvg(),
+                      xNew
+                  );
+    #if DOPARELLEL
+                  std::lock_guard<std::mutex> lock(threadLock);
+    #endif
+                  for (size_t j=0; j < numObservations; j++) {
+                    outputOOBPrediction[j] += outputOOBPrediction_iteration[j];
+                    outputOOBCount[j] += outputOOBCount_iteration[j];
+                  }
+                } catch (std::runtime_error &err) {
+                  // Rcpp::Rcerr << err.what() << std::endl;
+                }
+              }
+    #if DOPARELLEL
+            },
+            t * getNtree() / nthreadToUse,
+            (t + 1) == nthreadToUse ?
+            getNtree() :
+              (t + 1) * getNtree() / nthreadToUse,
+              t
+        );
+        allThreads[t] = std::thread(dummyThread);
+          }
+          std::for_each(
+            allThreads.begin(),
+            allThreads.end(),
+            [](std::thread& x) { x.join(); }
+          );
+    #endif
+
+  double OOB_MSE = 0;
+  for (size_t j=0; j<numObservations; j++){
+    double trueValue = getTrainingData()->getOutcomePoint(j);
+    if (outputOOBCount[j] != 0) {
+      OOB_MSE +=
+        pow(trueValue - outputOOBPrediction[j] / outputOOBCount[j], 2);
+      outputOOBPrediction[j] = outputOOBPrediction[j] / outputOOBCount[j];
+    } else {
+      outputOOBPrediction[j] = std::numeric_limits<double>::quiet_NaN();
+    }
+  }
+  return outputOOBPrediction;
+}
+
+
 void forestry::calculateVariableImportance() {
   // For all variables, shuffle + get OOB Error, record in
 
@@ -793,7 +890,8 @@ void forestry::calculateOOBError() {
               outputOOBCount_iteration,
               getTrainingData(),
               getOOBhonest(),
-              getMinNodeSizeToSplitAvg()
+              getMinNodeSizeToSplitAvg(),
+              nullptr
             );
 
             #if DOPARELLEL

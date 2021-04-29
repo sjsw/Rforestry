@@ -1138,7 +1138,8 @@ void forestryTree::getOOBPrediction(
     std::vector<size_t> &outputOOBCount,
     DataFrame* trainingData,
     bool OOBhonest,
-    size_t nodesizeStrictAvg
+    size_t nodesizeStrictAvg,
+    std::vector< std::vector<double> >* xNew
 ){
 
   std::vector<size_t> OOBIndex;
@@ -1158,7 +1159,13 @@ void forestryTree::getOOBPrediction(
 
   // Holds observations from training data corresponding to the OOB observations
   // for this tree.
-  std::vector< std::vector<double> >* OOBSampleObservations_ = trainingData->getAllFeatureData();
+  std::vector< std::vector<double> >* OOBSampleObservations_;
+
+  if (xNew == nullptr) {
+    OOBSampleObservations_ = trainingData->getAllFeatureData();
+  } else {
+    OOBSampleObservations_ = xNew;
+  }
 
   std::vector<double> currentTreePrediction(OOBIndex.size());
   std::vector<int>* currentTreeTerminalNodes = nullptr;

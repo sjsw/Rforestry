@@ -31,7 +31,7 @@ test_that("Test if nodesizeStrictSpl is working correctly", {
   expect_gt(length(which(p$weightMatrix != 0 )), 4)
 
   skip_if_not_mac()
-  expect_equal(length(which(p$weightMatrix != 0 )), 5)
+  expect_equal(length(which(p$weightMatrix != 0 )), 9)
 
 
   context("Test a greater number of required averaging observations")
@@ -60,7 +60,7 @@ test_that("Test if nodesizeStrictSpl is working correctly", {
   expect_gt(length(which(p$weightMatrix != 0 )), 10)
 
   skip_if_not_mac()
-  expect_equal(length(which(p$weightMatrix != 0 )), 14)
+  expect_equal(length(which(p$weightMatrix != 0 )), 20)
 
   context("Test the same without OOB honesty")
   forest <- forestry(
@@ -88,6 +88,6 @@ test_that("Test if nodesizeStrictSpl is working correctly", {
   expect_gt(length(which(p$weightMatrix != 0 )), 10)
 
   skip_if_not_mac()
-  expect_equal(length(which(p$weightMatrix != 0 )), 13)
+  expect_equal(length(which(p$weightMatrix != 0 )), 11)
 
 })
