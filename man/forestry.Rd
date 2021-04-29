@@ -84,7 +84,7 @@ predict for the new observation. The default value is 1.}
 
 \item{minSplitGain}{Minimum loss reduction to split a node further in a tree.}
 
-\item{maxDepth}{Maximum depth of a tree. The default value is 99.}
+\item{maxDepth}{Maximum depth of a tree.}
 
 \item{interactionDepth}{All splits at or above interaction depth must be on variables
 that are not weighting variables (as provided by the interactionVariables argument)}
