@@ -41,3 +41,9 @@ int add_vector(
   }
   return sum;
 }
+
+double square(
+  double x
+) {
+  return (x*x);
+}

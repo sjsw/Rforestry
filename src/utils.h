@@ -22,6 +22,10 @@ int add_vector(
     std::vector<int>* v
 );
 
+double square(
+    double x
+);
+
 
 struct tree_info {
   std::vector< int > var_id;
