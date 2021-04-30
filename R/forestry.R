@@ -2027,7 +2027,7 @@ make_savable <- function(object) {
 {
   Lib <- dirname(system.file(package = "Rforestry"))
   version <- utils::packageDescription("Rforestry", lib.loc = Lib)$Version
-  BuildDate <- utils::packageDescription("Rforestry", lib.loc = Lib)$Date
+  BuildDate <- utils::packageDescription("Rforestry", lib.loc = Lib)$Built
 
   message <- paste("## \n##  Rforestry (Version ", version, ", Build Date: ", BuildDate, ")\n",
                    "##  See https://github.com/forestry-labs for additional documentation.\n",
