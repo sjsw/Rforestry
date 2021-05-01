@@ -5,17 +5,17 @@
 \alias{getOOBpreds}
 \title{getOOBpreds-forestry}
 \usage{
-getOOBpreds(object, noWarning, feature.new = NULL)
+getOOBpreds(object, feature.new = NULL, noWarning = FALSE)
 }
 \arguments{
 \item{object}{A trained model object of class "forestry".}
-
-\item{noWarning}{Flag to not display warnings.}
 
 \item{feature.new}{A possible new data frame on which to run out of bag
 predictions. If this is not NULL, we assume that the indices of
 feature.new are the same as the indices of the training set, and will use
 these to find which trees the observation is considered in/out of bag for.}
+
+\item{noWarning}{Flag to not display warnings.}
 }
 \value{
 The vector of all training observations, with their out of bag

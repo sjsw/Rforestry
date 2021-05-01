@@ -453,10 +453,16 @@ setClass(
 #'   usage however since there will be no data available for splitting).
 #' @param OOBhonest This is an experimental method of enforcing honesty. In this
 #'   version of honesty, the out-of-bag examples for each tree are used as the
-#'   honest set. Then for out of sample predictions, predictions are done with
-#'   every tree in the forest, and for in sample predictions, only the trees
-#'   which didn't use an observation in the averaging set (technically the in bag)
-#'   are used to predict for that example.
+#'   honest (averaging) set. This setting also changes how predictions are done
+#'   for new examples. When predicting for observations which are out of sample
+#'   (using Predict), all the trees in the forest are used to predict for the
+#'   observation. When predicting for an observation which was in sample (using
+#'   getOOBpreds), only the trees for which the observation was not in the averaging
+#'   set (the set of trees for which the observation was in the splitting set) are
+#'   used to make the prediction for the observation. This ensures that the
+#'   outcome value for an observation is never used to predict for that observation
+#'   even when it is in sample, a feature not shared by the standard honesty
+#'   implementation.
 #' @param seed random seed
 #' @param verbose if training process in verbose mode
 #' @param nthread Number of threads to train and predict the forest. The default
@@ -1456,11 +1462,11 @@ getOOB <- function(object,
 #' @rdname getOOBpreds-forestry
 #' @description Calculate the out-of-bag predictions of a given forest.
 #' @param object A trained model object of class "forestry".
-#' @param noWarning Flag to not display warnings.
 #' @param feature.new A possible new data frame on which to run out of bag
 #'  predictions. If this is not NULL, we assume that the indices of
 #'  feature.new are the same as the indices of the training set, and will use
 #'  these to find which trees the observation is considered in/out of bag for.
+#' @param noWarning Flag to not display warnings.
 #' @return The vector of all training observations, with their out of bag
 #'  predictions. Note each observation is out of bag for different trees, and so
 #'  the predictions will be more or less stable based on the observation. Some
@@ -1469,8 +1475,8 @@ getOOB <- function(object,
 #' @seealso \code{\link{forestry}}
 #' @export
 getOOBpreds <- function(object,
-                        noWarning,
-                        feature.new = NULL) {
+                        feature.new = NULL,
+                        noWarning = FALSE) {
 
   if (!object@replace &&
       object@ntree * (rcpp_getObservationSizeInterface(object@dataframe) -
