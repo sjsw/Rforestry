@@ -86,10 +86,16 @@ usage however since there will be no data available for splitting).}
 
 \item{OOBhonest}{This is an experimental method of enforcing honesty. In this
 version of honesty, the out-of-bag examples for each tree are used as the
-honest set. Then for out of sample predictions, predictions are done with
-every tree in the forest, and for in sample predictions, only the trees
-which didn't use an observation in the averaging set (technically the in bag)
-are used to predict for that example.}
+honest (averaging) set. This setting also changes how predictions are done
+for new examples. When predicting for observations which are out of sample
+(using Predict), all the trees in the forest are used to predict for the
+observation. When predicting for an observation which was in sample (using
+getOOBpreds), only the trees for which the observation was not in the averaging
+set (the set of trees for which the observation was in the splitting set) are
+used to make the prediction for the observation. This ensures that the
+outcome value for an observation is never used to predict for that observation
+even when it is in sample, a feature not shared by the standard honesty
+implementation.}
 
 \item{nthread}{Number of threads to train and predict the forest. The default
 number is 0 which represents using all cores.}

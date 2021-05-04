@@ -348,6 +348,7 @@ setClass(
     linear = "logical",
     linFeats = "numeric",
     monotonicConstraints = "numeric",
+    monotoneAvg = "logical",
     featureWeights = "numeric",
     featureWeightsVariables = "numeric",
     deepFeatureWeights = "numeric",
@@ -389,6 +390,7 @@ setClass(
     linear = "logical",
     linFeats = "numeric",
     monotonicConstraints = "numeric",
+    monotoneAvg = "logical",
     featureWeights = "numeric",
     featureWeightsVariables = "numeric",
     deepFeatureWeights = "numeric",
@@ -453,10 +455,16 @@ setClass(
 #'   usage however since there will be no data available for splitting).
 #' @param OOBhonest This is an experimental method of enforcing honesty. In this
 #'   version of honesty, the out-of-bag examples for each tree are used as the
-#'   honest set. Then for out of sample predictions, predictions are done with
-#'   every tree in the forest, and for in sample predictions, only the trees
-#'   which didn't use an observation in the averaging set (technically the in bag)
-#'   are used to predict for that example.
+#'   honest (averaging) set. This setting also changes how predictions are done
+#'   for new examples. When predicting for observations which are out of sample
+#'   (using Predict), all the trees in the forest are used to predict for the
+#'   observation. When predicting for an observation which was in sample (using
+#'   getOOBpreds), only the trees for which the observation was not in the averaging
+#'   set (the set of trees for which the observation was in the splitting set) are
+#'   used to make the prediction for the observation. This ensures that the
+#'   outcome value for an observation is never used to predict for that observation
+#'   even when it is in sample, a feature not shared by the standard honesty
+#'   implementation.
 #' @param seed random seed
 #' @param verbose if training process in verbose mode
 #' @param nthread Number of threads to train and predict the forest. The default
@@ -487,6 +495,10 @@ setClass(
 #'   entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
 #'   -1 indicating a decreasing monotonic relationship, and 0 indicating no
 #'   relationship. Constraints supplied for categorical will be ignored.
+#' @param monotoneAvg This is a boolean flag which indicates whether or not
+#'   monotonicity should be enforced on the averaging set in addition to the
+#'   splitting set. This flag is meaningless unless both honesty and monotonic
+#'   constraints are in use. The default is FALSE.
 #' @param overfitPenalty Value to determine how much to penalize magnitude of
 #' coefficients in ridge regression
 #' @return A `forestry` object.
@@ -597,6 +609,7 @@ forestry <- function(x,
                      linear = FALSE,
                      linFeats = 0:(ncol(x)-1),
                      monotonicConstraints = rep(0, ncol(x)),
+                     monotoneAvg = FALSE,
                      overfitPenalty = 1,
                      doubleTree = FALSE,
                      reuseforestry = NULL,
@@ -711,7 +724,8 @@ forestry <- function(x,
         deepFeatureWeights =  deepFeatureWeights,
         deepFeatureWeightsVariables = deepFeatureWeightsVariables,
         observationWeights = observationWeights,
-        monotonicConstraints = monotonicConstraints
+        monotonicConstraints = monotonicConstraints,
+        monotoneAvg = monotoneAvg
       )
 
       rcppForest <- rcpp_cppBuildInterface(
@@ -745,6 +759,7 @@ forestry <- function(x,
         deepFeatureWeightsVariables,
         observationWeights,
         monotonicConstraints,
+        monotoneAvg,
         hasNas,
         linear,
         overfitPenalty,
@@ -796,6 +811,7 @@ forestry <- function(x,
           linear = linear,
           linFeats = linFeats,
           monotonicConstraints = monotonicConstraints,
+          monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree
         )
@@ -855,6 +871,7 @@ forestry <- function(x,
         deepFeatureWeightsVariables = deepFeatureWeightsVariables,
         observationWeights,
         monotonicConstraints,
+        monotoneAvg,
         hasNas,
         linear,
         overfitPenalty,
@@ -894,6 +911,7 @@ forestry <- function(x,
           linear = linear,
           linFeats = linFeats,
           monotonicConstraints = monotonicConstraints,
+          monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree
         )
@@ -946,6 +964,7 @@ multilayerForestry <- function(x,
                      linear = FALSE,
                      linFeats = 0:(ncol(x)-1),
                      monotonicConstraints = rep(0, ncol(x)),
+                     monotoneAvg = FALSE,
                      featureWeights = rep(1, ncol(x)),
                      deepFeatureWeights = featureWeights,
                      observationWeights = NULL,
@@ -1060,7 +1079,8 @@ multilayerForestry <- function(x,
         deepFeatureWeights =  deepFeatureWeights,
         deepFeatureWeightsVariables = deepFeatureWeightsVariables,
         observationWeights = observationWeights,
-        monotonicConstraints = monotonicConstraints
+        monotonicConstraints = monotonicConstraints,
+        monotoneAvg = monotoneAvg
       )
 
       rcppForest <- rcpp_cppMultilayerBuildInterface(
@@ -1145,6 +1165,7 @@ multilayerForestry <- function(x,
           deepFeatureWeightsVariables = deepFeatureWeightsVariables,
           observationWeights = observationWeights,
           monotonicConstraints = monotonicConstraints,
+          monotoneAvg = monotoneAvg,
           linear = linear,
           linFeats = linFeats,
           overfitPenalty = overfitPenalty,
@@ -1239,6 +1260,7 @@ multilayerForestry <- function(x,
           linear = linear,
           linFeats = linFeats,
           monotonicConstraints = monotonicConstraints,
+          monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree,
           gammas = reuseforestry@gammas
@@ -1370,12 +1392,12 @@ predict.forestry <- function(object,
 #' @return A vector of predicted responses.
 #' @export
 predict.multilayerForestry <- function(object,
-                             feature.new,
-                             aggregation = "average",
-                             seed = as.integer(runif(1) * 10000),
-                             nthread = 0,
-                             exact = NULL,
-                             ...) {
+                                       feature.new,
+                                       aggregation = "average",
+                                       seed = as.integer(runif(1) * 10000),
+                                       nthread = 0,
+                                       exact = NULL,
+                                       ...) {
     forest_checker(object)
 
     if (is.null(exact)) {
@@ -1456,11 +1478,11 @@ getOOB <- function(object,
 #' @rdname getOOBpreds-forestry
 #' @description Calculate the out-of-bag predictions of a given forest.
 #' @param object A trained model object of class "forestry".
-#' @param noWarning Flag to not display warnings.
 #' @param feature.new A possible new data frame on which to run out of bag
 #'  predictions. If this is not NULL, we assume that the indices of
 #'  feature.new are the same as the indices of the training set, and will use
 #'  these to find which trees the observation is considered in/out of bag for.
+#' @param noWarning Flag to not display warnings.
 #' @return The vector of all training observations, with their out of bag
 #'  predictions. Note each observation is out of bag for different trees, and so
 #'  the predictions will be more or less stable based on the observation. Some
@@ -1469,8 +1491,8 @@ getOOB <- function(object,
 #' @seealso \code{\link{forestry}}
 #' @export
 getOOBpreds <- function(object,
-                        noWarning,
-                        feature.new = NULL) {
+                        feature.new = NULL,
+                        noWarning = FALSE) {
 
   if (!object@replace &&
       object@ntree * (rcpp_getObservationSizeInterface(object@dataframe) -
@@ -1903,6 +1925,7 @@ relinkCPP_prt <- function(object) {
           deepFeatureWeightsVariables = object@deepFeatureWeightsVariables,
           observationWeights = object@observationWeights,
           monotonicConstraints = object@monotonicConstraints,
+          monotoneAvg = object@monotoneAvg,
           linear = object@linear,
           overfitPenalty = object@overfitPenalty,
           doubleTree = object@doubleTree)
@@ -1949,6 +1972,7 @@ relinkCPP_prt <- function(object) {
           deepFeatureWeightsVariables = object@deepFeatureWeightsVariables,
           observationWeights = object@observationWeights,
           monotonicConstraints = object@monotonicConstraints,
+          monotoneAvg = object@monotoneAvg,
           gammas = object@gammas,
           linear = object@linear,
           overfitPenalty = object@overfitPenalty,
@@ -2027,7 +2051,7 @@ make_savable <- function(object) {
 {
   Lib <- dirname(system.file(package = "Rforestry"))
   version <- utils::packageDescription("Rforestry", lib.loc = Lib)$Version
-  BuildDate <- utils::packageDescription("Rforestry", lib.loc = Lib)$Date
+  BuildDate <- utils::packageDescription("Rforestry", lib.loc = Lib)$Built
 
   message <- paste("## \n##  Rforestry (Version ", version, ", Build Date: ", BuildDate, ")\n",
                    "##  See https://github.com/forestry-labs for additional documentation.\n",

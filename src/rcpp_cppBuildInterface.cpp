@@ -40,7 +40,8 @@ SEXP rcpp_cppDataFrameInterface(
     Rcpp::NumericVector deepFeatureWeights,
     Rcpp::NumericVector deepFeatureWeightsVariables,
     Rcpp::NumericVector observationWeights,
-    Rcpp::NumericVector monotonicConstraints
+    Rcpp::NumericVector monotonicConstraints,
+    bool monotoneAvg
 ){
 
   try {
@@ -119,7 +120,8 @@ SEXP rcpp_cppDataFrameInterface(
         std::move(deepFeatureWeightsRcpp),
         std::move(deepFeatureWeightsVariablesRcpp),
         std::move(observationWeightsRcpp),
-        std::move(monotonicConstraintsRcpp)
+        std::move(monotonicConstraintsRcpp),
+        (bool) monotoneAvg
     );
 
     Rcpp::XPtr<DataFrame> ptr(trainingData, true) ;
@@ -166,6 +168,7 @@ SEXP rcpp_cppBuildInterface(
   Rcpp::NumericVector deepFeatureWeightsVariables,
   Rcpp::NumericVector observationWeights,
   Rcpp::NumericVector monotonicConstraints,
+  bool monotoneAvg,
   bool hasNas,
   bool linear,
   double overfitPenalty,
@@ -297,7 +300,8 @@ SEXP rcpp_cppBuildInterface(
           std::move(deepFeatureWeightsRcpp),
           std::move(deepFeatureWeightsVariablesRcpp),
           std::move(observationWeightsRcpp),
-          std::move(monotoneConstraintsRcpp)
+          std::move(monotoneConstraintsRcpp),
+          (bool) monotoneAvg
       );
 
       forestry* testFullForest = new forestry(
@@ -961,6 +965,7 @@ Rcpp::List rcpp_reconstructree(
   Rcpp::NumericVector deepFeatureWeightsVariables,
   Rcpp::NumericVector observationWeights,
   Rcpp::NumericVector monotonicConstraints,
+  bool monotoneAvg,
   bool hasNas,
   bool linear,
   double overfitPenalty,
@@ -1111,7 +1116,8 @@ Rcpp::List rcpp_reconstructree(
     std::move(deepFeatureWeightsRcpp),
     std::move(deepFeatureWeightsVariablesRcpp),
     std::move(observationWeightsRcpp),
-    std::move(monotonicConstraintsRcpp)
+    std::move(monotonicConstraintsRcpp),
+    (bool) monotoneAvg
   );
 
   forestry* testFullForest = new forestry(
@@ -1198,6 +1204,7 @@ Rcpp::List rcpp_reconstruct_forests(
     Rcpp::NumericVector observationWeights,
     Rcpp::NumericVector monotonicConstraints,
     Rcpp::NumericVector gammas,
+    bool monotoneAvg,
     bool linear,
     double overfitPenalty,
     bool doubleTree
@@ -1389,7 +1396,8 @@ Rcpp::List rcpp_reconstruct_forests(
       std::move(deepFeatureWeightsRcpp),
       std::move(deepFeatureWeightsVariablesRcpp),
       std::move(observationWeightsRcpp),
-      std::move(monotonicConstraintsRcpp)
+      std::move(monotonicConstraintsRcpp),
+      (bool) monotoneAvg
     );
 
     // std::cout << "Making a forest \n";
@@ -1516,7 +1524,8 @@ Rcpp::List rcpp_reconstruct_forests(
     std::move(deepFeatureWeightsRcpp),
     std::move(deepFeatureWeightsVariablesRcpp),
     std::move(observationWeightsRcpp),
-    std::move(monotonicConstraintsRcpp)
+    std::move(monotonicConstraintsRcpp),
+    (bool) monotoneAvg
   );
 
 

@@ -173,6 +173,7 @@ forestryTree::forestryTree(
     monotonic_details.monotonic_constraints = (*trainingData->getMonotonicConstraints());
     monotonic_details.upper_bound = std::numeric_limits<float>::max();
     monotonic_details.lower_bound = -std::numeric_limits<float>::max();
+    monotonic_details.monotoneAvg = trainingData->getMonotoneAvg();
   }
 
   /* Recursively grow the tree */
@@ -348,7 +349,7 @@ void splitDataIntoTwoParts(
     double rightMean = trainingData->partitionMean(rightPartitionIndex);
 
     for (const auto& index : naIndices) {
-      if (std::abs(trainingData->getOutcomePoint(index) - leftMean) < std::abs(trainingData->getOutcomePoint(index) - rightMean)) {
+      if (square(trainingData->getOutcomePoint(index) - leftMean) < square(trainingData->getOutcomePoint(index) - rightMean)) {
         leftPartitionIndex->push_back(index);
         naLeftCount++;
       } else {
@@ -720,6 +721,10 @@ void forestryTree::recursivePartition(
       int monotone_direction = monotone_details.monotonic_constraints[bestSplitFeature];
       monotonic_details_left.monotonic_constraints = (*trainingData->getMonotonicConstraints());
       monotonic_details_right.monotonic_constraints = (*trainingData->getMonotonicConstraints());
+
+      // Also need to pass down the monotone Average Flag
+      monotonic_details_left.monotoneAvg = monotone_details.monotoneAvg;
+      monotonic_details_right.monotoneAvg = monotone_details.monotoneAvg;
 
       float leftNodeMean = calculateMonotonicBound(trainingData->partitionMean(&splittingLeftPartitionIndex), monotone_details);
       float rightNodeMean = calculateMonotonicBound(trainingData->partitionMean(&splittingRightPartitionIndex), monotone_details);

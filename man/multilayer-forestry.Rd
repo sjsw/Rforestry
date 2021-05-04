@@ -32,6 +32,7 @@ multilayerForestry(
   linear = FALSE,
   linFeats = 0:(ncol(x) - 1),
   monotonicConstraints = rep(0, ncol(x)),
+  monotoneAvg = FALSE,
   featureWeights = rep(1, ncol(x)),
   deepFeatureWeights = featureWeights,
   observationWeights = NULL,
@@ -101,10 +102,16 @@ usage however since there will be no data available for splitting).}
 
 \item{OOBhonest}{This is an experimental method of enforcing honesty. In this
 version of honesty, the out-of-bag examples for each tree are used as the
-honest set. Then for out of sample predictions, predictions are done with
-every tree in the forest, and for in sample predictions, only the trees
-which didn't use an observation in the averaging set (technically the in bag)
-are used to predict for that example.}
+honest (averaging) set. This setting also changes how predictions are done
+for new examples. When predicting for observations which are out of sample
+(using Predict), all the trees in the forest are used to predict for the
+observation. When predicting for an observation which was in sample (using
+getOOBpreds), only the trees for which the observation was not in the averaging
+set (the set of trees for which the observation was in the splitting set) are
+used to make the prediction for the observation. This ensures that the
+outcome value for an observation is never used to predict for that observation
+even when it is in sample, a feature not shared by the standard honesty
+implementation.}
 
 \item{seed}{random seed}
 
@@ -133,6 +140,11 @@ continuous features and the outcome. Supplied as a vector of length p with
 entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
 -1 indicating a decreasing monotonic relationship, and 0 indicating no
 relationship. Constraints supplied for categorical will be ignored.}
+
+\item{monotoneAvg}{This is a boolean flag which indicates whether or not
+monotonicity should be enforced on the averaging set in addition to the
+splitting set. This flag is meaningless unless both honesty and monotonic
+constraints are in use. The default is FALSE.}
 
 \item{featureWeights}{weights used when subsampling features for nodes above or at interactionDepth.}
 
