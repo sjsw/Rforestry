@@ -63,6 +63,10 @@ struct monotonic_info {
   // bounds.
   float upper_bound;
   float lower_bound;
+
+  // This flag indicates whether or not to enforce monotonicity on the averaging
+  // set as well as the splitting set
+  bool monotoneAvg;
 };
 
 #endif //FORESTRYCPP_UTILS_H

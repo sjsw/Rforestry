@@ -25,7 +25,8 @@ public:
     std::unique_ptr< std::vector<double> > deepFeatureWeights,
     std::unique_ptr< std::vector<size_t> > deepFeatureWeightsVariables,
     std::unique_ptr< std::vector<double> > observationWeights,
-    std::shared_ptr< std::vector<int> > monotonicConstraints
+    std::shared_ptr< std::vector<int> > monotonicConstraints,
+    bool monotoneAvg
   );
 
   double getPoint(size_t rowIndex, size_t colIndex);
@@ -95,6 +96,10 @@ public:
     return _monotonicConstraints.get();
   }
 
+  bool getMonotoneAvg() {
+    return _monotoneAvg;
+  }
+
   std::vector<size_t>* getRowNumbers() {
     return _rowNumbers.get();
   }
@@ -120,6 +125,7 @@ private:
   std::unique_ptr< std::vector<size_t> > _deepFeatureWeightsVariables;
   std::unique_ptr< std::vector<double> > _observationWeights;
   std::shared_ptr< std::vector<int> > _monotonicConstraints;
+  bool _monotoneAvg;
 };
 
 

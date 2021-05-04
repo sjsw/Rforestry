@@ -348,6 +348,7 @@ setClass(
     linear = "logical",
     linFeats = "numeric",
     monotonicConstraints = "numeric",
+    monotoneAvg = "logical",
     featureWeights = "numeric",
     featureWeightsVariables = "numeric",
     deepFeatureWeights = "numeric",
@@ -389,6 +390,7 @@ setClass(
     linear = "logical",
     linFeats = "numeric",
     monotonicConstraints = "numeric",
+    monotoneAvg = "logical",
     featureWeights = "numeric",
     featureWeightsVariables = "numeric",
     deepFeatureWeights = "numeric",
@@ -493,6 +495,10 @@ setClass(
 #'   entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
 #'   -1 indicating a decreasing monotonic relationship, and 0 indicating no
 #'   relationship. Constraints supplied for categorical will be ignored.
+#' @param monotoneAvg This is a boolean flag which indicates whether or not
+#'   monotonicity should be enforced on the averaging set in addition to the
+#'   splitting set. This flag is meaningless unless both honesty and monotonic
+#'   constraints are in use. The default is FALSE.
 #' @param overfitPenalty Value to determine how much to penalize magnitude of
 #' coefficients in ridge regression
 #' @return A `forestry` object.
@@ -603,6 +609,7 @@ forestry <- function(x,
                      linear = FALSE,
                      linFeats = 0:(ncol(x)-1),
                      monotonicConstraints = rep(0, ncol(x)),
+                     monotoneAvg = FALSE,
                      overfitPenalty = 1,
                      doubleTree = FALSE,
                      reuseforestry = NULL,
@@ -717,7 +724,8 @@ forestry <- function(x,
         deepFeatureWeights =  deepFeatureWeights,
         deepFeatureWeightsVariables = deepFeatureWeightsVariables,
         observationWeights = observationWeights,
-        monotonicConstraints = monotonicConstraints
+        monotonicConstraints = monotonicConstraints,
+        monotoneAvg = monotoneAvg
       )
 
       rcppForest <- rcpp_cppBuildInterface(
@@ -751,6 +759,7 @@ forestry <- function(x,
         deepFeatureWeightsVariables,
         observationWeights,
         monotonicConstraints,
+        monotoneAvg,
         hasNas,
         linear,
         overfitPenalty,
@@ -802,6 +811,7 @@ forestry <- function(x,
           linear = linear,
           linFeats = linFeats,
           monotonicConstraints = monotonicConstraints,
+          monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree
         )
@@ -861,6 +871,7 @@ forestry <- function(x,
         deepFeatureWeightsVariables = deepFeatureWeightsVariables,
         observationWeights,
         monotonicConstraints,
+        monotoneAvg,
         hasNas,
         linear,
         overfitPenalty,
@@ -900,6 +911,7 @@ forestry <- function(x,
           linear = linear,
           linFeats = linFeats,
           monotonicConstraints = monotonicConstraints,
+          monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree
         )
@@ -952,6 +964,7 @@ multilayerForestry <- function(x,
                      linear = FALSE,
                      linFeats = 0:(ncol(x)-1),
                      monotonicConstraints = rep(0, ncol(x)),
+                     monotoneAvg = FALSE,
                      featureWeights = rep(1, ncol(x)),
                      deepFeatureWeights = featureWeights,
                      observationWeights = NULL,
@@ -1066,7 +1079,8 @@ multilayerForestry <- function(x,
         deepFeatureWeights =  deepFeatureWeights,
         deepFeatureWeightsVariables = deepFeatureWeightsVariables,
         observationWeights = observationWeights,
-        monotonicConstraints = monotonicConstraints
+        monotonicConstraints = monotonicConstraints,
+        monotoneAvg = monotoneAvg
       )
 
       rcppForest <- rcpp_cppMultilayerBuildInterface(
@@ -1151,6 +1165,7 @@ multilayerForestry <- function(x,
           deepFeatureWeightsVariables = deepFeatureWeightsVariables,
           observationWeights = observationWeights,
           monotonicConstraints = monotonicConstraints,
+          monotoneAvg = monotoneAvg,
           linear = linear,
           linFeats = linFeats,
           overfitPenalty = overfitPenalty,
@@ -1245,6 +1260,7 @@ multilayerForestry <- function(x,
           linear = linear,
           linFeats = linFeats,
           monotonicConstraints = monotonicConstraints,
+          monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree,
           gammas = reuseforestry@gammas
@@ -1376,12 +1392,12 @@ predict.forestry <- function(object,
 #' @return A vector of predicted responses.
 #' @export
 predict.multilayerForestry <- function(object,
-                             feature.new,
-                             aggregation = "average",
-                             seed = as.integer(runif(1) * 10000),
-                             nthread = 0,
-                             exact = NULL,
-                             ...) {
+                                       feature.new,
+                                       aggregation = "average",
+                                       seed = as.integer(runif(1) * 10000),
+                                       nthread = 0,
+                                       exact = NULL,
+                                       ...) {
     forest_checker(object)
 
     if (is.null(exact)) {
@@ -1909,6 +1925,7 @@ relinkCPP_prt <- function(object) {
           deepFeatureWeightsVariables = object@deepFeatureWeightsVariables,
           observationWeights = object@observationWeights,
           monotonicConstraints = object@monotonicConstraints,
+          monotoneAvg = object@monotoneAvg,
           linear = object@linear,
           overfitPenalty = object@overfitPenalty,
           doubleTree = object@doubleTree)
@@ -1955,6 +1972,7 @@ relinkCPP_prt <- function(object) {
           deepFeatureWeightsVariables = object@deepFeatureWeightsVariables,
           observationWeights = object@observationWeights,
           monotonicConstraints = object@monotonicConstraints,
+          monotoneAvg = object@monotoneAvg,
           gammas = object@gammas,
           linear = object@linear,
           overfitPenalty = object@overfitPenalty,

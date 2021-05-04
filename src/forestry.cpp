@@ -114,33 +114,6 @@ forestry::forestry(
   // Create initial trees
   addTrees(ntree);
 
-  // Rcpp::Rcout << "Tree seeds:" << std::endl;
-  // R_FlushConsole();
-  // R_ProcessEvents();
-  // R_CheckUserInterrupt();
-  //
-  // Rcpp::Rcout << "c(";
-  // R_FlushConsole();
-  // R_ProcessEvents();
-  // R_CheckUserInterrupt();
-  //
-  // std::vector<unsigned int> seeds;
-
-  // forestryTree *currentTree;
-  // for (auto p = 0; p < (*this->getForest()).size(); p++) {
-  //   currentTree = (*this->getForest())[p].get();
-  //
-  //   currentTree->printTree();
-  // }
-  // std::sort(seeds.begin(), seeds.end());
-  // print_vector(seeds);
-  //
-  // Rcpp::Rcout << std::endl;
-  // RcppThread::Rcout << "SORTING NOW";
-  // R_FlushConsole();
-  // R_ProcessEvents();
-  // R_CheckUserInterrupt();
-
   // Try sorting the forest by seed, this way we should do predict in the same order
   std::vector< std::unique_ptr< forestryTree > >* curr_forest;
   curr_forest = this->getForest();
@@ -148,12 +121,6 @@ forestry::forestry(
                                                          const std::unique_ptr< forestryTree >& b) {
     return a.get()->getSeed() > b.get()->getSeed();
   });
-
-  // std::unique_ptr< std::vector< std::unique_ptr< forestryTree > > > sorted_forest (
-  //     new std::vector< std::unique_ptr< forestryTree > >(*curr_forest)
-  // );
-  //
-  // this->_forest = std::move(sorted_forest);
 }
 
 void forestry::addTrees(size_t ntree) {

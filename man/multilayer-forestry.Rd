@@ -32,6 +32,7 @@ multilayerForestry(
   linear = FALSE,
   linFeats = 0:(ncol(x) - 1),
   monotonicConstraints = rep(0, ncol(x)),
+  monotoneAvg = FALSE,
   featureWeights = rep(1, ncol(x)),
   deepFeatureWeights = featureWeights,
   observationWeights = NULL,
@@ -139,6 +140,11 @@ continuous features and the outcome. Supplied as a vector of length p with
 entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
 -1 indicating a decreasing monotonic relationship, and 0 indicating no
 relationship. Constraints supplied for categorical will be ignored.}
+
+\item{monotoneAvg}{This is a boolean flag which indicates whether or not
+monotonicity should be enforced on the averaging set in addition to the
+splitting set. This flag is meaningless unless both honesty and monotonic
+constraints are in use. The default is FALSE.}
 
 \item{featureWeights}{weights used when subsampling features for nodes above or at interactionDepth.}
 

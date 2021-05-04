@@ -23,7 +23,8 @@ DataFrame::DataFrame(
   std::unique_ptr<std::vector<double>> deepFeatureWeights,
   std::unique_ptr<std::vector<size_t>> deepFeatureWeightsVariables,
   std::unique_ptr< std::vector<double> > observationWeights,
-  std::shared_ptr< std::vector<int> > monotonicConstraints
+  std::shared_ptr< std::vector<int> > monotonicConstraints,
+  bool monotoneAvg
 ) {
   this->_featureData = std::move(featureData);
   this->_outcomeData = std::move(outcomeData);
@@ -37,6 +38,7 @@ DataFrame::DataFrame(
   this->_deepFeatureWeightsVariables = std::move(deepFeatureWeightsVariables);
   this->_observationWeights = std::move(observationWeights);
   this->_monotonicConstraints = std::move(monotonicConstraints);
+  this->_monotoneAvg = monotoneAvg;
 
   // define the row numbers to be the numbers from 1 to nrow:
   std::vector<size_t> rowNumberss;

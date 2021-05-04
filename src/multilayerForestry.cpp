@@ -128,7 +128,8 @@ void multilayerForestry::addForests(size_t ntree) {
       std::move(residualdeepFeatureWeights_),
       std::move(residualdeepFeatureWeightsVariables_),
       std::move(residualobservationWeights_),
-      std::move(monotonicConstraintsRcpp_)
+      std::move(monotonicConstraintsRcpp_),
+      false
     );
 
     forestry *residualForest = new forestry(
