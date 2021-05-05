@@ -1459,7 +1459,7 @@ void findBestSplitImpute(
       // If closer to left partitionmean, add to left sum, leftcount ++
       // This is okay to do after we check monotonicity, this shouldn't change
       // the ordering of the partition means as we allocate the NA examples greedily
-      if (abs(currOutcome - leftPartitionMean) < abs(currOutcome - rightPartitionMean)) {
+      if ( ((currOutcome - leftPartitionMean)*(currOutcome - leftPartitionMean)) < ((currOutcome - rightPartitionMean)*(currOutcome - rightPartitionMean)) ) {
         LeftPartitionNaSum += currOutcome;
         leftPartitionNaCount++;
       }
@@ -1474,7 +1474,7 @@ void findBestSplitImpute(
       // If closer to left partitionmean, add to left sum, leftcount ++
       // This is okay to do after we check monotonicity, this shouldn't change
       // the ordering of the partition means as we allocate the NA examples greedily
-      if (abs(currOutcome - leftPartitionMean) < abs(currOutcome - rightPartitionMean)) {
+      if ( ((currOutcome - leftPartitionMean)*(currOutcome - leftPartitionMean)) < ((currOutcome - rightPartitionMean)*(currOutcome - rightPartitionMean)) ) {
         LeftAvgPartitionNaSum += currOutcome;
         leftAvgPartitionNaCount++;
       }
