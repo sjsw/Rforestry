@@ -349,7 +349,7 @@ void splitDataIntoTwoParts(
     double rightMean = trainingData->partitionMean(rightPartitionIndex);
 
     for (const auto& index : naIndices) {
-      if ( ((trainingData->getOutcomePoint(index) - leftMean)*(trainingData->getOutcomePoint(index) - leftMean)) < ((trainingData->getOutcomePoint(index) - rightMean)*(trainingData->getOutcomePoint(index) - rightMean)) ) {
+      if ( abs(trainingData->getOutcomePoint(index) - leftMean) < abs(trainingData->getOutcomePoint(index) - rightMean) ) {
         leftPartitionIndex->push_back(index);
         naLeftCount++;
       } else {
