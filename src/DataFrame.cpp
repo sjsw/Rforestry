@@ -149,7 +149,7 @@ double DataFrame::partitionMean(
   ) {
     accummulatedSum += getOutcomePoint(*it);
   }
-  return accummulatedSum / totalSampleSize;
+  return accummulatedSum / ((double) totalSampleSize);
 }
 
 std::vector<size_t> DataFrame::get_all_row_idx(

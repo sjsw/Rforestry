@@ -369,13 +369,6 @@ void forestry::addTrees(size_t ntree) {
               R_FlushConsole();
               R_ProcessEvents();
             }
-            // RcppThread::Rcout << (i+1)*see << ",";
-            // R_FlushConsole();
-            // R_ProcessEvents();
-            //oneTree->printTree();
-
-
-            // R_CheckUserInterrupt();
 
             (*getForest()).emplace_back(oneTree);
             _ntree = _ntree + 1;
@@ -386,19 +379,6 @@ void forestry::addTrees(size_t ntree) {
               // delete anotherTree;
             }
 
-
-
-            // size_t new_dots = (size_t) ((float) _ntree / ntree - percent_complete);
-            // percent_complete = (float) _ntree / ntree;
-            // for (size_t q = 0; q < 2; q++) {
-            //   Rcpp::Rcout << "*";
-            //   R_FlushConsole();
-            //   R_ProcessEvents();
-            //   //RcppThread::checkUserInterrupt();
-            // }
-
-            // R_FlushConsole();
-            // R_ProcessEvents();
           } catch (std::runtime_error &err) {
             // Rcpp::Rcerr << err.what() << std::endl;
           }

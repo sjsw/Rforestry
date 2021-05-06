@@ -171,8 +171,8 @@ forestryTree::forestryTree(
 
   if (monotone_splits) {
     monotonic_details.monotonic_constraints = (*trainingData->getMonotonicConstraints());
-    monotonic_details.upper_bound = std::numeric_limits<float>::max();
-    monotonic_details.lower_bound = -std::numeric_limits<float>::max();
+    monotonic_details.upper_bound = std::numeric_limits<double>::max();
+    monotonic_details.lower_bound = -std::numeric_limits<double>::max();
     monotonic_details.monotoneAvg = trainingData->getMonotoneAvg();
   }
 
@@ -726,9 +726,9 @@ void forestryTree::recursivePartition(
       monotonic_details_left.monotoneAvg = monotone_details.monotoneAvg;
       monotonic_details_right.monotoneAvg = monotone_details.monotoneAvg;
 
-      float leftNodeMean = calculateMonotonicBound(trainingData->partitionMean(&splittingLeftPartitionIndex), monotone_details);
-      float rightNodeMean = calculateMonotonicBound(trainingData->partitionMean(&splittingRightPartitionIndex), monotone_details);
-      float midMean = (leftNodeMean + rightNodeMean )/(2);
+      double leftNodeMean = calculateMonotonicBound(trainingData->partitionMean(&splittingLeftPartitionIndex), monotone_details);
+      double rightNodeMean = calculateMonotonicBound(trainingData->partitionMean(&splittingRightPartitionIndex), monotone_details);
+      double midMean = (leftNodeMean + rightNodeMean )/(2);
 
       // Pass down the new upper and lower bounds if it is a monotonic split,
       if (monotone_direction == -1) {

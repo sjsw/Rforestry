@@ -61,8 +61,8 @@ struct monotonic_info {
   // currently being split on. These are used to reject potential splits
   // which do not respect the bounds, and therfore enforce global monotonic
   // bounds.
-  float upper_bound;
-  float lower_bound;
+  double upper_bound;
+  double lower_bound;
 
   // This flag indicates whether or not to enforce monotonicity on the averaging
   // set as well as the splitting set

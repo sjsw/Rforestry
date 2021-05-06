@@ -83,7 +83,7 @@ void RFNode::ridgePredict(
                      dimension + 1);
 
   arma::Mat<double> identity(dimension + 1,
-                            dimension + 1);
+                             dimension + 1);
   identity.eye();
 
   //Don't penalize intercept
@@ -112,7 +112,7 @@ void RFNode::ridgePredict(
 
   //Map xNew into Eigen matrix
   arma::Mat<double> xn(updateIndex->size(),
-                      dimension + 1);
+                       dimension + 1);
 
   size_t index = 0;
   for (std::vector<size_t>::iterator it = updateIndex->begin();
@@ -197,7 +197,7 @@ void RFNode::predict(
         for (size_t i = 0; i<idx_in_leaf.size(); i++) {
           (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
           (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
-          (double) 1.0 / idx_in_leaf.size();
+          (double) 1.0 / ((double) idx_in_leaf.size());
         }
       }
     }
@@ -361,7 +361,7 @@ void RFNode::predict(
             for (size_t i = 0; i<idx_in_leaf.size(); i++) {
               (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
                 (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
-                (double) 1.0 / idx_in_leaf.size();
+                (double) 1.0 / ((double) idx_in_leaf.size());
             }
           }
         }
@@ -433,7 +433,7 @@ void RFNode::predict(
             for (size_t i = 0; i<idx_in_leaf.size(); i++) {
               (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
                 (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
-                (double) 1.0 / idx_in_leaf.size();
+                (double) 1.0 / ((double) idx_in_leaf.size());
             }
           }
         }

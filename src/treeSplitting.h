@@ -230,12 +230,12 @@ void determineBestSplit(
 bool acceptMonotoneSplit(
     monotonic_info &monotone_details,
     size_t currentFeature,
-    float leftPartitionMean,
-    float rightPartitionMean
+    double leftPartitionMean,
+    double rightPartitionMean
 );
 
-float calculateMonotonicBound(
-    float node_mean,
+double calculateMonotonicBound(
+    double node_mean,
     monotonic_info& monotone_details
 );
 

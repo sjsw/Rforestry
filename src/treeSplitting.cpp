@@ -1777,14 +1777,14 @@ void determineBestSplit(
 bool acceptMonotoneSplit(
     monotonic_info &monotone_details,
     size_t currentFeature,
-    float leftPartitionMean,
-    float rightPartitionMean
+    double leftPartitionMean,
+    double rightPartitionMean
 ) {
   // If we have the uncle mean equal to infinity, then we enforce a simple
   // monotone split without worrying about the uncle bounds
   int monotone_direction = monotone_details.monotonic_constraints[currentFeature];
-  float upper_bound = monotone_details.upper_bound;
-  float lower_bound = monotone_details.lower_bound;
+  double upper_bound = monotone_details.upper_bound;
+  double lower_bound = monotone_details.lower_bound;
 
   // This is not right. I should check the split is correctly monotonic and then
   // check that neither node violates the upper and lower bounds
@@ -1815,8 +1815,8 @@ bool acceptMonotoneSplit(
   }
 }
 
-float calculateMonotonicBound(
-    float node_mean,
+double calculateMonotonicBound(
+    double node_mean,
     monotonic_info& monotone_details
 ) {
   if (node_mean < monotone_details.lower_bound) {
