@@ -1690,7 +1690,7 @@ void findBestSplitImputeCategorical(
       double currOutcome = std::get<1>(pair);
 
       // If closer to left partitionmean, add to left sum, leftcount ++
-      if (square(currOutcome - leftPartitionMean) < square(currOutcome - rightPartitionMean)) {
+      if (abs(currOutcome - leftPartitionMean) < abs(currOutcome - rightPartitionMean)) {
         LeftPartitionNaSum += currOutcome;
         leftPartitionNaCount++;
       }

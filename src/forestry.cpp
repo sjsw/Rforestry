@@ -248,9 +248,26 @@ void forestry::addTrees(size_t ntree) {
             // resize OOB index
             OOBIndex.resize((unsigned long) (it - OOBIndex.begin()));
 
+
+            // Now in new version, of OOB honesty
+            // we want to sample with replacement from
+            // the OOB index vector, so that our averaging vector
+            // is also bagged.
+            std::uniform_int_distribution<size_t> uniform_dist(
+                0, (size_t) (OOBIndex.size() - 1)
+            );
+
+            std::vector< size_t > AvgIndices;
+
+            // Sample with replacement
+            while (AvgIndices.size() < OOBIndex.size()) {
+              size_t randomIndex = uniform_dist(random_number_generator);
+              AvgIndices.push_back(randomIndex);
+            }
+
             // Now set the splitting indices and averaging indices
             splitSampleIndex_ = sampleIndex;
-            averageSampleIndex_ = OOBIndex;
+            averageSampleIndex_ = AvgIndices;
 
             // Give split and avg sample indices the right indices
             splitSampleIndex.reset(

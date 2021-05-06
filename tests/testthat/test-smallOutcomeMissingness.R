@@ -11,8 +11,8 @@ test_that("Tests missing value splitting when Outcome values are close to zero",
 
   y <- 5.7*x$V3
 
-  print(summary(y))
-  print(summary(y^2))
+  # print(summary(y))
+  # print(summary(y^2))
 
   # Take some missing examples
   sample_idx_1 <- sample(1:5000, size = 2000, replace = FALSE)
@@ -35,7 +35,7 @@ test_that("Tests missing value splitting when Outcome values are close to zero",
   p <- predict(forest, x, seed = 12)
   R_squared <- 1- (mean((p - y)^2))/(var(y))
 
-  print(R_squared)
+  # print(R_squared)
 
   # WHEN USING ABS(), R^2 is pretty high, should be able to catch most of the
   # signal here despite a lot of missingness (should be > .65)

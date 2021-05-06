@@ -19,7 +19,7 @@ test_that("Tests if OOB Honesty is working correctly", {
     splitratio = 1,
     OOBhonest = TRUE,
     seed = 8921,
-    nodesizeStrictAvg = 0
+    nodesizeStrictAvg = 1
   )
 
   # Test OOB
