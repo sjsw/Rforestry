@@ -39,6 +39,11 @@ test_that("Tests missing value splitting when Outcome values are close to zero",
 
   # WHEN USING ABS(), R^2 is pretty high, should be able to catch most of the
   # signal here despite a lot of missingness (should be > .65)
+  #  0.9624975 for square()
+  #  0.9624975 for std::abs()
+  #  0.9624975 for std::fabs()
+  #  0.9624975 for abs()
+  #  0.9624975 for squaring by hand
 
   # predictions should be monotonically increasing
   expect_gt(R_squared, 0.65)
