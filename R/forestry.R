@@ -422,9 +422,9 @@ setClass(
 #'   The default value is set to be one third of total number of features of the
 #'   training data.
 #' @param nodesizeSpl Minimum observations contained in terminal nodes. The
-#'   default value is 3.
+#'   default value is 5.
 #' @param nodesizeAvg Minimum size of terminal nodes for averaging dataset. The
-#'   default value is 3.
+#'   default value is 5.
 #' @param nodesizeStrictSpl Minimum observations to follow strictly in terminal
 #'   nodes. The default value is 1.
 #' @param nodesizeStrictAvg Minimum size of terminal nodes for averaging data set
@@ -454,13 +454,14 @@ setClass(
 #'   and all the data is used for the averaging data set (This is not a good
 #'   usage however since there will be no data available for splitting).
 #' @param OOBhonest This is an experimental method of enforcing honesty. In this
-#'   version of honesty, the out-of-bag examples for each tree are used as the
+#'   version of honesty, the out-of-bag examples for each tree are used for
+#'   another bootstrap draw, which then gives the set of observations in the
 #'   honest (averaging) set. This setting also changes how predictions are done
 #'   for new examples. When predicting for observations which are out of sample
 #'   (using Predict), all the trees in the forest are used to predict for the
 #'   observation. When predicting for an observation which was in sample (using
-#'   getOOBpreds), only the trees for which the observation was not in the averaging
-#'   set (the set of trees for which the observation was in the splitting set) are
+#'   getOOBpreds), only the trees for which the observation was not in the
+#'   averaging set (the set of trees for which the observation was in the splitting set) are
 #'   used to make the prediction for the observation. This ensures that the
 #'   outcome value for an observation is never used to predict for that observation
 #'   even when it is in sample, a feature not shared by the standard honesty
@@ -587,8 +588,8 @@ forestry <- function(x,
                        ceiling(.632 * nrow(x)),
                      sample.fraction = NULL,
                      mtry = max(floor(ncol(x) / 3), 1),
-                     nodesizeSpl = 3,
-                     nodesizeAvg = 3,
+                     nodesizeSpl = 5,
+                     nodesizeAvg = 5,
                      nodesizeStrictSpl = 1,
                      nodesizeStrictAvg = 1,
                      minSplitGain = 0,
