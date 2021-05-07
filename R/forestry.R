@@ -1473,6 +1473,50 @@ getOOB <- function(object,
     return(rcppOOB)
 }
 
+# -- Calculate Splitting Proportions -------------------------------------------
+#' getSplitProps-forestry
+#' @name getSplitProps-forestry
+#' @rdname getSplitProps-forestry
+#' @description Retrieves the proportion of splits for each feature in the given
+#'  forestry object. These proportions are calculated as the number of splits
+#'  on feature i in the entire forest over total the number of splits in the
+#'  forest.
+#' @param object A trained model object of class "forestry".
+#' @return A vector of length equal to the number of columns
+#' @seealso \code{\link{forestry}}
+#' @export
+getSplitProps <- function(object) {
+
+  # Make forest saveable so we can access the tree data in R
+  object <- make_savable(object)
+
+  # Dataframe to hold the splitting counts for each tree
+  data <- data.frame(matrix(rep(0,
+                                object@ntree*length(object@processed_dta$featNames)),
+                            nrow = object@ntree))
+  # Store feat names
+  names(data) <- object@processed_dta$featNames
+
+  # Cycle through all trees and splits in each tree and tally the count for
+  # the respective feature split count
+  for (i in 1:nrow(data)) {
+    tree_vars <- object@R_forest[[i]]$var_id
+    for (j in 1:length(tree_vars)) {
+      if (tree_vars[j] > 0) {
+        data[i,tree_vars[j]] = data[i,tree_vars[j]]+1
+      }
+    }
+  }
+
+  # Aggregate by all trees inn forest
+  count_totals <- apply(data, 2, sum)
+
+  # Return normalized counts (i.e. the split proportions)
+  return(count_totals / sum(count_totals))
+
+}
+
+
 # -- Calculate OOB Predictions -------------------------------------------------
 #' getOOBpreds-forestry
 #' @name getOOBpreds-forestry
