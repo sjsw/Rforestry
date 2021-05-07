@@ -5,9 +5,9 @@ test_that("Tests missing value splitting when Outcome values are close to zero",
 
 
   context("For different distance functions (abs() vs square()), we see if we have underflow problems")
-  x <- data.frame(V1 = runif(5000, min = -1e-10, max = 1e-10),
-                  V2 = runif(5000, min = -1e-10, max = 1e-10),
-                  V3 = runif(5000, min = -1e-10, max = 1e-10))
+  x <- data.frame(V1 = runif(5000, min = -1e-8, max = 1e-8),
+                  V2 = runif(5000, min = -1e-8, max = 1e-8),
+                  V3 = runif(5000, min = -1e-8, max = 1e-8))
 
   y <- 5.7*x$V3
 
@@ -45,6 +45,5 @@ test_that("Tests missing value splitting when Outcome values are close to zero",
   #  0.9624975 for abs()
   #  0.9624975 for squaring by hand
 
-  # predictions should be monotonically increasing
   expect_gt(R_squared, 0.65)
 })
