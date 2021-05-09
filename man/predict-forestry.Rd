@@ -32,7 +32,10 @@ leaves are indexed using a depth first ordering, and, in the "sparse"
 representation, the first leaf in the second tree has column index one more than
 the number of leaves in the first tree and so on. So, for example, if the
 first tree has 5 leaves, the sixth column of the "sparse" matrix corresponds
-to the first leaf in the second tree.}
+to the first leaf in the second tree.
+`oob` returns the out-of-bag predictions for the forest. We assume
+that the ordering of the observations in feature.new have not changed from
+training. If the ordering has changed, we will get the wrong OOB indices.}
 
 \item{seed}{random seed}
 

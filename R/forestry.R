@@ -1297,6 +1297,9 @@ multilayerForestry <- function(x,
 #'   the number of leaves in the first tree and so on. So, for example, if the
 #'   first tree has 5 leaves, the sixth column of the "sparse" matrix corresponds
 #'   to the first leaf in the second tree.
+#'   `oob` returns the out-of-bag predictions for the forest. We assume
+#'   that the ordering of the observations in feature.new have not changed from
+#'   training. If the ordering has changed, we will get the wrong OOB indices.
 #' @param seed random seed
 #' @param nthread The number of threads with which to run the predictions with.
 #'   This will default to the number of threads with which the forest was trained
@@ -1336,19 +1339,43 @@ predict.forestry <- function(object,
   }
 
   # If option set to terminalNodes, we need to make matrix of ID's
-  rcppPrediction <- tryCatch({
-    rcpp_cppPredictInterface(object@forest,
-                             processed_x,
-                             aggregation,
-                             seed = seed,
-                             nthread = nthread,
-                             exact = exact)
-  }, error = function(err) {
-    print(err)
-    return(NULL)
-  })
+  if (aggregation == "oob") {
+
+    if (!is.null(feature.new) && (object@sampsize != nrow(feature.new))) {
+      warning(paste(
+        "Attempting to do OOB predictions on a dataset which doesn't match the",
+        "training data!"
+      ))
+      return(NA)
+    }
+
+    rcppPrediction <- tryCatch({
+      rcpp_OBBPredictionsInterface(object@forest,
+                                   processed_x,
+                                   TRUE)
+    }, error = function(err) {
+      print(err)
+      return(NULL)
+    })
+  } else {
+    rcppPrediction <- tryCatch({
+      rcpp_cppPredictInterface(object@forest,
+                               processed_x,
+                               aggregation,
+                               seed = seed,
+                               nthread = nthread,
+                               exact = exact)
+    }, error = function(err) {
+      print(err)
+      return(NULL)
+    })
+  }
+
+
   if (aggregation == "average") {
     return(rcppPrediction$prediction)
+  } else if (aggregation == "oob") {
+    return(rcppPrediction)
   } else if (aggregation == "weightMatrix") {
     terminalNodes <- rcppPrediction$terminalNodes
     nobs <- nrow(feature.new)
@@ -1558,6 +1585,11 @@ getOOBpreds <- function(object,
       "training data!"
     ))
     return(NA)
+  }
+
+  if (!noWarning) {
+    warning(paste("OOB predictions have been moved to the predict() function.
+                  Run OOB predictions by calling predict(..., aggregation = \"oob\")"))
   }
 
   if (!is.null(feature.new)) {
