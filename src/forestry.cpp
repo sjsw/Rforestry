@@ -609,7 +609,8 @@ std::unique_ptr< std::vector<double> > forestry::predict(
 
 
 std::vector<double> forestry::predictOOB(
-    std::vector< std::vector<double> >* xNew
+    std::vector< std::vector<double> >* xNew,
+    bool doubleOOB
 ) {
 
   size_t numObservations = getTrainingData()->getNumRows();
@@ -658,6 +659,7 @@ std::vector<double> forestry::predictOOB(
                       outputOOBCount_iteration,
                       getTrainingData(),
                       getOOBhonest(),
+                      doubleOOB,
                       getMinNodeSizeToSplitAvg(),
                       xNew
                   );
@@ -866,6 +868,7 @@ void forestry::calculateOOBError() {
               outputOOBCount_iteration,
               getTrainingData(),
               getOOBhonest(),
+              false,
               getMinNodeSizeToSplitAvg(),
               nullptr
             );

@@ -55,7 +55,8 @@ public:
   );
 
   std::vector<double> predictOOB(
-    std::vector< std::vector<double> >* xNew
+    std::vector< std::vector<double> >* xNew,
+    bool doubleOOB
   );
 
   void fillinTreeInfo(

@@ -35,7 +35,16 @@ first tree has 5 leaves, the sixth column of the "sparse" matrix corresponds
 to the first leaf in the second tree.
 `oob` returns the out-of-bag predictions for the forest. We assume
 that the ordering of the observations in feature.new have not changed from
-training. If the ordering has changed, we will get the wrong OOB indices.}
+training. If the ordering has changed, we will get the wrong OOB indices.
+`doubleOOB` is an experimental flag, which can only be used when OOBhonest = TRUE
+and doubleBootstrap = TRUE. When both of these settings are on, the
+splitting set is selected as a bootstrap sample of observations and the
+averaging set is selected as a bootstrap sample of the observations which
+were left out of bag during the splitting set selection. This leaves a third
+set which is the observations which were not selected in either bootstrap sample.
+This predict flag gives the predictions using- for each observation- only the trees
+in which the observation fell into this third set (so was neither a splitting
+nor averaging example).}
 
 \item{seed}{random seed}
 

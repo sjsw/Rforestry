@@ -1322,6 +1322,15 @@ multilayerForestry <- function(x,
 #'   `oob` returns the out-of-bag predictions for the forest. We assume
 #'   that the ordering of the observations in feature.new have not changed from
 #'   training. If the ordering has changed, we will get the wrong OOB indices.
+#'   `doubleOOB` is an experimental flag, which can only be used when OOBhonest = TRUE
+#'   and doubleBootstrap = TRUE. When both of these settings are on, the
+#'   splitting set is selected as a bootstrap sample of observations and the
+#'   averaging set is selected as a bootstrap sample of the observations which
+#'   were left out of bag during the splitting set selection. This leaves a third
+#'   set which is the observations which were not selected in either bootstrap sample.
+#'   This predict flag gives the predictions using- for each observation- only the trees
+#'   in which the observation fell into this third set (so was neither a splitting
+#'   nor averaging example).
 #' @param seed random seed
 #' @param nthread The number of threads with which to run the predictions with.
 #'   This will default to the number of threads with which the forest was trained
@@ -1374,7 +1383,37 @@ predict.forestry <- function(object,
     rcppPrediction <- tryCatch({
       rcpp_OBBPredictionsInterface(object@forest,
                                    processed_x,
-                                   TRUE)
+                                   TRUE,
+                                   FALSE
+                                   )
+    }, error = function(err) {
+      print(err)
+      return(NULL)
+    })
+  } else if (aggregation == "doubleOOB") {
+
+    if (!is.null(feature.new) && (object@sampsize != nrow(feature.new))) {
+      warning(paste(
+        "Attempting to do OOB predictions on a dataset which doesn't match the",
+        "training data!"
+      ))
+      return(NA)
+    }
+
+    if (!object@doubleBootstrap) {
+      warning(paste(
+        "Attempting to do double OOB predictions with a forest that was not trained
+        with doubleBootstrap = TRUE"
+      ))
+      return(NA)
+    }
+
+    rcppPrediction <- tryCatch({
+      rcpp_OBBPredictionsInterface(object@forest,
+                                   processed_x,
+                                   TRUE,
+                                   TRUE
+      )
     }, error = function(err) {
       print(err)
       return(NULL)
@@ -1397,6 +1436,8 @@ predict.forestry <- function(object,
   if (aggregation == "average") {
     return(rcppPrediction$prediction)
   } else if (aggregation == "oob") {
+    return(rcppPrediction)
+  } else if (aggregation == "doubleOOB") {
     return(rcppPrediction)
   } else if (aggregation == "weightMatrix") {
     terminalNodes <- rcppPrediction$terminalNodes

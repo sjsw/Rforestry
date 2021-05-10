@@ -1097,6 +1097,74 @@ void forestryTree::getOOBindex(
 
 }
 
+void forestryTree::getDoubleOOBIndex(
+    std::vector<size_t> &outputOOBIndex,
+    size_t nRows
+){
+
+  // This function is intended to be used with OOB honesty
+  // using a double bootstrap in order to get the observations which
+  // were not selected in the first bootstrap (the splitting set),
+  // and were not selected in the second bootstrap (the averaging set)
+  // we expect for each tree, this should be about  0.368^2 = 13.5%
+  // of the total observations.
+
+  // equivalent to setDiff(1:nrow(x), union(splittingIndices, averagingIndices))
+  // Generate union of splitting and averaging dataset
+  std::sort(
+    getSplittingIndex()->begin(),
+    getSplittingIndex()->end()
+  );
+  std::sort(
+    getAveragingIndex()->begin(),
+    getAveragingIndex()->end()
+  );
+
+  std::vector<size_t> allSampledIndex(
+      getSplittingIndex()->size() + getAveragingIndex()->size()
+  );
+
+  std::vector<size_t>::iterator it= std::set_union(
+    getSplittingIndex()->begin(),
+    getSplittingIndex()->end(),
+    getAveragingIndex()->begin(),
+    getAveragingIndex()->end(),
+    allSampledIndex.begin()
+  );
+
+  allSampledIndex.resize((unsigned long) (it - allSampledIndex.begin()));
+
+  // Generate a vector of all index based on nRows
+  struct IncGenerator {
+    size_t current_;
+    IncGenerator(size_t start): current_(start) {}
+    size_t operator()() { return current_++; }
+  };
+  std::vector<size_t> allIndex(nRows);
+  IncGenerator g(0);
+  std::generate(allIndex.begin(), allIndex.end(), g);
+
+  // OOB index is the set difference between sampled index and all index
+  std::vector<size_t> OOBIndex(nRows);
+
+  it = std::set_difference (
+    allIndex.begin(),
+    allIndex.end(),
+    allSampledIndex.begin(),
+    allSampledIndex.end(),
+    OOBIndex.begin()
+  );
+  OOBIndex.resize((unsigned long) (it - OOBIndex.begin()));
+
+  for (
+      std::vector<size_t>::iterator it_ = OOBIndex.begin();
+      it_ != OOBIndex.end();
+      ++it_
+  ) {
+    outputOOBIndex.push_back(*it_);
+  }
+}
+
 void forestryTree::getOOBhonestIndex(
     std::vector<size_t> &outputOOBIndex,
     size_t nRows
@@ -1143,6 +1211,7 @@ void forestryTree::getOOBPrediction(
     std::vector<size_t> &outputOOBCount,
     DataFrame* trainingData,
     bool OOBhonest,
+    bool doubleOOB,
     size_t nodesizeStrictAvg,
     std::vector< std::vector<double> >* xNew
 ){
@@ -1153,8 +1222,15 @@ void forestryTree::getOOBPrediction(
   // different sets of trees to be used (we want the set of trees)
   // without the averaging set
   if (OOBhonest) {
-    getOOBhonestIndex(OOBIndex, trainingData->getNumRows());
+    if (doubleOOB) {
+      // Get setDiff(1:nrow(x), union(splittingIndices, averagingIndices))
+      getDoubleOOBIndex(OOBIndex, trainingData->getNumRows());
+    } else {
+      // Get setDiff(1:nrow(x), averagingIndices)
+      getOOBhonestIndex(OOBIndex, trainingData->getNumRows());
+    }
   } else {
+    // Standard OOB indices in the non honest case
     getOOBindex(OOBIndex, trainingData->getNumRows());
   }
 

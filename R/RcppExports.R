@@ -25,8 +25,8 @@ rcpp_OBBPredictInterface <- function(forest) {
     .Call(`_Rforestry_rcpp_OBBPredictInterface`, forest)
 }
 
-rcpp_OBBPredictionsInterface <- function(forest, x, existing_df) {
-    .Call(`_Rforestry_rcpp_OBBPredictionsInterface`, forest, x, existing_df)
+rcpp_OBBPredictionsInterface <- function(forest, x, existing_df, doubleOOB) {
+    .Call(`_Rforestry_rcpp_OBBPredictionsInterface`, forest, x, existing_df, doubleOOB)
 }
 
 rcpp_VariableImportanceInterface <- function(forest) {

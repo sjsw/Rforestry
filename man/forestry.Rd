@@ -25,6 +25,7 @@ forestry(
   observationWeights = NULL,
   splitratio = 1,
   OOBhonest = FALSE,
+  doubleBootstrap = if (OOBhonest) TRUE else FALSE,
   seed = as.integer(runif(1) * 1000),
   verbose = FALSE,
   nthread = 0,
@@ -123,6 +124,11 @@ used to make the prediction for the observation. This ensures that the
 outcome value for an observation is never used to predict for that observation
 even when it is in sample, a feature not shared by the standard honesty
 implementation.}
+
+\item{doubleBootstrap}{The doubleBootstrap flag provides the option to resample
+from the out-of-bag observations set a second time in order to get the
+averaging set when using OOBhonest. By default this is TRUE when running
+OOBhonesty.}
 
 \item{seed}{random seed}
 

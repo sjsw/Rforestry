@@ -613,7 +613,8 @@ double rcpp_OBBPredictInterface(
 Rcpp::NumericVector rcpp_OBBPredictionsInterface(
     SEXP forest,
     Rcpp::List x,
-    bool existing_df
+    bool existing_df,
+    bool doubleOOB
 ){
   // Then we predict with the feature.new data
   if (existing_df) {
@@ -622,7 +623,8 @@ Rcpp::NumericVector rcpp_OBBPredictionsInterface(
 
     try {
       Rcpp::XPtr< forestry > testFullForest(forest) ;
-      std::vector<double> OOBpreds = (*testFullForest).predictOOB(&featureData);
+      std::vector<double> OOBpreds = (*testFullForest).predictOOB(&featureData,
+                                                                  doubleOOB);
       Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
       return wrapped_preds;
     } catch(std::runtime_error const& err) {

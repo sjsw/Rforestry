@@ -157,6 +157,11 @@ public:
     size_t nRows
   );
 
+  void getDoubleOOBIndex(
+      std::vector<size_t> &outputOOBIndex,
+      size_t nRows
+  );
+
   void getOOBhonestIndex(
       std::vector<size_t> &outputOOBIndex,
       size_t nRows
@@ -167,6 +172,7 @@ public:
     std::vector<size_t> &outputOOBCount,
     DataFrame* trainingData,
     bool OOBhonest,
+    bool doubleOOB,
     size_t nodesizeStrictAvg,
     std::vector< std::vector<double> >* xNew
   );
