@@ -25,6 +25,7 @@ public:
     size_t sampSize,
     double splitRatio,
     bool OOBhonest,
+    bool doubleBootstrap,
     size_t mtry,
     size_t minNodeSizeSpt,
     size_t minNodeSizeAvg,
@@ -162,6 +163,10 @@ public:
     return _OOBhonest;
   }
 
+  bool getDoubleBootstrap() {
+    return _doubleBootstrap;
+  }
+
   bool isReplacement() {
     return _replace;
   }
@@ -213,6 +218,7 @@ private:
   size_t _sampSize;
   double _splitRatio;
   bool _OOBhonest;
+  bool _doubleBootstrap;
   size_t _mtry;
   size_t _minNodeSizeSpt;
   size_t _minNodeSizeAvg;

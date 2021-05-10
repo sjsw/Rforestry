@@ -33,6 +33,7 @@ forestry::forestry(
   size_t sampSize,
   double splitRatio,
   bool OOBhonest,
+  bool doubleBootstrap,
   size_t mtry,
   size_t minNodeSizeSpt,
   size_t minNodeSizeAvg,
@@ -57,6 +58,7 @@ forestry::forestry(
   this->_sampSize = sampSize;
   this->_splitRatio = splitRatio;
   this->_OOBhonest = OOBhonest;
+  this->_doubleBootstrap = doubleBootstrap;
   this->_mtry = mtry;
   this->_minNodeSizeAvg = minNodeSizeAvg;
   this->_minNodeSizeSpt = minNodeSizeSpt;
@@ -218,9 +220,9 @@ void forestry::addTrees(size_t ntree) {
           std::unique_ptr<std::vector<size_t> > averageSampleIndex2;
 
           // If OOBhonest is true, we generate the averaging set based
-          // on the OOB set
+          // on the OOB set.
           if (getOOBhonest()) {
-            // Generate sample index based on the split ratio
+
             std::vector<size_t> splitSampleIndex_;
             std::vector<size_t> averageSampleIndex_;
 
@@ -236,6 +238,7 @@ void forestry::addTrees(size_t ntree) {
 
             std::vector<size_t> OOBIndex(getSampleSize());
 
+            // First we get the set of all possible
             // OOB index is the set difference between sampleIndex and all_idx
             std::vector<size_t>::iterator it = std::set_difference (
               allIndex.begin(),
@@ -247,23 +250,32 @@ void forestry::addTrees(size_t ntree) {
 
             // resize OOB index
             OOBIndex.resize((unsigned long) (it - OOBIndex.begin()));
-
-
-            // Now in new version, of OOB honesty
-            // we want to sample with replacement from
-            // the OOB index vector, so that our averaging vector
-            // is also bagged.
-            std::uniform_int_distribution<size_t> uniform_dist(
-                0, (size_t) (OOBIndex.size() - 1)
-            );
-
             std::vector< size_t > AvgIndices;
 
-            // Sample with replacement
-            while (AvgIndices.size() < OOBIndex.size()) {
-              size_t randomIndex = uniform_dist(random_number_generator);
-              AvgIndices.push_back(randomIndex);
+            // Check the double bootstrap, if true, we take another sample
+            // from the OOB indices, otherwise we just take the OOB index
+            // set with standard (uniform) weightings
+            if (getDoubleBootstrap()) {
+              // Now in new version, of OOB honesty
+              // we want to sample with replacement from
+              // the OOB index vector, so that our averaging vector
+              // is also bagged.
+              std::uniform_int_distribution<size_t> uniform_dist(
+                  0, (size_t) (OOBIndex.size() - 1)
+              );
+
+              // Sample with replacement
+              while (AvgIndices.size() < OOBIndex.size()) {
+                size_t randomIndex = uniform_dist(random_number_generator);
+                AvgIndices.push_back(
+                  OOBIndex[randomIndex]
+                );
+              }
+
+            } else {
+              AvgIndices = OOBIndex;
             }
+
 
             // Now set the splitting indices and averaging indices
             splitSampleIndex_ = sampleIndex;

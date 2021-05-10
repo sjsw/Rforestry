@@ -21,6 +21,7 @@ multilayerForestry::multilayerForestry(
   size_t sampSize,
   double splitRatio,
   bool OOBhonest,
+  bool doubleBootstrap,
   size_t mtry,
   size_t minNodeSizeSpt,
   size_t minNodeSizeAvg,
@@ -45,6 +46,7 @@ multilayerForestry::multilayerForestry(
   this->_sampSize = sampSize;
   this->_splitRatio = splitRatio;
   this->_OOBhonest = OOBhonest;
+  this->_doubleBootstrap = doubleBootstrap;
   this->_mtry = mtry;
   this->_minNodeSizeAvg = minNodeSizeAvg;
   this->_minNodeSizeSpt = minNodeSizeSpt;
@@ -139,6 +141,7 @@ void multilayerForestry::addForests(size_t ntree) {
       _sampSize,
       _splitRatio,
       _OOBhonest,
+      _doubleBootstrap,
       _mtry,
       _minNodeSizeSpt,
       _minNodeSizeAvg,
