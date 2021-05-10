@@ -901,7 +901,8 @@ void forestry::calculateOOBError() {
     }
   }
 
-  this->_OOBError = OOB_MSE;
+  // Return the MSE and the prediction vector
+  this->_OOBError = OOB_MSE /( (double) outputOOBPrediction.size() );
   this->_OOBpreds = outputOOBPrediction;
 };
 

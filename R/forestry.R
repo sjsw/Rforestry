@@ -1467,7 +1467,9 @@ predict.multilayerForestry <- function(object,
 #' getOOB-forestry
 #' @name getOOB-forestry
 #' @rdname getOOB-forestry
-#' @description Calculate the out-of-bag error of a given forest.
+#' @description Calculate the out-of-bag error of a given forest. This is done
+#' by using the out-of-bag predictions for each observation, and calculating the
+#' MSE over the entire forest.
 #' @param object A `forestry` object.
 #' @param noWarning flag to not display warnings
 #' @aliases getOOB,forestry-method
