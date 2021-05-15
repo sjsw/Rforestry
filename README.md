@@ -75,7 +75,7 @@ monotone_rf <- forestry(x = data_train[,-3],
                         nthread = 1,
                         ntree = 25)
                         
-predict(monotone_rf, feature.new = data_train[,-3])
+predict(monotone_rf, newdata.new = data_train[,-3])
 ```
 
 
