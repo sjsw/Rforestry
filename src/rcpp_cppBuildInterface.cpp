@@ -637,7 +637,7 @@ Rcpp::NumericVector rcpp_OBBPredictionsInterface(
   } else {
     try {
       Rcpp::XPtr< forestry > testFullForest(forest) ;
-      std::vector<double> OOBpreds = (*testFullForest).getOOBpreds();
+      std::vector<double> OOBpreds = (*testFullForest).getOOBpreds(doubleOOB);
       Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
       return wrapped_preds;
     } catch(std::runtime_error const& err) {

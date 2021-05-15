@@ -78,7 +78,9 @@ public:
 
   size_t getTotalNodeCount();
 
-  void calculateOOBError();
+  void calculateOOBError(
+      bool doubleOOB = false
+  );
 
   void calculateVariableImportance();
 
@@ -100,8 +102,10 @@ public:
     return _OOBError;
   }
 
-  std::vector<double> getOOBpreds() {
-    calculateOOBError();
+  std::vector<double> getOOBpreds(
+      bool doubleOOB = false
+  ) {
+    calculateOOBError(doubleOOB);
     return _OOBpreds;
   }
 

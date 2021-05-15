@@ -24,7 +24,7 @@ test_that("Tests if OOB Honesty is working correctly", {
 
   # Test OOB
   skip_if_not_mac()
-  expect_lt(mean((getOOB(forest) - 12.73149)^2), .1)
+  expect_lt(mean((getOOB(forest) - 0.09086581)^2), .1)
 
   # Test what happens when we specify splitratio as well as OOBhonest
   expect_warning(forest <- forestry(
@@ -45,7 +45,7 @@ test_that("Tests if OOB Honesty is working correctly", {
   )
 
   skip_if_not_mac()
-  expect_equal(getOOBpreds(forest)[1:3], c(5.048432, 4.698436, 4.698634), tolerance = 1e-3)
+  expect_equal(getOOBpreds(forest, noWarning = TRUE)[1:3], c(5.048525, 4.749303, 4.745130), tolerance = 1e-3)
 
 
   context('Test OOB Honesty vs honest OOB set')
@@ -62,6 +62,7 @@ test_that("Tests if OOB Honesty is working correctly", {
     splitrule = "variance",
     splitratio = 1,
     OOBhonest = TRUE,
+    doubleBootstrap = FALSE,
     seed = 8921,
     nodesizeStrictAvg = 0,
     saveable = TRUE
@@ -70,7 +71,7 @@ test_that("Tests if OOB Honesty is working correctly", {
 
   skip_if_not_mac()
   # OOB preds should be for only observations in the splitting set for the tree
-  expect_equal(sort(which(!is.nan(getOOBpreds(forest)))),
+  expect_equal(sort(which(!is.nan(getOOBpreds(forest, noWarning = TRUE)))),
                sort(unique(forest@R_forest[[1]]$splittingSampleIndex)))
 
   forest <- forestry(
@@ -97,7 +98,7 @@ test_that("Tests if OOB Honesty is working correctly", {
                              forest@R_forest[[1]]$averagingSampleIndex))
 
   skip_if_not_mac()
-  expect_equal(sort(which(!is.nan(getOOBpreds(forest)))),
+  expect_equal(sort(which(!is.nan(getOOBpreds(forest, noWarning = TRUE)))),
                sort(oob_index))
 
   context('Test saving and loading with OOB Honesty')

@@ -8,11 +8,11 @@ test_that("Tests that saving RF and laoding it works", {
   doubleOOBpreds <- getOOBpreds(rf, doubleOOB = TRUE,
                                 noWarning = TRUE)
 
-  OOBpreds <- getOOBpreds(rf,noWarning = TRUE)
+  OOBpreds <- getOOBpreds(rf, noWarning = TRUE)
 
-  predict_doubleOOBpreds <- predict(rf, aggregation = "oob")
+  predict_doubleOOBpreds <- predict(rf, aggregation = "doubleOOB")
 
-  predict_OOBpreds <- predict(rf, aggregation = "doubleOOB")
+  predict_OOBpreds <- predict(rf, aggregation = "oob")
 
   # Expect OOB preds from getOOB preds and predict to be the same
   expect_equal(all.equal(predict_OOBpreds,

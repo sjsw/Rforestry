@@ -5,12 +5,12 @@
 \alias{compute_lp}
 \title{compute lp distances}
 \usage{
-compute_lp(object, feature.new, feature, p)
+compute_lp(object, newdata, feature, p)
 }
 \arguments{
 \item{object}{A `forestry` object.}
 
-\item{feature.new}{A data frame of testing predictors.}
+\item{newdata}{A data frame of testing predictors.}
 
 \item{feature}{A string denoting the dimension for computing lp distances.}
 
@@ -38,7 +38,7 @@ predict(rf, x_test)
 
 # Compute the l2 distances in the "Petal.Length" dimension
 distances_2 <- compute_lp(object = rf,
-                          feature.new = x_test,
+                          newdata = x_test,
                           feature = "Petal.Length",
                           p = 2)
 }

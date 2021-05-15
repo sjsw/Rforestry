@@ -14,8 +14,10 @@ test_that("Tests if OOB predictions are working with supplied feature", {
   change_species_x$Petal.Width[1:50] = change_species_x$Petal.Width[1:50] + 2
 
 
-  preds_modified <- getOOBpreds(rf, feature.new = change_species_x)
-  preds_original <- getOOBpreds(rf)
+  preds_modified <- getOOBpreds(rf, newdata = change_species_x,
+                                noWarning = TRUE)
+  preds_original <- getOOBpreds(rf,
+                                noWarning = TRUE)
 
   skip_if_not_mac()
 
@@ -27,7 +29,7 @@ test_that("Tests if OOB predictions are working with supplied feature", {
   # Now try testing an error
   k <- iris[1:10,-1]
   expect_warning(
-    preds <- getOOBpreds(rf, feature.new = k)
+    preds <- getOOBpreds(rf, newdata = k)
   )
   expect_equal(preds, NA)
 

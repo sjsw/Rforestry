@@ -25,7 +25,7 @@ test_that("Tests that Monotone Avg parameter is working correctly", {
   # Using the monotoneAvg parameter, the predictions from the averaging set should
   # respect monotonicity
   pred_means_avg_monotone <- sapply(c(1:9), function(x) {mean(predict(monotone_avg_forest,
-                                                         feature.new = data.frame(V1 = rep(x, 100))))})
+                                                         newdata = data.frame(V1 = rep(x, 100))))})
 
   expect_equal(all.equal(order(pred_means_avg_monotone), 1:9), TRUE)
 
@@ -42,7 +42,7 @@ test_that("Tests that Monotone Avg parameter is working correctly", {
   )
   # Test predictions are monotonic increasing in the first feature
   pred_means <- sapply(c(1:9), function(x) {mean(predict(monotone_forest,
-                                                         feature.new = data.frame(V1 = rep(x, 100))))})
+                                                         newdata = data.frame(V1 = rep(x, 100))))})
 
   # If we don't use the parameter, monotonicity is broken
   expect_equal(all.equal(order(pred_means), c(1,5,4,3,2,7,6,9,8)), TRUE)

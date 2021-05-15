@@ -806,7 +806,7 @@ void forestry::calculateVariableImportance() {
             pow(trueValue - outputOOBPrediction[j] / outputOOBCount[j], 2);
         }
       }
-      variableImportances.push_back(current_MSE);
+      variableImportances.push_back(current_MSE/( (double) outputOOBPrediction.size() ));
   }
 
   std::unique_ptr<std::vector<double> > variableImportances_(
@@ -817,7 +817,9 @@ void forestry::calculateVariableImportance() {
   this-> _variableImportance = std::move(variableImportances_);
 }
 
-void forestry::calculateOOBError() {
+void forestry::calculateOOBError(
+    bool doubleOOB
+) {
 
   size_t numObservations = getTrainingData()->getNumRows();
 
@@ -868,7 +870,7 @@ void forestry::calculateOOBError() {
               outputOOBCount_iteration,
               getTrainingData(),
               getOOBhonest(),
-              false,
+              doubleOOB,
               getMinNodeSizeToSplitAvg(),
               nullptr
             );

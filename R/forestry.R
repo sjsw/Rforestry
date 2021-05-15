@@ -1305,7 +1305,7 @@ multilayerForestry <- function(x,
 #' @rdname predict-forestry
 #' @description Return the prediction from the forest.
 #' @param object A `forestry` object.
-#' @param feature.new A data frame of testing predictors.
+#' @param newdata A data frame of testing predictors.
 #' @param aggregation How the individual tree predictions are aggregated:
 #'   `average` returns the mean of all trees in the forest; `weightMatrix`
 #'   returns a list consisting of "weightMatrix", the adaptive nearest neighbor
@@ -1313,14 +1313,14 @@ multilayerForestry <- function(x,
 #'   the ith entry of the jth column is the index of the leaf node to which the
 #'   ith observation is assigned in the jth tree; and "sparse", a matrix
 #'   where the ith entry in the jth column is 1 if the ith observation in
-#'   feature.new is assigned to the jth leaf and 0 otherwise. In each tree the
+#'   newdata is assigned to the jth leaf and 0 otherwise. In each tree the
 #'   leaves are indexed using a depth first ordering, and, in the "sparse"
 #'   representation, the first leaf in the second tree has column index one more than
 #'   the number of leaves in the first tree and so on. So, for example, if the
 #'   first tree has 5 leaves, the sixth column of the "sparse" matrix corresponds
 #'   to the first leaf in the second tree.
 #'   `oob` returns the out-of-bag predictions for the forest. We assume
-#'   that the ordering of the observations in feature.new have not changed from
+#'   that the ordering of the observations in newdata have not changed from
 #'   training. If the ordering has changed, we will get the wrong OOB indices.
 #'   `doubleOOB` is an experimental flag, which can only be used when OOBhonest = TRUE
 #'   and doubleBootstrap = TRUE. When both of these settings are on, the
@@ -1651,9 +1651,9 @@ getSplitProps <- function(object) {
 #' @rdname getOOBpreds-forestry
 #' @description Calculate the out-of-bag predictions of a given forest.
 #' @param object A trained model object of class "forestry".
-#' @param feature.new A possible new data frame on which to run out of bag
+#' @param newdata A possible new data frame on which to run out of bag
 #'  predictions. If this is not NULL, we assume that the indices of
-#'  feature.new are the same as the indices of the training set, and will use
+#'  newdata are the same as the indices of the training set, and will use
 #'  these to find which trees the observation is considered in/out of bag for.
 #' @param doubleOOB A flag specifying whether or not we should use the double OOB
 #'  set for the OOB predictions. This is the set of observations for each tree which

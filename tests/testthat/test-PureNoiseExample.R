@@ -18,7 +18,7 @@ test_that("Tests if OOB honesty is able to have low correlation to the training 
                    doubleBootstrap = FALSE
     )
 
-    p0oob <- predict(f0, X0, aggregation = "oob")
+    p0oob <- predict(f0, aggregation = "oob")
 
 
     dta$OOB[which(dta$rep == rep_i)] <- cor(p0oob,Y0)
@@ -29,7 +29,7 @@ test_that("Tests if OOB honesty is able to have low correlation to the training 
                    doubleBootstrap = TRUE
     )
 
-    p0oob <- predict(f0, X0, aggregation = "oob")
+    p0oob <- predict(f0, aggregation = "oob")
 
     dta$OOBdoubleBoot[which(dta$rep == rep_i)] <- cor(p0oob,Y0)
   }

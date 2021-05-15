@@ -179,7 +179,7 @@ adaptiveForestry <- function(x,
 #' @rdname predict-adaptiveForestry
 #' @description Return the prediction from the forest.
 #' @param object An `adaptiveForestry` object.
-#' @param feature.new A data frame of testing predictors.
+#' @param newdata A data frame of testing predictors.
 #' @param aggregation How the individual tree predictions are aggregated:
 #'   `average` returns the mean of all trees in the forest; `weightMatrix`
 #'   returns a list consisting of "weightMatrix", the adaptive nearest neighbor
@@ -213,7 +213,7 @@ adaptiveForestry <- function(x,
 #' @return A vector of predicted responses.
 #' @export
 predict.adaptiveForestry <- function(object,
-                                     feature.new,
+                                     newdata,
                                      aggregation = "average",
                                      seed = as.integer(runif(1) * 10000),
                                      nthread = 0,
@@ -229,7 +229,7 @@ predict.adaptiveForestry <- function(object,
 
   # Get first forest predictions
   p.first <- predict(object = object@first.forest,
-                     feature.new = feature.new,
+                     newdata = newdata,
                      aggregation = "average",
                      seed = seed,
                      nthread = nthread,
@@ -237,7 +237,7 @@ predict.adaptiveForestry <- function(object,
 
   # Get second forest predictions
   p.second <- predict(object = object@second.forest,
-                      feature.new = feature.new,
+                      newdata = newdata,
                       aggregation = "average",
                       seed = seed,
                       nthread = nthread,

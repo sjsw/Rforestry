@@ -7,7 +7,7 @@
 \usage{
 \method{predict}{adaptiveForestry}(
   object,
-  feature.new,
+  newdata,
   aggregation = "average",
   seed = as.integer(runif(1) * 10000),
   nthread = 0,
@@ -19,7 +19,7 @@
 \arguments{
 \item{object}{An `adaptiveForestry` object.}
 
-\item{feature.new}{A data frame of testing predictors.}
+\item{newdata}{A data frame of testing predictors.}
 
 \item{aggregation}{How the individual tree predictions are aggregated:
 `average` returns the mean of all trees in the forest; `weightMatrix`

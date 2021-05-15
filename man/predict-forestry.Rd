@@ -7,7 +7,7 @@
 \usage{
 \method{predict}{forestry}(
   object,
-  feature.new,
+  newdata = NULL,
   aggregation = "average",
   seed = as.integer(runif(1) * 10000),
   nthread = 0,
@@ -18,7 +18,7 @@
 \arguments{
 \item{object}{A `forestry` object.}
 
-\item{feature.new}{A data frame of testing predictors.}
+\item{newdata}{A data frame of testing predictors.}
 
 \item{aggregation}{How the individual tree predictions are aggregated:
 `average` returns the mean of all trees in the forest; `weightMatrix`
@@ -27,14 +27,14 @@ weights used to construct the predictions; "terminalNodes", a matrix where
 the ith entry of the jth column is the index of the leaf node to which the
 ith observation is assigned in the jth tree; and "sparse", a matrix
 where the ith entry in the jth column is 1 if the ith observation in
-feature.new is assigned to the jth leaf and 0 otherwise. In each tree the
+newdata is assigned to the jth leaf and 0 otherwise. In each tree the
 leaves are indexed using a depth first ordering, and, in the "sparse"
 representation, the first leaf in the second tree has column index one more than
 the number of leaves in the first tree and so on. So, for example, if the
 first tree has 5 leaves, the sixth column of the "sparse" matrix corresponds
 to the first leaf in the second tree.
 `oob` returns the out-of-bag predictions for the forest. We assume
-that the ordering of the observations in feature.new have not changed from
+that the ordering of the observations in newdata have not changed from
 training. If the ordering has changed, we will get the wrong OOB indices.
 `doubleOOB` is an experimental flag, which can only be used when OOBhonest = TRUE
 and doubleBootstrap = TRUE. When both of these settings are on, the

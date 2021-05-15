@@ -30,10 +30,10 @@ test_that("Tests if different OOB honesty sampling schemes are working as expect
   # the observations which were not in either the splitting or aggregation set
   doubleOOBindices <- setdiff(setdiff(1:nrow(x_train),
                                       rf@R_forest[[1]]$splittingSampleIndex),
-                              rf@R_forest[[1]]$averagingSampleIndex)
+                                      rf@R_forest[[1]]$averagingSampleIndex)
 
 
-  preds <- predict(rf, feature.new = x_train, aggregation = "doubleOOB")
+  preds <- predict(rf, aggregation = "doubleOOB")
   prediction_indices <- which(!is.nan(preds))
 
   expect_equal(all.equal(prediction_indices, doubleOOBindices),
