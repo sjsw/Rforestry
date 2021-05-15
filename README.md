@@ -98,10 +98,10 @@ rf <- forestry(x = iris[,-1],
                ntree = 500)
 
 # Get the OOB predictions for the training set
-oob_preds <- predict(rf, feature.new = iris[,-1], aggregation = "oob")
+oob_preds <- predict(rf, aggregation = "oob")
 
 # This should be equal to the OOB error
-sum((oob_preds -  iris[,1])^2)
+mean((oob_preds -  iris[,1])^2)
 getOOB(rf)
 ```
 
