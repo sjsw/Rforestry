@@ -1345,24 +1345,32 @@ multilayerForestry <- function(x,
 #' @return A vector of predicted responses.
 #' @export
 predict.forestry <- function(object,
-                             feature.new,
+                             newdata = NULL,
                              aggregation = "average",
                              seed = as.integer(runif(1) * 10000),
                              nthread = 0,
                              exact = NULL,
                              ...) {
-  # Preprocess the data. We only run the data checker if ridge is turned on, because even in the case where there were no NAs in train, we still want to predict.
-  forest_checker(object)
-  feature.new <- testing_data_checker(object, feature.new, object@hasNas)
-  feature.new <- as.data.frame(feature.new)
 
-  processed_x <- preprocess_testing(feature.new,
-                                    object@categoricalFeatureCols,
-                                    object@categoricalFeatureMapping)
+  if (is.null(newdata) && !(aggregation == "oob" || aggregation == "doubleOOB")) {
+    stop("When using an aggregation that is not oob or doubleOOB, one must supply newdata")
+  }
+
+  # Preprocess the data. We only run the data checker if ridge is turned on, because even in the case where there were no NAs in train, we still want to predict.
+  if (!is.null(newdata)) {
+    forest_checker(object)
+    newdata <- testing_data_checker(object, newdata, object@hasNas)
+    newdata <- as.data.frame(newdata)
+
+    processed_x <- preprocess_testing(newdata,
+                                      object@categoricalFeatureCols,
+                                      object@categoricalFeatureMapping)
+
+  }
 
   # Set exact aggregation method if nobs < 100,000 and average aggregation
   if (is.null(exact)) {
-    if (nrow(feature.new) > 1e5 || aggregation != "average") {
+    if (nrow(newdata) > 1e5 || aggregation != "average") {
       exact = FALSE
     } else {
       exact = TRUE
@@ -1372,7 +1380,7 @@ predict.forestry <- function(object,
   # If option set to terminalNodes, we need to make matrix of ID's
   if (aggregation == "oob") {
 
-    if (!is.null(feature.new) && (object@sampsize != nrow(feature.new))) {
+    if (!is.null(newdata) && (object@sampsize != nrow(newdata))) {
       warning(paste(
         "Attempting to do OOB predictions on a dataset which doesn't match the",
         "training data!"
@@ -1380,19 +1388,33 @@ predict.forestry <- function(object,
       return(NA)
     }
 
-    rcppPrediction <- tryCatch({
-      rcpp_OBBPredictionsInterface(object@forest,
-                                   processed_x,
-                                   TRUE,
-                                   FALSE
-                                   )
-    }, error = function(err) {
-      print(err)
-      return(NULL)
-    })
+    if (is.null(newdata)) {
+      rcppPrediction <- tryCatch({
+        rcpp_OBBPredictionsInterface(object@forest,
+                                     NULL,  # Give null for the dataframe
+                                     FALSE, # Tell predict we don't have an existing dataframe
+                                     FALSE
+        )
+      }, error = function(err) {
+        print(err)
+        return(NULL)
+      })
+    } else {
+      rcppPrediction <- tryCatch({
+        rcpp_OBBPredictionsInterface(object@forest,
+                                     processed_x,
+                                     TRUE, # Give dataframe flag
+                                     FALSE
+        )
+      }, error = function(err) {
+        print(err)
+        return(NULL)
+      })
+    }
+
   } else if (aggregation == "doubleOOB") {
 
-    if (!is.null(feature.new) && (object@sampsize != nrow(feature.new))) {
+    if (!is.null(newdata) && (object@sampsize != nrow(newdata))) {
       warning(paste(
         "Attempting to do OOB predictions on a dataset which doesn't match the",
         "training data!"
@@ -1408,16 +1430,30 @@ predict.forestry <- function(object,
       return(NA)
     }
 
-    rcppPrediction <- tryCatch({
-      rcpp_OBBPredictionsInterface(object@forest,
-                                   processed_x,
-                                   TRUE,
-                                   TRUE
-      )
-    }, error = function(err) {
-      print(err)
-      return(NULL)
-    })
+    if (is.null(newdata)) {
+      rcppPrediction <- tryCatch({
+        rcpp_OBBPredictionsInterface(object@forest,
+                                     NULL,  # Give null for the dataframe
+                                     FALSE, # Tell predict we don't have an existing dataframe
+                                     TRUE
+        )
+      }, error = function(err) {
+        print(err)
+        return(NULL)
+      })
+    } else {
+      rcppPrediction <- tryCatch({
+        rcpp_OBBPredictionsInterface(object@forest,
+                                     processed_x,
+                                     TRUE, # Give dataframe flag
+                                     TRUE
+        )
+      }, error = function(err) {
+        print(err)
+        return(NULL)
+      })
+    }
+
   } else {
     rcppPrediction <- tryCatch({
       rcpp_cppPredictInterface(object@forest,
@@ -1441,7 +1477,7 @@ predict.forestry <- function(object,
     return(rcppPrediction)
   } else if (aggregation == "weightMatrix") {
     terminalNodes <- rcppPrediction$terminalNodes
-    nobs <- nrow(feature.new)
+    nobs <- nrow(newdata)
     ntree <- object@ntree
     sparse_rep <- matrix(nrow = nobs, ncol = 0)
     for (i in 1:ntree) {
@@ -1619,6 +1655,11 @@ getSplitProps <- function(object) {
 #'  predictions. If this is not NULL, we assume that the indices of
 #'  feature.new are the same as the indices of the training set, and will use
 #'  these to find which trees the observation is considered in/out of bag for.
+#' @param doubleOOB A flag specifying whether or not we should use the double OOB
+#'  set for the OOB predictions. This is the set of observations for each tree which
+#'  were in neither the averaging set nor the splitting set. Note that the forest
+#'  must have been trained with doubleBootstrap = TRUE for this to be used. Default
+#'  is FALSE.
 #' @param noWarning Flag to not display warnings.
 #' @return The vector of all training observations, with their out of bag
 #'  predictions. Note each observation is out of bag for different trees, and so
@@ -1628,8 +1669,10 @@ getSplitProps <- function(object) {
 #' @seealso \code{\link{forestry}}
 #' @export
 getOOBpreds <- function(object,
-                        feature.new = NULL,
-                        noWarning = FALSE) {
+                        newdata = NULL,
+                        doubleOOB = FALSE,
+                        noWarning = FALSE
+                        ) {
 
   if (!object@replace &&
       object@ntree * (rcpp_getObservationSizeInterface(object@dataframe) -
@@ -1644,7 +1687,7 @@ getOOBpreds <- function(object,
   }
 
 
-  if (!is.null(feature.new) && (object@sampsize != nrow(feature.new))) {
+  if (!is.null(newdata) && (object@sampsize != nrow(newdata))) {
     warning(paste(
       "Attempting to do OOB predictions on a dataset which doesn't match the",
       "training data!"
@@ -1657,11 +1700,17 @@ getOOBpreds <- function(object,
                   Run OOB predictions by calling predict(..., aggregation = \"oob\")"))
   }
 
-  if (!is.null(feature.new)) {
-    feature.new <- testing_data_checker(object, feature.new, object@hasNas)
-    feature.new <- as.data.frame(feature.new)
+  if (doubleOOB && !object@doubleBootstrap) {
+    doubleOOB <- FALSE
+    warning(paste("Cannot do doubleOOB preds if the forest was trained with doubleBootstrap = FALSE",
+                  "Setting doubleOOB = FALSE"))
+  }
 
-    processed_x <- preprocess_testing(feature.new,
+  if (!is.null(newdata)) {
+    newdata <- testing_data_checker(object, newdata, object@hasNas)
+    newdata <- as.data.frame(newdata)
+
+    processed_x <- preprocess_testing(newdata,
                                       object@categoricalFeatureCols,
                                       object@categoricalFeatureMapping)
 
@@ -1674,7 +1723,8 @@ getOOBpreds <- function(object,
   rcppOOBpreds <- tryCatch({
     return(rcpp_OBBPredictionsInterface(object@forest,
                                         processed_x,
-                                        existing_df))
+                                        existing_df,
+                                        doubleOOB))
   }, error = function(err) {
     print(err)
     return(NA)
