@@ -4,7 +4,7 @@ test_that("Tests missing value splitting when Outcome values are close to zero",
   set.seed(24750371)
 
 
-  context("For different distance functions (abs() vs square()), we see if we have underflow problems")
+  context("Test Missing data + Small Y for underflow")
   x <- data.frame(V1 = runif(5000, min = -1e-8, max = 1e-8),
                   V2 = runif(5000, min = -1e-8, max = 1e-8),
                   V3 = runif(5000, min = -1e-8, max = 1e-8))

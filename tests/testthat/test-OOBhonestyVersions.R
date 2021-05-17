@@ -2,6 +2,7 @@ test_that("Tests if different OOB honesty sampling schemes are working as expect
 
   set.seed(292313)
 
+  context("Test OOB honesty vs doubleBootstrap OOB honesty")
   x_train <- iris[, -1]
   y_train <- iris[, 1]
 

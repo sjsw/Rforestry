@@ -36,7 +36,7 @@ test_that("Tests if OOB predictions are working correctly (normal setting)", {
 test_that("Tests if OOB predictions are working correctly (extreme setting)", {
   x <- iris[, -1]
   y <- iris[, 1]
-  context('OOB Predictions')
+  context('OOB Predictions extreme')
   # Set seed for reproductivity
   set.seed(24750371)
 
