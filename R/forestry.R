@@ -1770,6 +1770,80 @@ getVI <- function(object,
     return(rcppVI)
   }
 
+# -- Calculate Confidence Interval estimates for a new feature -----------------
+#' getCI-forestry
+#' @rdname getCI-forestry
+#' @description For a new set of features, calculate the confidence intervals
+#'  for each new observation.
+#' @param object A `forestry` object.
+#' @param newdata A set of new observations for which we want to predict the
+#'  outcomes and use confidence intervals.
+#' @param level The confidence level at which we want to make our intervals. Default
+#'  is to use .95 which corresponds to 95 percentile confidence intervals.
+#' @param method A flag for the different ways to create the confidence intervals.
+#'  Right now we have two ways of doing this. One is the `OOB-bootstrap` flag which
+#'  uses many bootstrap pulls from the set of OOB trees then with these different
+#'  pulls, we use the set of trees to predict for the new feature and give the
+#'  confidence set over the many bootstrap draws. The other method- `OOB-conformal`-
+#'  creates intervals by taking the set of doubleOOB trees for each observation, and
+#'  using the predictions of these trees to give conformal intervals. So for an
+#'  observation obs_i, let S_i be the set of trees for which obs_i was in neither
+#'  the splitting set nor the averaging set (or the set of trees for which obs_i
+#'  was "doubleOOB"), we then predict for obs_i with only the trees in S_i.
+#'  doubleOOB_tree_preds <- predict(S_i, obs_i):
+#'  Then CI(obs_i, alpha = .95) = quantile(doubleOOB_tree_preds - y_i, probs = .95).
+#'  Default is `OOB-conformal`.
+#' @param noWarning flag to not display warnings
+#' @return The confidence intervals for each observation in newdata.
+#' @export
+getCI <- function(object,
+                  newdata,
+                  level = .95,
+                  method = "OOB-conformal",
+                  noWarning = FALSE) {
+
+  if ((method == "OOB-conformal") && !(object@OOBhonest && object@doubleBootstrap)) {
+    stop("We cannot do OOB-conformal intervals unless both OOBhonest and doubleBootstrap are TRUE")
+  }
+
+  if ((method == "OOB-bootstrap") && !(object@OOBhonest)) {
+    stop("We cannot do OOB-bootstrap intervals unless OOBhonest is TRUE")
+  }
+
+  # Check the Rforestry object
+  forest_checker(object)
+
+  # Check the newdata
+  newdata <- testing_data_checker(object, newdata, object@hasNas)
+  newdata <- as.data.frame(newdata)
+  processed_x <- preprocess_testing(newdata,
+                                    object@categoricalFeatureCols,
+                                    object@categoricalFeatureMapping)
+
+  if (method == "OOB-bootstrap") {
+    warning("OOB-bootstrap not implemented")
+    return(NA)
+  } else if (method == "OOB-conformal") {
+    # Get double OOB predictions and the residuals
+    y_pred <- predict(object, aggregation = "doubleOOB")
+    res <- y_pred - object@processed_dta$y
+
+    # Get (1-level) / 2 and 1 - (1-level) / 2 quantiles of the residuals
+    quantiles <- quantile(res, probs = c((1-level) / 2, 1 - (1-level) / 2))
+
+    # Get predictions on newdata
+    predictions_new <- predict(object, newdata)
+
+    predictions <- list("Predictions" = predictions_new,
+                        "CI.upper" = predictions_new + unname(quantiles[2]),
+                        "CI.lower" = predictions_new + unname(quantiles[1]),
+                        "Level" = level)
+    return(predictions)
+  } else {
+    return(NA)
+  }
+}
+
 
 
 # -- Add More Trees ------------------------------------------------------------
