@@ -1861,17 +1861,26 @@ getCI <- function(object,
 
     # Now we do B bootstrap pulls of the trees in order to do prediction
     # intervals for newdata
-    full_preds <- predict(object, newdata, aggregation = "weightMatrix")$weightMatrix
     prediction_array <- data.frame(matrix(nrow = nrow(newdata), ncol = B))
 
     for (i in 1:B) {
       bootstrap_i <- sample(x = (1:object@ntree),
                             size = object@ntree,
                             replace = TRUE)
-      #pred_i <- predict()
+      pred_i <- predict(object, newdata = newdata, trees = bootstrap_i)
+      prediction_array[,i] <- pred_i
     }
+    quantiles <- apply(prediction_array,
+                       MARGIN = 1,
+                       FUN = quantile,
+                       probs = c((1-level) / 2, 1 - (1-level) / 2))
 
-    return(NA)
+    predictions <- list("Predictions" = predict(object, newdata = newdata),
+                        "CI.upper" = quantiles[2,],
+                        "CI.lower" = quantiles[1,],
+                        "Level" = level)
+
+    return(predictions)
   } else if (method == "OOB-conformal") {
     # Get double OOB predictions and the residuals
     y_pred <- predict(object, aggregation = "doubleOOB")
