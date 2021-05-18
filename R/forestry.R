@@ -1341,6 +1341,15 @@ multilayerForestry <- function(x,
 #'   varied orders as different threads finish at different times.
 #'   By default, exact is TRUE unless N > 100,000 or a custom aggregation
 #'   function is used.
+#' @param trees A vector (1-indexed) of indices in the range 1:ntree which tells
+#'   predict which trees in the forest to use for the prediction. Predict will by
+#'   default take the average of all trees in the forest, although this flag
+#'   can be used to take single tree predictions, or averages of diffferent trees
+#'   with different weightings. Duplicate entries are allowed, so if trees = c(1,2,2)
+#'   this will predict the weighted average prediction of only trees 1 and 2 by:
+#'   predict(..., trees = c(1,2,2)) = (predict(..., trees = c(1)) +
+#'                                      2*predict(..., trees = c(2))) / 3.
+#'   note we must have exact = TRUE, and aggregation = "average" to use tree indices.
 #' @param ... additional arguments.
 #' @return A vector of predicted responses.
 #' @export
@@ -1350,6 +1359,7 @@ predict.forestry <- function(object,
                              seed = as.integer(runif(1) * 10000),
                              nthread = 0,
                              exact = NULL,
+                             trees = NULL,
                              ...) {
 
   if (is.null(newdata) && !(aggregation == "oob" || aggregation == "doubleOOB")) {
@@ -1376,6 +1386,28 @@ predict.forestry <- function(object,
       exact = TRUE
     }
   }
+
+  # We can only use tree aggregations if exact = TRUE and aggregation = "average"
+  if (!is.null(trees) && ((exact != TRUE) || (aggregation != "average"))) {
+    stop("When using tree indices, we must have exact = TRUE and aggregation = \"average\" ")
+  }
+
+  if (any(trees < 1) || any(trees > object@ntree) || any(trees %% 1 != 0)) {
+    stop("trees must contain indices which are integers between 1 and ntree")
+  }
+
+  # If trees are being used, we need to convert them into a weight vector
+  if (!is.null(trees)) {
+    tree_weights <- rep(0, object@ntree)
+    for (i in 1:length(trees)) {
+      tree_weights[trees[i]] = tree_weights[trees[i]] + 1
+    }
+    use_weights <- TRUE
+  } else {
+    tree_weights <- rep(0, object@ntree)
+    use_weights <- FALSE
+  }
+
 
   # If option set to terminalNodes, we need to make matrix of ID's
   if (aggregation == "oob") {
@@ -1461,7 +1493,9 @@ predict.forestry <- function(object,
                                aggregation,
                                seed = seed,
                                nthread = nthread,
-                               exact = exact)
+                               exact = exact,
+                               use_weights = use_weights,
+                               tree_weights = tree_weights)
     }, error = function(err) {
       print(err)
       return(NULL)
@@ -1780,6 +1814,7 @@ getVI <- function(object,
 #'  outcomes and use confidence intervals.
 #' @param level The confidence level at which we want to make our intervals. Default
 #'  is to use .95 which corresponds to 95 percentile confidence intervals.
+#' @param B Number of bootstrap draws to use when using method = "OOB-bootstrap"
 #' @param method A flag for the different ways to create the confidence intervals.
 #'  Right now we have two ways of doing this. One is the `OOB-bootstrap` flag which
 #'  uses many bootstrap pulls from the set of OOB trees then with these different
@@ -1799,6 +1834,7 @@ getVI <- function(object,
 getCI <- function(object,
                   newdata,
                   level = .95,
+                  B = 100,
                   method = "OOB-conformal",
                   noWarning = FALSE) {
 
@@ -1821,7 +1857,20 @@ getCI <- function(object,
                                     object@categoricalFeatureMapping)
 
   if (method == "OOB-bootstrap") {
-    warning("OOB-bootstrap not implemented")
+    #warning("OOB-bootstrap not implemented")
+
+    # Now we do B bootstrap pulls of the trees in order to do prediction
+    # intervals for newdata
+    full_preds <- predict(object, newdata, aggregation = "weightMatrix")$weightMatrix
+    prediction_array <- data.frame(matrix(nrow = nrow(newdata), ncol = B))
+
+    for (i in 1:B) {
+      bootstrap_i <- sample(x = (1:object@ntree),
+                            size = object@ntree,
+                            replace = TRUE)
+      #pred_i <- predict()
+    }
+
     return(NA)
   } else if (method == "OOB-conformal") {
     # Get double OOB predictions and the residuals

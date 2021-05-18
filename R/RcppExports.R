@@ -13,8 +13,8 @@ rcpp_cppMultilayerBuildInterface <- function(x, y, catCols, linCols, numRows, nu
     .Call(`_Rforestry_rcpp_cppMultilayerBuildInterface`, x, y, catCols, linCols, numRows, numColumns, ntree, nrounds, eta, replace, sampsize, mtry, splitratio, OOBhonest, doubleBootstrap, nodesizeSpl, nodesizeAvg, nodesizeStrictSpl, nodesizeStrictAvg, minSplitGain, maxDepth, seed, nthread, verbose, middleSplit, maxObs, featureWeights, featureWeightsVariables, deepFeatureWeights, deepFeatureWeightsVariables, observationWeights, monotonicConstraints, linear, overfitPenalty, doubleTree, existing_dataframe_flag, existing_dataframe)
 }
 
-rcpp_cppPredictInterface <- function(forest, x, aggregation, seed, nthread, exact) {
-    .Call(`_Rforestry_rcpp_cppPredictInterface`, forest, x, aggregation, seed, nthread, exact)
+rcpp_cppPredictInterface <- function(forest, x, aggregation, seed, nthread, exact, use_weights, tree_weights) {
+    .Call(`_Rforestry_rcpp_cppPredictInterface`, forest, x, aggregation, seed, nthread, exact, use_weights, tree_weights)
 }
 
 rcpp_cppMultilayerPredictInterface <- function(multilayerForest, x, aggregation, seed, nthread, exact) {

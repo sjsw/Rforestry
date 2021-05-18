@@ -51,7 +51,9 @@ public:
     arma::Mat<int>* terminalNodes,
     unsigned int seed,
     size_t nthread,
-    bool exact
+    bool exact,
+    bool use_weights,
+    std::vector<size_t>* tree_weights
   );
 
   std::vector<double> predictOOB(

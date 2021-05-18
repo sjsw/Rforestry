@@ -8,6 +8,7 @@ getCI(
   object,
   newdata,
   level = 0.95,
+  B = 100,
   method = "OOB-conformal",
   noWarning = FALSE
 )
@@ -20,6 +21,8 @@ outcomes and use confidence intervals.}
 
 \item{level}{The confidence level at which we want to make our intervals. Default
 is to use .95 which corresponds to 95 percentile confidence intervals.}
+
+\item{B}{Number of bootstrap draws to use when using method = "OOB-bootstrap"}
 
 \item{method}{A flag for the different ways to create the confidence intervals.
 Right now we have two ways of doing this. One is the `OOB-bootstrap` flag which

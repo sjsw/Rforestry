@@ -451,7 +451,9 @@ Rcpp::List rcpp_cppPredictInterface(
   std::string aggregation,
   int seed,
   int nthread,
-  bool exact
+  bool exact,
+  bool use_weights,
+  Rcpp::NumericVector tree_weights
 ){
   try {
 
@@ -466,6 +468,16 @@ Rcpp::List rcpp_cppPredictInterface(
     arma::Mat<double> weightMatrix;
     arma::Mat<int> terminalNodes;
 
+    // Have to keep track of tree_weights
+    std::vector<size_t>* testForestTreeWeights;
+    std::vector<size_t> weights;
+
+    if (use_weights) {
+      weights = Rcpp::as< std::vector<size_t> >(tree_weights);
+      testForestTreeWeights =
+        new std::vector<size_t> (weights);
+    }
+
     size_t threads_to_use;
     if (nthread == 0) {
       threads_to_use = testFullForest->getNthread();
@@ -473,7 +485,7 @@ Rcpp::List rcpp_cppPredictInterface(
       threads_to_use = (size_t) nthread;
     }
 
-    if(aggregation == "weightMatrix") {
+    if (aggregation == "weightMatrix") {
       size_t nrow = featureData[0].size(); // number of features to be predicted
       size_t ncol = (*testFullForest).getNtrain(); // number of train data
       weightMatrix.resize(nrow, ncol); // initialize the space for the matrix
@@ -496,14 +508,18 @@ Rcpp::List rcpp_cppPredictInterface(
                                                        &terminalNodes,
                                                        seed,
                                                        threads_to_use,
-                                                       exact);
+                                                       exact,
+                                                       false,
+                                                       NULL);
     } else {
       testForestPrediction = (*testFullForest).predict(&featureData,
                                                        NULL,
                                                        NULL,
                                                        seed,
                                                        threads_to_use,
-                                                       exact);
+                                                       exact,
+                                                       use_weights,
+                                                       use_weights ? testForestTreeWeights : NULL);
     }
 
     std::vector<double>* testForestPrediction_ =
@@ -1618,7 +1634,9 @@ std::vector< std::vector<double> > rcpp_cppImputeInterface(
                                                    NULL,
                                                    seed,
                                                    testFullForest->getNthread(),
-                                                   false);
+                                                   false,
+                                                   false,
+                                                   NULL);
 
   std::vector<double>* testForestPrediction_ =
     new std::vector<double>(*testForestPrediction.get());

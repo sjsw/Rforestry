@@ -442,7 +442,9 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   arma::Mat<int>* terminalNodes,
   unsigned int seed,
   size_t nthread,
-  bool exact
+  bool exact,
+  bool use_weights,
+  std::vector<size_t>* tree_weights
 ){
   std::vector<double> prediction;
   size_t numObservations = (*xNew)[0].size();
@@ -554,6 +556,8 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   #endif
 
   // If exact, we need to aggregate the predictions by tree seed order.
+  double total_weights = 0;
+
   if (exact) {
     std::vector<size_t> indices(tree_seeds.size());
     std::iota(indices.begin(), indices.end(), 0);
@@ -563,15 +567,20 @@ std::unique_ptr< std::vector<double> > forestry::predict(
                 return tree_seeds[a] > tree_seeds[b];
               });
 
+    size_t weight_index = 0;
     // Now aggregate using the new index ordering
-    for(std::vector<size_t>::iterator iter = indices.begin();
+    for (std::vector<size_t>::iterator iter = indices.begin();
         iter != indices.end();
         ++iter)
     {
         size_t cur_index  = *iter;
+
+        double cur_weight = use_weights ? (double) (*tree_weights)[weight_index] : (double) 1.0;
+        total_weights += cur_weight;
+        weight_index++;
         // Aggregate all predictions for current tree
         for (size_t j = 0; j < numObservations; j++) {
-          prediction[j] += tree_preds[cur_index][j];
+          prediction[j] += cur_weight * tree_preds[cur_index][j];
         }
 
         if (terminalNodes) {
@@ -583,9 +592,14 @@ std::unique_ptr< std::vector<double> > forestry::predict(
     }
   }
 
-  for (size_t j=0; j<numObservations; j++){
-    prediction[j] /= getNtree();
+  if (!use_weights) {
+    total_weights = (double) getNtree();
   }
+
+  for (size_t j=0; j<numObservations; j++){
+    prediction[j] /= total_weights;
+  }
+
 
   std::unique_ptr< std::vector<double> > prediction_ (
     new std::vector<double>(prediction)
