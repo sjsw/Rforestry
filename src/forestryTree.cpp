@@ -1,4 +1,4 @@
-#include "forestryTree.h"
+>#include "forestryTree.h"
 #include "utils.h"
 #include "treeSplitting.h"
 #include <RcppArmadillo.h>
@@ -349,7 +349,7 @@ void splitDataIntoTwoParts(
     double rightMean = trainingData->partitionMean(rightPartitionIndex);
 
     for (const auto& index : naIndices) {
-      if ( abs(trainingData->getOutcomePoint(index) - leftMean) < abs(trainingData->getOutcomePoint(index) - rightMean) ) {
+      if ( std::fabs((double) (trainingData->getOutcomePoint(index) - leftMean)) < std::fabs((double) (trainingData->getOutcomePoint(index) - rightMean))) {
         leftPartitionIndex->push_back(index);
         naLeftCount++;
       } else {
@@ -1452,8 +1452,8 @@ void forestryTree::recursive_reconstruction(
 
   if(var_id < 0){
     // This is a terminal node
-    int nAve = abs(var_id);
-    int nSpl = abs((*var_ids)[0]);
+    int nAve = std::fabs((double) var_id);
+    int nSpl = std::fabs((dobule) (*var_ids)[0]);
     (*var_ids).erase((*var_ids).begin());
 
     std::unique_ptr<std::vector<size_t> > averagingSampleIndex_(

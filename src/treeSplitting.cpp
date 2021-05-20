@@ -1459,7 +1459,7 @@ void findBestSplitImpute(
       // If closer to left partitionmean, add to left sum, leftcount ++
       // This is okay to do after we check monotonicity, this shouldn't change
       // the ordering of the partition means as we allocate the NA examples greedily
-      if ( abs(currOutcome - leftPartitionMean) < abs(currOutcome - rightPartitionMean) ) {
+      if ( std::fabs( (double) (currOutcome - leftPartitionMean)) < std::fabs((double) (currOutcome - rightPartitionMean))) {
         LeftPartitionNaSum += currOutcome;
         leftPartitionNaCount++;
       }
@@ -1474,7 +1474,7 @@ void findBestSplitImpute(
       // If closer to left partitionmean, add to left sum, leftcount ++
       // This is okay to do after we check monotonicity, this shouldn't change
       // the ordering of the partition means as we allocate the NA examples greedily
-      if ( abs(currOutcome - leftPartitionMean) < abs(currOutcome - rightPartitionMean) ) {
+      if ( std::fabs((double) (currOutcome - leftPartitionMean)) < std::fabs((double) (currOutcome - rightPartitionMean))) {
         LeftAvgPartitionNaSum += currOutcome;
         leftAvgPartitionNaCount++;
       }
@@ -1690,7 +1690,7 @@ void findBestSplitImputeCategorical(
       double currOutcome = std::get<1>(pair);
 
       // If closer to left partitionmean, add to left sum, leftcount ++
-      if (abs(currOutcome - leftPartitionMean) < abs(currOutcome - rightPartitionMean)) {
+      if (std::fabs( (double) (currOutcome - leftPartitionMean)) < std::fabs((double) (currOutcome - rightPartitionMean))) {
         LeftPartitionNaSum += currOutcome;
         leftPartitionNaCount++;
       }
