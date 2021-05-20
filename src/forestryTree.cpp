@@ -1,4 +1,4 @@
->#include "forestryTree.h"
+#include "forestryTree.h"
 #include "utils.h"
 #include "treeSplitting.h"
 #include <RcppArmadillo.h>
