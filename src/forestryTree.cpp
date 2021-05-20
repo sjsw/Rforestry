@@ -1452,8 +1452,8 @@ void forestryTree::recursive_reconstruction(
 
   if(var_id < 0){
     // This is a terminal node
-    int nAve = std::fabs((double) var_id);
-    int nSpl = std::fabs((dobule) (*var_ids)[0]);
+    int nAve = std::abs((int) var_id);
+    int nSpl = std::abs((int) (*var_ids)[0]);
     (*var_ids).erase((*var_ids).begin());
 
     std::unique_ptr<std::vector<size_t> > averagingSampleIndex_(
