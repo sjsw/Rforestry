@@ -118,26 +118,27 @@ public:
   );
 
   void selectBestFeature(
-    size_t& bestSplitFeature,
-    double& bestSplitValue,
-    double& bestSplitLoss,
-    arma::Mat<double> &bestSplitGL,
-    arma::Mat<double> &bestSplitGR,
-    arma::Mat<double> &bestSplitSL,
-    arma::Mat<double> &bestSplitSR,
-    std::vector<size_t>* featureList,
-    std::vector<size_t>* averagingSampleIndex,
-    std::vector<size_t>* splittingSampleIndex,
-    DataFrame* trainingData,
-    std::mt19937_64& random_number_generator,
-    bool splitMiddle,
-    size_t maxObs,
-    bool linear,
-    double overfitPenalty,
-    std::shared_ptr< arma::Mat<double> > gtotal,
-    std::shared_ptr< arma::Mat<double> > stotal,
-    bool monotone_splits,
-    monotonic_info &monotone_details
+      size_t &bestSplitFeature,
+      double &bestSplitValue,
+      double &bestSplitLoss,
+      int &bestSplitNaDir,
+      arma::Mat<double> &bestSplitGL,
+      arma::Mat<double> &bestSplitGR,
+      arma::Mat<double> &bestSplitSL,
+      arma::Mat<double> &bestSplitSR,
+      std::vector<size_t>* featureList,
+      std::vector<size_t>* averagingSampleIndex,
+      std::vector<size_t>* splittingSampleIndex,
+      DataFrame* trainingData,
+      std::mt19937_64& random_number_generator,
+      bool splitMiddle,
+      size_t maxObs,
+      bool linear,
+      double overfitPenalty,
+      std::shared_ptr< arma::Mat<double> > gtotal,
+      std::shared_ptr< arma::Mat<double> > stotal,
+      bool monotone_splits,
+      monotonic_info &monotone_details
   );
 
   void initializelinear(

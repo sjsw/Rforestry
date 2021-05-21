@@ -306,6 +306,7 @@ void splitDataIntoTwoParts(
     std::vector<size_t>* sampleIndex,
     size_t splitFeature,
     double splitValue,
+    int naDirection,
     std::vector<size_t>* leftPartitionIndex,
     std::vector<size_t>* rightPartitionIndex,
     bool categoical,
@@ -344,19 +345,21 @@ void splitDataIntoTwoParts(
         }
       }
     }
-    // Now we have computed the split indices without NA indices, get two partition means and split NA indices
-    double leftMean = trainingData->partitionMean(leftPartitionIndex);
-    double rightMean = trainingData->partitionMean(rightPartitionIndex);
 
-    for (const auto& index : naIndices) {
-      if ( std::fabs((double) (trainingData->getOutcomePoint(index) - leftMean)) < std::fabs((double) (trainingData->getOutcomePoint(index) - rightMean))) {
+    // Now instead of splitting with distance to Y values, we send all NA indices
+    // right if naDirection == 1, left if naDirection == -1
+    if (naDirection == -1) {
+      for (const auto& index : naIndices) {
         leftPartitionIndex->push_back(index);
         naLeftCount++;
-      } else {
+      }
+    } else if (naDirection == 1) {
+      for (const auto& index : naIndices) {
         rightPartitionIndex->push_back(index);
         naRightCount++;
       }
     }
+
     //Run normal splitting
   } else {
 
@@ -391,6 +394,7 @@ void splitData(
     std::vector<size_t>* splittingSampleIndex,
     size_t splitFeature,
     double splitValue,
+    int naDirection,
     std::vector<size_t>* averagingLeftPartitionIndex,
     std::vector<size_t>* averagingRightPartitionIndex,
     std::vector<size_t>* splittingLeftPartitionIndex,
@@ -408,6 +412,7 @@ void splitData(
     averagingSampleIndex,
     splitFeature,
     splitValue,
+    naDirection,
     averagingLeftPartitionIndex,
     averagingRightPartitionIndex,
     categoical,
@@ -423,6 +428,7 @@ void splitData(
     splittingSampleIndex,
     splitFeature,
     splitValue,
+    naDirection,
     splittingLeftPartitionIndex,
     splittingRightPartitionIndex,
     categoical,
@@ -575,6 +581,7 @@ void forestryTree::recursivePartition(
   double bestSplitLoss;
   size_t naLeftCount = 0;
   size_t naRightCount = 0;
+  int bestSplitNaDir = 0;
 
 
   /* Arma mat memory is uninitialized now */
@@ -596,6 +603,7 @@ void forestryTree::recursivePartition(
     bestSplitFeature,
     bestSplitValue,
     bestSplitLoss,
+    bestSplitNaDir,
     bestSplitGL,
     bestSplitGR,
     bestSplitSL,
@@ -648,6 +656,7 @@ void forestryTree::recursivePartition(
       splittingSampleIndex,
       bestSplitFeature,
       bestSplitValue,
+      bestSplitNaDir,
       &averagingLeftPartitionIndex,
       &averagingRightPartitionIndex,
       &splittingLeftPartitionIndex,
@@ -831,6 +840,7 @@ void forestryTree::selectBestFeature(
     size_t &bestSplitFeature,
     double &bestSplitValue,
     double &bestSplitLoss,
+    int &bestSplitNaDir,
     arma::Mat<double> &bestSplitGL,
     arma::Mat<double> &bestSplitGR,
     arma::Mat<double> &bestSplitSL,
@@ -858,12 +868,14 @@ void forestryTree::selectBestFeature(
   double* bestSplitValueAll = new double[mtry];
   size_t* bestSplitFeatureAll = new size_t[mtry];
   size_t* bestSplitCountAll = new size_t[mtry];
+  int* bestSplitNaDirectionAll = new int[mtry];
 
   for (size_t i=0; i<mtry; i++) {
     bestSplitLossAll[i] = -std::numeric_limits<double>::infinity();
     bestSplitValueAll[i] = std::numeric_limits<double>::quiet_NaN();
     bestSplitFeatureAll[i] = std::numeric_limits<size_t>::quiet_NaN();
     bestSplitCountAll[i] = 0;
+    bestSplitNaDirectionAll[i] = 0;
   }
 
   // Iterate each selected features
@@ -908,6 +920,7 @@ void forestryTree::selectBestFeature(
           bestSplitValueAll,
           bestSplitFeatureAll,
           bestSplitCountAll,
+          bestSplitNaDirectionAll,
           trainingData,
           getMinNodeSizeToSplitSpt(),
           getMinNodeSizeToSplitAvg(),
@@ -963,6 +976,7 @@ void forestryTree::selectBestFeature(
         bestSplitValueAll,
         bestSplitFeatureAll,
         bestSplitCountAll,
+        bestSplitNaDirectionAll,
         trainingData,
         getMinNodeSizeToSplitSpt(),
         getMinNodeSizeToSplitAvg(),
@@ -999,11 +1013,13 @@ void forestryTree::selectBestFeature(
     bestSplitFeature,
     bestSplitValue,
     bestSplitLoss,
+    bestSplitNaDir,
     mtry,
     bestSplitLossAll,
     bestSplitValueAll,
     bestSplitFeatureAll,
     bestSplitCountAll,
+    bestSplitNaDirectionAll,
     random_number_generator
   );
 
@@ -1030,6 +1046,7 @@ void forestryTree::selectBestFeature(
   delete[](bestSplitValueAll);
   delete[](bestSplitFeatureAll);
   delete[](bestSplitCountAll);
+  delete[](bestSplitNaDirectionAll);
 }
 
 void forestryTree::printTree(){

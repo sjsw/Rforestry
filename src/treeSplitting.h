@@ -30,6 +30,20 @@ void updateBestSplit(
         std::mt19937_64& random_number_generator
 );
 
+void updateBestSplitImpute(
+        double* bestSplitLossAll,
+        double* bestSplitValueAll,
+        size_t* bestSplitFeatureAll,
+        size_t* bestSplitCountAll,
+        int* bestSplitNaDirectionAll,
+        double currentSplitLoss,
+        double currentSplitValue,
+        size_t currentFeature,
+        size_t bestSplitTableIndex,
+        int currentSplitNaDirection,
+        std::mt19937_64& random_number_generator
+);
+
 void updateBestSplitS(
         arma::Mat<double> &bestSplitSL,
         arma::Mat<double> &bestSplitSR,
@@ -189,6 +203,7 @@ void findBestSplitImpute(
         double* bestSplitValueAll,
         size_t* bestSplitFeatureAll,
         size_t* bestSplitCountAll,
+        int* bestSplitNaDirectionAll,
         DataFrame* trainingData,
         size_t splitNodeSize,
         size_t averageNodeSize,
@@ -208,6 +223,7 @@ void findBestSplitImputeCategorical(
         double* bestSplitValueAll,
         size_t* bestSplitFeatureAll,
         size_t* bestSplitCountAll,
+        int* bestSplitNaDirectionAll,
         DataFrame* trainingData,
         size_t splitNodeSize,
         size_t averageNodeSize,
@@ -219,11 +235,13 @@ void determineBestSplit(
         size_t &bestSplitFeature,
         double &bestSplitValue,
         double &bestSplitLoss,
+        int &bestSplitNaDir,
         size_t mtry,
         double* bestSplitLossAll,
         double* bestSplitValueAll,
         size_t* bestSplitFeatureAll,
         size_t* bestSplitCountAll,
+        int* bestSplitNaDirectionAll,
         std::mt19937_64& random_number_generator
 );
 
