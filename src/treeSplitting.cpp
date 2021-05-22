@@ -1470,13 +1470,6 @@ void findBestSplitImpute(
       continue;
     }
 
-    // Calculate sample mean in both splitting partitions
-    double leftPartitionMean =
-      splitLeftPartitionRunningSum / splitLeftPartitionCount;
-    double rightPartitionMean =
-      (splitTotalSum - splitLeftPartitionRunningSum)
-      / (splitTotalCount - splitLeftPartitionCount);
-
     double currentSplitValue;
     if (splitMiddle) {
       currentSplitValue = (newFeatureValue + featureValue) / 2.0;
