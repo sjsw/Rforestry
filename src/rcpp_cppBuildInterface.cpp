@@ -472,11 +472,11 @@ Rcpp::List rcpp_cppPredictInterface(
     std::vector<size_t>* testForestTreeWeights;
     std::vector<size_t> weights;
 
-    if (use_weights) {
-      weights = Rcpp::as< std::vector<size_t> >(tree_weights);
-      testForestTreeWeights =
-        new std::vector<size_t> (weights);
-    }
+    // If we have weights we want to initialize them.
+    weights = Rcpp::as< std::vector<size_t> >(tree_weights);
+    testForestTreeWeights =
+      new std::vector<size_t> (weights);
+
 
     size_t threads_to_use;
     if (nthread == 0) {

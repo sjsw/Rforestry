@@ -8,7 +8,7 @@
 #'   for a point by computing the average, using neighborhoods weights, for all
 #'   of the point's neighbors.
 #' @param object an object of class `forestry`
-#' @param feature.new the feature data.frame we will impute
+#' @param newdata the feature data.frame we will impute
 #' @param seed a random seed passed to the predict method of forestry
 #' @param use_mean_imputation_fallback if TRUE, mean imputation (for numeric
 #'   variables) and mode imputation (for factor variables) is used for missing
@@ -16,7 +16,7 @@
 #'   missing; if FALSE these missing features remain as NAs in the data frame
 #'   returned by `impute_features`.
 
-#' @return A data.frame that is feature.new with imputed missing values.
+#' @return A data.frame that is newdata with imputed missing values.
 
 #' @examples
 #' iris_with_missing <- iris
@@ -31,24 +31,24 @@
 #' forest <- forestry(x, y, ntree = 500, seed = 2,nthread = 2)
 #' imputed_x <- impute_features(forest, x, seed = 2)
 #' @export
-impute_features <- function(object, feature.new,
+impute_features <- function(object, newdata,
                             seed = round(runif(1)*10000),
                             use_mean_imputation_fallback = FALSE) {
   # Sanity checking
   features.train <- object@processed_dta$processed_x
-  if(ncol(features.train) != ncol(feature.new)) {
+  if(ncol(features.train) != ncol(newdata)) {
     stop("Training data and imputation data have a different number of columns")
   }
-  if(!all(colnames(feature.new) == colnames(features.train))) {
-    stop("feature.new and training features have discordant names.")
+  if(!all(colnames(newdata) == colnames(features.train))) {
+    stop("newdata and training features have discordant names.")
   }
-  if(!any(is.na(feature.new))) {
-    message("No values in feature.new were missing. Returning the data without modification")
-    return(feature.new)
+  if(!any(is.na(newdata))) {
+    message("No values in newdata were missing. Returning the data without modification")
+    return(newdata)
   }
   imputed_data <- rcpp_cppImputeInterface(
     object@forest,
-    feature.new,
+    newdata,
     seed
   )
   for(catCol in object@categoricalFeatureMapping) {

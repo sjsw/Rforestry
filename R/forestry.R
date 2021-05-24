@@ -1922,8 +1922,7 @@ getCI <- function(object,
 
     CI_local <- data.frame(lower = NA, upper = NA)
 
-    for ( i in 1:nrow(newdata)) {
-
+    for (i in 1:nrow(newdata)) {
       data.frame(val = OOB_res, prob = weights[i,]) %>%
         dplyr::filter(prob > 0) %>%
         dplyr::arrange(val) %>%

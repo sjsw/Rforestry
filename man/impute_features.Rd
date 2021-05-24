@@ -6,7 +6,7 @@
 \usage{
 impute_features(
   object,
-  feature.new,
+  newdata,
   seed = round(runif(1) * 10000),
   use_mean_imputation_fallback = FALSE
 )
@@ -14,7 +14,7 @@ impute_features(
 \arguments{
 \item{object}{an object of class `forestry`}
 
-\item{feature.new}{the feature data.frame we will impute}
+\item{newdata}{the feature data.frame we will impute}
 
 \item{seed}{a random seed passed to the predict method of forestry}
 
@@ -25,7 +25,7 @@ missing; if FALSE these missing features remain as NAs in the data frame
 returned by `impute_features`.}
 }
 \value{
-A data.frame that is feature.new with imputed missing values.
+A data.frame that is newdata with imputed missing values.
 }
 \description{
 This function uses the neighborhoods implied by a random forest
