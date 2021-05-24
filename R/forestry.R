@@ -1317,7 +1317,8 @@ multilayerForestry <- function(x,
 #' @param aggregation How the individual tree predictions are aggregated:
 #'   `average` returns the mean of all trees in the forest; `weightMatrix`
 #'   returns a list consisting of "weightMatrix", the adaptive nearest neighbor
-#'   weights used to construct the predictions; "terminalNodes", a matrix where
+#'   weights used to construct the predictions; `terminalNodes` also returns
+#'   the weightMatrix, as well as "terminalNodes", a matrix where
 #'   the ith entry of the jth column is the index of the leaf node to which the
 #'   ith observation is assigned in the jth tree; and "sparse", a matrix
 #'   where the ith entry in the jth column is 1 if the ith observation in
@@ -1518,6 +1519,8 @@ predict.forestry <- function(object,
   } else if (aggregation == "doubleOOB") {
     return(rcppPrediction)
   } else if (aggregation == "weightMatrix") {
+    return(rcppPrediction)
+  } else if (aggregation == "terminalNodes") {
     terminalNodes <- rcppPrediction$terminalNodes
     nobs <- nrow(newdata)
     ntree <- object@ntree

@@ -491,12 +491,30 @@ Rcpp::List rcpp_cppPredictInterface(
       weightMatrix.resize(nrow, ncol); // initialize the space for the matrix
       weightMatrix.zeros(nrow, ncol);  // set it all to 0
 
+      // In this version, we pass NULL for terminalNodes, and the created weight
+      // matrix for weightMatrix. This speeds stuff up considerably if we want
+      // to run just weightMatrix without terminal nodes (especially on large datasets)
+      testForestPrediction = (*testFullForest).predict(&featureData,
+                                                       &weightMatrix,
+                                                       NULL,
+                                                       seed,
+                                                       threads_to_use,
+                                                       exact,
+                                                       false,
+                                                       NULL);
+    } else if (aggregation == "terminalNodes") {
+      // In this case, we return both the terminal nodes, and the weightMatrix
+      size_t nrow = featureData[0].size(); // number of features to be predicted
+      size_t ncol = (*testFullForest).getNtrain(); // number of train data
+      weightMatrix.resize(nrow, ncol); // initialize the space for the matrix
+      weightMatrix.zeros(nrow, ncol);  // set it all to 0
+
       // Don't make sparse matrix in C,
       // get indices for each observation/tree combo,
       // then parse the sparse form in R
       ncol = (*testFullForest).getNtree();  // Total nodes across the forest
       nrow = featureData[1].size()+1;   // Total feature.new observations
-                                        // Bottom row is the total node count/tree
+      // Bottom row is the total node count/tree
 
 
       terminalNodes.resize(nrow, ncol);
@@ -504,13 +522,13 @@ Rcpp::List rcpp_cppPredictInterface(
       // The idea is that, if the weightMatrix is point to NULL it won't be
       // be updated, but otherwise it will be updated:
       testForestPrediction = (*testFullForest).predict(&featureData,
-                                                       &weightMatrix,
-                                                       &terminalNodes,
-                                                       seed,
-                                                       threads_to_use,
-                                                       exact,
-                                                       false,
-                                                       NULL);
+                              &weightMatrix,
+                              &terminalNodes,
+                              seed,
+                              threads_to_use,
+                              exact,
+                              false,
+                              NULL);
     } else {
       testForestPrediction = (*testFullForest).predict(&featureData,
                                                        NULL,
