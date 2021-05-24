@@ -58,7 +58,7 @@ impute_features <- function(object, newdata,
       labels = catCol$uniqueFeatureValues)
   }
   imputed_data <- as.data.frame(imputed_data)
-  names(imputed_data) <- names(feature.new)
+  names(imputed_data) <- names(newdata)
 
   if(use_mean_imputation_fallback & any(is.na(imputed_data))) {
     message("Some missing observations had empty neighborhoods or consisted only of other missing observations.",
