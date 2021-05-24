@@ -36,6 +36,9 @@ the splitting set nor the averaging set (or the set of trees for which obs_i
 was "doubleOOB"), we then predict for obs_i with only the trees in S_i.
 doubleOOB_tree_preds <- predict(S_i, obs_i):
 Then CI(obs_i, alpha = .95) = quantile(doubleOOB_tree_preds - y_i, probs = .95).
+The `local-conformal` option takes the residuals of each training point (using)
+OOB predictions, and then uses the weights of the random forest to determine
+the quantiles of the residuals in the local neighborhood of the predicted point.
 Default is `OOB-conformal`.}
 
 \item{noWarning}{flag to not display warnings}

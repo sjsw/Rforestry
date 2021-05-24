@@ -1835,6 +1835,9 @@ getVI <- function(object,
 #'  was "doubleOOB"), we then predict for obs_i with only the trees in S_i.
 #'  doubleOOB_tree_preds <- predict(S_i, obs_i):
 #'  Then CI(obs_i, alpha = .95) = quantile(doubleOOB_tree_preds - y_i, probs = .95).
+#'  The `local-conformal` option takes the residuals of each training point (using)
+#'  OOB predictions, and then uses the weights of the random forest to determine
+#'  the quantiles of the residuals in the local neighborhood of the predicted point.
 #'  Default is `OOB-conformal`.
 #' @param noWarning flag to not display warnings
 #' @return The confidence intervals for each observation in newdata.
@@ -1852,6 +1855,10 @@ getCI <- function(object,
 
   if ((method == "OOB-bootstrap") && !(object@OOBhonest)) {
     stop("We cannot do OOB-bootstrap intervals unless OOBhonest is TRUE")
+  }
+
+  if ((method == "local-conformal") && !(object@OOBhonest)) {
+    stop("We cannot do local-conformal intervals unless OOBhonest is TRUE")
   }
 
   # Check the Rforestry object
@@ -1903,6 +1910,41 @@ getCI <- function(object,
     predictions <- list("Predictions" = predictions_new,
                         "CI.upper" = predictions_new + unname(quantiles[2]),
                         "CI.lower" = predictions_new + unname(quantiles[1]),
+                        "Level" = level)
+    return(predictions)
+  } else if (method == "local-conformal") {
+    library(dplyr)
+    OOB_preds <- predict(object, aggregation = "oob")
+    OOB_res <- object@processed_dta$y - OOB_preds
+
+    preds <- predict(object, newdata = newdata, aggregation = "weightMatrix")
+    weights <- preds$weightMatrix
+
+    CI_local <- data.frame(lower = NA, upper = NA)
+
+    for ( i in 1:nrow(newdata)) {
+
+      data.frame(val = OOB_res, prob = weights[i,]) %>%
+        dplyr::filter(prob > 0) %>%
+        dplyr::arrange(val) %>%
+        dplyr::mutate(cdf = cumsum(prob)) %>%
+        dplyr::filter(cdf > .025, cdf < .975) %>%
+        dplyr::summarise(
+          lower = dplyr::first(val),
+          upper = dplyr::last(val)
+        ) -> cur_bound
+
+      CI_local <- rbind(CI_local, cur_bound)
+    }
+
+    CI_local <- CI_local[-1,]
+
+    # Get predictions on newdata
+    predictions_new <- predict(object, newdata)
+
+    predictions <- list("Predictions" = predictions_new,
+                        "CI.lower" = predictions_new + CI_local$lower,
+                        "CI.upper" = predictions_new + CI_local$upper,
                         "Level" = level)
     return(predictions)
   } else {

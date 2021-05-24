@@ -228,6 +228,14 @@ implementation we only use observations for which the splitting variable is
 not missing. The previous approach was biased towards splitting on variables
 with missingness because observations with a missing splitting variable are
 assigned to the leaf that minimized the MSE.
+
+In version 0.9.0.34, we have modified the handling of missing data. Instead of
+the greedy approach used in previous iterations, we now test any potential
+split by putting all NA's to the right, and all NA's to the left, and taking
+the choice which gives the best MSE for the split. Under this version of handling
+the potential splits, we will still respect monotonic constraints. So if we put all
+NA's to either side, and the resulting leaf nodes have means which violate
+the monotone constraints, the split will be rejected.
 }
 \examples{
 set.seed(292315)
