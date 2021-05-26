@@ -7,7 +7,7 @@
 \usage{
 \method{predict}{multilayerForestry}(
   object,
-  feature.new,
+  newdata,
   aggregation = "average",
   seed = as.integer(runif(1) * 10000),
   nthread = 0,
@@ -18,7 +18,7 @@
 \arguments{
 \item{object}{A `multilayerForestry` object.}
 
-\item{feature.new}{A data frame of testing predictors.}
+\item{newdata}{A data frame of testing predictors.}
 
 \item{aggregation}{How shall the leaf be aggregated. The default is to return
 the mean of the leave `average`. Other options are `weightMatrix`.}

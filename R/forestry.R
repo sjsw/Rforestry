@@ -264,28 +264,28 @@ training_data_checker <- function(x,
 #' @name testing_data_checker-forestry
 #' @description Check the testing data to do prediction
 #' @param object A forestry object.
-#' @param feature.new A data frame of testing predictors.
+#' @param newdata A data frame of testing predictors.
 #' @param hasNas TRUE if the there were NAs in the training data FALSE otherwise.
 #' @return A feature dataframe if it can be used for new predictions.
-testing_data_checker <- function(object, feature.new, hasNas) {
-  if(ncol(feature.new) != object@processed_dta$numColumns) {
-    stop(paste0("feature.new has ", ncol(feature.new), " but the forest was trained with ",
+testing_data_checker <- function(object, newdata, hasNas) {
+  if(ncol(newdata) != object@processed_dta$numColumns) {
+    stop(paste0("newdata has ", ncol(newdata), " but the forest was trained with ",
                 object@processed_dta$numColumns, " columns.")
     )
   }
   if(!is.null(object@processed_dta$featNames)) {
-    if(!all(names(feature.new) == object@processed_dta$featNames)) {
-      warning("feature.new columns have been reordered so that they match the training feature matrix")
-      matchingPositions <- match(object@processed_dta$featNames, names(feature.new))
-      feature.new <- feature.new[, matchingPositions]
+    if(!all(names(newdata) == object@processed_dta$featNames)) {
+      warning("newdata columns have been reordered so that they match the training feature matrix")
+      matchingPositions <- match(object@processed_dta$featNames, names(newdata))
+      newdata <- newdata[, matchingPositions]
     }
   }
 
   # If linear is true we can't predict observations with some features missing.
-  if(object@linear && any(is.na(feature.new))) {
+  if(object@linear && any(is.na(newdata))) {
       stop("linear does not support missing data")
   }
-  return(feature.new)
+  return(newdata)
 }
 
 sample_weights_checker <- function(featureWeights, mtry, ncol) {
@@ -1421,7 +1421,7 @@ predict.forestry <- function(object,
   # If option set to terminalNodes, we need to make matrix of ID's
   if (aggregation == "oob") {
 
-    if (!is.null(newdata) && (object@sampsize != nrow(newdata))) {
+    if (!is.null(newdata) && (object@processed_dta$nObservations != nrow(newdata))) {
       warning(paste(
         "Attempting to do OOB predictions on a dataset which doesn't match the",
         "training data!"
@@ -1547,7 +1547,7 @@ predict.forestry <- function(object,
 #' @rdname predict-multilayer-forestry
 #' @description Return the prediction from the forest.
 #' @param object A `multilayerForestry` object.
-#' @param feature.new A data frame of testing predictors.
+#' @param newdata A data frame of testing predictors.
 #' @param aggregation How shall the leaf be aggregated. The default is to return
 #'   the mean of the leave `average`. Other options are `weightMatrix`.
 #' @param seed random seed
@@ -1564,7 +1564,7 @@ predict.forestry <- function(object,
 #' @return A vector of predicted responses.
 #' @export
 predict.multilayerForestry <- function(object,
-                                       feature.new,
+                                       newdata,
                                        aggregation = "average",
                                        seed = as.integer(runif(1) * 10000),
                                        nthread = 0,
@@ -1573,7 +1573,7 @@ predict.multilayerForestry <- function(object,
     forest_checker(object)
 
     if (is.null(exact)) {
-      if (nrow(feature.new) > 1e5 || aggregation != "average") {
+      if (nrow(newdata) > 1e5 || aggregation != "average") {
         exact = FALSE
       } else {
         exact = TRUE
@@ -1583,10 +1583,10 @@ predict.multilayerForestry <- function(object,
    # Preprocess the data. We only run the data checker if ridge is turned on,
    # because even in the case where there were no NAs in train, we still want to predict.
     if(object@linear) {
-      testing_data_checker(feature.new, FALSE)
+      testing_data_checker(newdata, FALSE)
     }
 
-    processed_x <- preprocess_testing(feature.new,
+    processed_x <- preprocess_testing(newdata,
                                       object@categoricalFeatureCols,
                                       object@categoricalFeatureMapping)
 

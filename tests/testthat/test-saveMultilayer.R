@@ -43,13 +43,13 @@ test_that("Tests that saving multilayerForestry and loading it works", {
 
   wd <- tempdir()
 
-  preds_before <- predict(rf, feature.new = iris[,-1])
+  preds_before <- predict(rf, newdata = iris[,-1])
   saveForestry(rf, filename = file.path(wd, "forest.Rda"))
   rm(rf)
   rf <- loadForestry(file.path(wd, "forest.Rda"))
 
   # Get the predictions after loading
-  preds_after <- predict(rf, feature.new = iris[,-1])
+  preds_after <- predict(rf, newdata = iris[,-1])
   file.remove(file.path(wd, "forest.Rda"))
 
   # THey should now be an exact match

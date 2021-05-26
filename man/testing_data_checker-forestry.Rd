@@ -5,12 +5,12 @@
 \alias{testing_data_checker}
 \title{Test data check}
 \usage{
-testing_data_checker(object, feature.new, hasNas)
+testing_data_checker(object, newdata, hasNas)
 }
 \arguments{
 \item{object}{A forestry object.}
 
-\item{feature.new}{A data frame of testing predictors.}
+\item{newdata}{A data frame of testing predictors.}
 
 \item{hasNas}{TRUE if the there were NAs in the training data FALSE otherwise.}
 }
