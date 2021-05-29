@@ -57,7 +57,7 @@ adaptiveForestry(
 trying to determine which features are important.}
 
 \item{ntree.second}{The number of features to use in the second stage when
-we grow a forest using the weights of the first stage.}
+we grow a second forest using the weights of the first stage.}
 
 \item{replace}{An indicator of whether sampling of training data is with
 replacement. The default value is TRUE.}
@@ -124,10 +124,10 @@ version of honesty, the out-of-bag examples for each tree are used for
 another bootstrap draw, which then gives the set of observations in the
 honest (averaging) set. This setting also changes how predictions are done
 for new examples. When predicting for observations which are out of sample
-(using Predict), all the trees in the forest are used to predict for the
+(using Predict(..., aggregation = "average")), all the trees in the forest are used to predict for the
 observation. When predicting for an observation which was in sample (using
-getOOBpreds), only the trees for which the observation was not in the
-averaging set (the set of trees for which the observation was in the splitting set) are
+predict(..., aggregation = "oob")), only the trees for which the observation was not in the
+averaging set (or the set of trees for which the observation was in the splitting set) are
 used to make the prediction for the observation. This ensures that the
 outcome value for an observation is never used to predict for that observation
 even when it is in sample, a feature not shared by the standard honesty
@@ -135,7 +135,7 @@ implementation.}
 
 \item{seed}{random seed}
 
-\item{verbose}{if training process in verbose mode}
+\item{verbose}{Indicator to train the forest in verbose mode}
 
 \item{nthread}{Number of threads to train and predict the forest. The default
 number is 0 which represents using all cores.}
@@ -150,10 +150,13 @@ between two feature values. (Default = FALSE)}
 
 \item{maxObs}{The max number of observations to split on}
 
-\item{linear}{Fit the model with a ridge regression or not}
+\item{linear}{Indicator which enables Ridge penalized splits and linear aggregation
+functions in the leaf nodes. This is recommended for data with linear outcomes.
+For implementation details, see: https://arxiv.org/abs/1906.06463. Default
+is FALSE.}
 
-\item{linFeats}{Specify which features to split linearly on when using
-linear (defaults to use all numerical features)}
+\item{linFeats}{A vector containing the indices of which features to split
+linearly on when using linear penalized splits (defaults to use all numerical features).}
 
 \item{monotonicConstraints}{Specifies monotonic relationships between the
 continuous features and the outcome. Supplied as a vector of length p with
@@ -162,12 +165,12 @@ entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
 relationship. Constraints supplied for categorical will be ignored.}
 
 \item{monotoneAvg}{This is a boolean flag which indicates whether or not
-monotonicity should be enforced on the averaging set in addition to the
+monotonic constraints should be enforced on the averaging set in addition to the
 splitting set. This flag is meaningless unless both honesty and monotonic
 constraints are in use. The default is FALSE.}
 
 \item{overfitPenalty}{Value to determine how much to penalize magnitude of
-coefficients in ridge regression}
+coefficients in ridge regression when using linear splits.}
 
 \item{doubleTree}{if the number of tree is doubled as averaging and splitting
 data can be exchanged to create decorrelated trees. (Default = FALSE)}
@@ -185,13 +188,15 @@ time and memory.}
 \item{saveable}{deprecated. Do not use.}
 }
 \value{
-Two forestry objects, the first forest, and the adaptive forest.
+Two forestry objects, the first forest, and the adaptive forest,
+  as well as the splitting proportions used to grow the second forest.
 }
 \description{
-Runs forestry in two stages, first estimating the feature weight
-  weights using a small number of trees, and then growing a much bigger
-  forest using the (normalized) split counts from the first forest as the
-  argument to featureWeights.
+This is an experimental function where we run forestry in two
+  stages, first estimating the feature weights by calculating the relative
+  splitting proportions of each feature using a small forest, and then
+  growing a much bigger forest using the
+  first forest splitting proportions as the featureWeights in the second forest.
 }
 \details{
 adaptiveForestry

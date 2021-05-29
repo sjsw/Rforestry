@@ -30,7 +30,7 @@ autoforestry(
 
 \item{seed}{random seed}
 
-\item{nthread}{Number of threads to train and predict theforest. The default
+\item{nthread}{Number of threads to train and predict the forest. The default
 number is 0 which represents using all cores.}
 }
 \value{

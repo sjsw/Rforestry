@@ -64,9 +64,9 @@ function is used.}
 \item{trees}{A vector (1-indexed) of indices in the range 1:ntree which tells
 predict which trees in the forest to use for the prediction. Predict will by
 default take the average of all trees in the forest, although this flag
-can be used to take single tree predictions, or averages of diffferent trees
+can be used to get single tree predictions, or averages of diffferent trees
 with different weightings. Duplicate entries are allowed, so if trees = c(1,2,2)
-this will predict the weighted average prediction of only trees 1 and 2 by:
+this will predict the weighted average prediction of only trees 1 and 2 weighted by:
 predict(..., trees = c(1,2,2)) = (predict(..., trees = c(1)) +
                                    2*predict(..., trees = c(2))) / 3.
 note we must have exact = TRUE, and aggregation = "average" to use tree indices.}

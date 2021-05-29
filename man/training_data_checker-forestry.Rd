@@ -89,10 +89,10 @@ version of honesty, the out-of-bag examples for each tree are used for
 another bootstrap draw, which then gives the set of observations in the
 honest (averaging) set. This setting also changes how predictions are done
 for new examples. When predicting for observations which are out of sample
-(using Predict), all the trees in the forest are used to predict for the
+(using Predict(..., aggregation = "average")), all the trees in the forest are used to predict for the
 observation. When predicting for an observation which was in sample (using
-getOOBpreds), only the trees for which the observation was not in the
-averaging set (the set of trees for which the observation was in the splitting set) are
+predict(..., aggregation = "oob")), only the trees for which the observation was not in the
+averaging set (or the set of trees for which the observation was in the splitting set) are
 used to make the prediction for the observation. This ensures that the
 outcome value for an observation is never used to predict for that observation
 even when it is in sample, a feature not shared by the standard honesty
@@ -108,8 +108,8 @@ between two feature values. (Default = FALSE)}
 \item{doubleTree}{if the number of tree is doubled as averaging and splitting
 data can be exchanged to create decorrelated trees. (Default = FALSE)}
 
-\item{linFeats}{Specify which features to split linearly on when using
-linear (defaults to use all numerical features)}
+\item{linFeats}{A vector containing the indices of which features to split
+linearly on when using linear penalized splits (defaults to use all numerical features).}
 
 \item{monotonicConstraints}{Specifies monotonic relationships between the
 continuous features and the outcome. Supplied as a vector of length p with
@@ -125,7 +125,10 @@ relationship. Constraints supplied for categorical will be ignored.}
 which determines how likely the observation is to be selected in each bootstrap
 sample. This option is not allowed when sampling is done without replacement.}
 
-\item{linear}{Fit the model with a ridge regression or not}
+\item{linear}{Indicator which enables Ridge penalized splits and linear aggregation
+functions in the leaf nodes. This is recommended for data with linear outcomes.
+For implementation details, see: https://arxiv.org/abs/1906.06463. Default
+is FALSE.}
 
 \item{hasNas}{indicates if there is any missingness in x.}
 }

@@ -21,7 +21,8 @@
 \item{newdata}{A data frame of testing predictors.}
 
 \item{aggregation}{How shall the leaf be aggregated. The default is to return
-the mean of the leave `average`. Other options are `weightMatrix`.}
+the mean of the leave `average`. Other options are `weightMatrix` which
+returns the adaptive nearest neighbor weights used to construct the predictions.}
 
 \item{seed}{random seed}
 

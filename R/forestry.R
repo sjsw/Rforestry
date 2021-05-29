@@ -460,20 +460,21 @@ setClass(
 #'   another bootstrap draw, which then gives the set of observations in the
 #'   honest (averaging) set. This setting also changes how predictions are done
 #'   for new examples. When predicting for observations which are out of sample
-#'   (using Predict), all the trees in the forest are used to predict for the
+#'   (using Predict(..., aggregation = "average")), all the trees in the forest are used to predict for the
 #'   observation. When predicting for an observation which was in sample (using
-#'   getOOBpreds), only the trees for which the observation was not in the
-#'   averaging set (the set of trees for which the observation was in the splitting set) are
+#'   predict(..., aggregation = "oob")), only the trees for which the observation was not in the
+#'   averaging set (or the set of trees for which the observation was in the splitting set) are
 #'   used to make the prediction for the observation. This ensures that the
 #'   outcome value for an observation is never used to predict for that observation
 #'   even when it is in sample, a feature not shared by the standard honesty
 #'   implementation.
 #' @param doubleBootstrap The doubleBootstrap flag provides the option to resample
 #'   from the out-of-bag observations set a second time in order to get the
-#'   averaging set when using OOBhonest. By default this is TRUE when running
-#'   OOBhonesty.
+#'   averaging set when using OOBhonest. Of this is FALSE, the out-of-bag observations
+#'   are used in the averaging set with their default weights. By default this
+#'   is TRUE when running OOBhonest = TRUE.
 #' @param seed random seed
-#' @param verbose if training process in verbose mode
+#' @param verbose Indicator to train the forest in verbose mode
 #' @param nthread Number of threads to train and predict the forest. The default
 #'   number is 0 which represents using all cores.
 #' @param splitrule only variance is implemented at this point and it contains
@@ -494,20 +495,23 @@ setClass(
 #'   training many RF, it makes a lot of sense to set this to FALSE to save
 #'   time and memory.
 #' @param saveable deprecated. Do not use.
-#' @param linear Fit the model with a ridge regression or not
-#' @param linFeats Specify which features to split linearly on when using
-#'   linear (defaults to use all numerical features)
+#' @param linear Indicator which enables Ridge penalized splits and linear aggregation
+#'   functions in the leaf nodes. This is recommended for data with linear outcomes.
+#'   For implementation details, see: https://arxiv.org/abs/1906.06463. Default
+#'   is FALSE.
+#' @param linFeats A vector containing the indices of which features to split
+#'   linearly on when using linear penalized splits (defaults to use all numerical features).
 #' @param monotonicConstraints Specifies monotonic relationships between the
 #'   continuous features and the outcome. Supplied as a vector of length p with
 #'   entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
 #'   -1 indicating a decreasing monotonic relationship, and 0 indicating no
 #'   relationship. Constraints supplied for categorical will be ignored.
 #' @param monotoneAvg This is a boolean flag which indicates whether or not
-#'   monotonicity should be enforced on the averaging set in addition to the
+#'   monotonic constraints should be enforced on the averaging set in addition to the
 #'   splitting set. This flag is meaningless unless both honesty and monotonic
 #'   constraints are in use. The default is FALSE.
 #' @param overfitPenalty Value to determine how much to penalize magnitude of
-#' coefficients in ridge regression
+#' coefficients in ridge regression when using linear splits.
 #' @return A `forestry` object.
 #' @examples
 #' set.seed(292315)
@@ -543,46 +547,7 @@ setClass(
 #'
 #' predict(forest, x)
 #' @note
-#' Treatment of missing data
-#'
-#' When training the forest, if a splitting feature is missing for an
-#' observation, we assign that observation to the child node which has
-#' an average y closer to the observed y of the observation with the
-#' missing feature, and record how many observations with missingness
-#' went to each child.
-#'
-#' At predict time, if there were missing observations in a node at
-#' training time, we randomly assign an observation with a missing
-#' feature to a child node with probability proportional to the number
-#' of observations with a missing splitting variable that went to each
-#' child at training time. If there was no missingness at training
-#' time, we assign to the child nodes with probability proportional to
-#' the number of observations in each child node.
-#'
-#' This procedure is a generalization of the usual recommended
-#' approach to missingness for forests---i.e., at each point add a
-#' decision to send the NAs to the left, right or to split on NA
-#' versus no NA. This usual recommendation is heuristically equivalent
-#' to adding an indicator for each feature plus a recoding of each
-#' missing variable where the missigness is the maximum and then the
-#' minimum observed value. This recommendation, however, allows the
-#' method to pickup time effects for when variables are missing
-#' because of the indicator. We, therefore, do not allow splitting on
-#' NAs. This should increase MSE in training but hopefully allows for
-#' better learning of universal relationships. Importantly, it is
-#' straightforward to show that our approach is weakly dominant in
-#' expected MSE to the always left or right approach. We should also
-#' note that almost no software package actually implements even the
-#' usual recommended approach---e.g., ranger does not.
-#'
-#' In version 0.8.2.09, the procedure for identifying the best variable to split
-#' on when there is missing training data was modified. Previously candidate
-#' variables were evaluated by computing the MSE taken over all observations,
-#' including those for which the splitting variable was missing. In the current
-#' implementation we only use observations for which the splitting variable is
-#' not missing. The previous approach was biased towards splitting on variables
-#' with missingness because observations with a missing splitting variable are
-#' assigned to the leaf that minimized the MSE.
+#' Treatment of Missing Data
 #'
 #' In version 0.9.0.34, we have modified the handling of missing data. Instead of
 #' the greedy approach used in previous iterations, we now test any potential
@@ -1353,9 +1318,9 @@ multilayerForestry <- function(x,
 #' @param trees A vector (1-indexed) of indices in the range 1:ntree which tells
 #'   predict which trees in the forest to use for the prediction. Predict will by
 #'   default take the average of all trees in the forest, although this flag
-#'   can be used to take single tree predictions, or averages of diffferent trees
+#'   can be used to get single tree predictions, or averages of diffferent trees
 #'   with different weightings. Duplicate entries are allowed, so if trees = c(1,2,2)
-#'   this will predict the weighted average prediction of only trees 1 and 2 by:
+#'   this will predict the weighted average prediction of only trees 1 and 2 weighted by:
 #'   predict(..., trees = c(1,2,2)) = (predict(..., trees = c(1)) +
 #'                                      2*predict(..., trees = c(2))) / 3.
 #'   note we must have exact = TRUE, and aggregation = "average" to use tree indices.
@@ -1375,7 +1340,8 @@ predict.forestry <- function(object,
     stop("When using an aggregation that is not oob or doubleOOB, one must supply newdata")
   }
 
-  # Preprocess the data. We only run the data checker if ridge is turned on, because even in the case where there were no NAs in train, we still want to predict.
+  # Preprocess the data. We only run the data checker if ridge is turned on,
+  # because even in the case where there were no NAs in train, we still want to predict.
   if (!is.null(newdata)) {
     forest_checker(object)
     newdata <- testing_data_checker(object, newdata, object@hasNas)
@@ -1549,7 +1515,8 @@ predict.forestry <- function(object,
 #' @param object A `multilayerForestry` object.
 #' @param newdata A data frame of testing predictors.
 #' @param aggregation How shall the leaf be aggregated. The default is to return
-#'   the mean of the leave `average`. Other options are `weightMatrix`.
+#'   the mean of the leave `average`. Other options are `weightMatrix` which
+#'   returns the adaptive nearest neighbor weights used to construct the predictions.
 #' @param seed random seed
 #' @param nthread The number of threads with which to run the predictions with.
 #'   This will default to the number of threads with which the forest was trained
@@ -1993,7 +1960,7 @@ addTrees <- function(object,
 #' @param eta Downsampling rate. Default value is 2.
 #' @param verbose if tuning process in verbose mode
 #' @param seed random seed
-#' @param nthread Number of threads to train and predict theforest. The default
+#' @param nthread Number of threads to train and predict the forest. The default
 #'   number is 0 which represents using all cores.
 #' @return A `forestry` object
 #' @import stats

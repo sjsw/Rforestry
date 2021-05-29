@@ -15,16 +15,18 @@ setClass(
 #' @name adaptiveForestry-forestry
 #' @title forestry with adaptive featureWeights
 #' @rdname adaptiveForestry-forestry
-#' @description Runs forestry in two stages, first estimating the feature weight
-#'   weights using a small number of trees, and then growing a much bigger
-#'   forest using the (normalized) split counts from the first forest as the
-#'   argument to featureWeights.
+#' @description This is an experimental function where we run forestry in two
+#'   stages, first estimating the feature weights by calculating the relative
+#'   splitting proportions of each feature using a small forest, and then
+#'   growing a much bigger forest using the
+#'   first forest splitting proportions as the featureWeights in the second forest.
 #' @inheritParams forestry
 #' @param ntree.first The number of trees to grow in the first forest when
 #'   trying to determine which features are important.
 #' @param ntree.second The number of features to use in the second stage when
-#'   we grow a forest using the weights of the first stage.
-#' @return Two forestry objects, the first forest, and the adaptive forest.
+#'   we grow a second forest using the weights of the first stage.
+#' @return Two forestry objects, the first forest, and the adaptive forest,
+#'   as well as the splitting proportions used to grow the second forest.
 #' @examples
 #'
 #' # Set seed for reproductivity
