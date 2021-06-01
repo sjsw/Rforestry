@@ -111,14 +111,13 @@ dataset is empty. If the ratio is 0, then the splitting data set is empty
 and all the data is used for the averaging data set (This is not a good
 usage however since there will be no data available for splitting).}
 
-\item{OOBhonest}{This is an experimental method of enforcing honesty. In this
-version of honesty, the out-of-bag examples for each tree are used for
+\item{OOBhonest}{In this version of honesty, the out-of-bag examples for each tree are used for
 another bootstrap draw, which then gives the set of observations in the
 honest (averaging) set. This setting also changes how predictions are done
 for new examples. When predicting for observations which are out of sample
 (using Predict(..., aggregation = "average")), all the trees in the forest are used to predict for the
 observation. When predicting for an observation which was in sample (using
-predict(..., aggregation = "oob")), only the trees for which the observation was not in the
+predict(..., aggregation = "oob")), only the trees for which that observation was not in the
 averaging set (or the set of trees for which the observation was in the splitting set) are
 used to make the prediction for the observation. This ensures that the
 outcome value for an observation is never used to predict for that observation
@@ -126,10 +125,9 @@ even when it is in sample, a feature not shared by the standard honesty
 implementation.}
 
 \item{doubleBootstrap}{The doubleBootstrap flag provides the option to resample
-from the out-of-bag observations set a second time in order to get the
-averaging set when using OOBhonest. Of this is FALSE, the out-of-bag observations
-are used in the averaging set with their default weights. By default this
-is TRUE when running OOBhonest = TRUE.}
+from the out-of-bag observations set to construct the averaging set when using OOBhonest.
+If this is FALSE, the out-of-bag observations are used as the averaging set. By default 
+this option is TRUE when running OOBhonest = TRUE. This option increases diversity across trees.}
 
 \item{seed}{random seed}
 
@@ -195,12 +193,12 @@ forestry
 Treatment of Missing Data
 
 In version 0.9.0.34, we have modified the handling of missing data. Instead of
-the greedy approach used in previous iterations, we now test any potential
+the greedy approach used in previous versions, we now test any potential
 split by putting all NA's to the right, and all NA's to the left, and taking
 the choice which gives the best MSE for the split. Under this version of handling
-the potential splits, we will still respect monotonic constraints. So if we put all
-NA's to either side, and the resulting leaf nodes have means which violate
-the monotone constraints, the split will be rejected.
+the potential splits, we will still respect monotonic constraints if they are provided. 
+Note that splits of NA versus non-NA's are not allowed. To allow for such splits, one 
+can add a covariate that is an indicator variable that denotes missingness versus non-missingness.
 }
 \examples{
 set.seed(292315)
