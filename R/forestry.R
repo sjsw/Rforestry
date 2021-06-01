@@ -918,7 +918,7 @@ forestry <- function(x,
 #' @name multilayer-forestry
 #' @title Multilayer forestry
 #' @rdname multilayer-forestry
-#' @description Construct a gradient boosted random forest.
+#' @description Construct a gradient boosted ensemble with random forest base learners.
 #' @inheritParams forestry
 #' @param featureWeights weights used when subsampling features for nodes above or at interactionDepth.
 #' @param deepFeatureWeights weights used when subsampling features for nodes below interactionDepth.
@@ -1748,7 +1748,8 @@ getOOBpreds <- function(object,
 # -- Calculate Variable Importance ---------------------------------------------
 #' getVI-forestry
 #' @rdname getVI-forestry
-#' @description Calculate increase in OOB for each shuffled feature for forest.
+#' @description Calculate the percentage increase in OOB error of the forest
+#'  when each feature is shuffled.
 #' @param object A `forestry` object.
 #' @param noWarning flag to not display warnings
 #' @note No seed is passed to this function so it is

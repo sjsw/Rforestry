@@ -10,12 +10,13 @@
 \arguments{
 \item{x}{A forestry x.}
 
-\item{tree.id}{Specifies the tree number that should be visulaized.}
+\item{tree.id}{Specifies the tree number that should be visualized.}
 
-\item{print.meta_dta}{Should the data for the plot be printed?}
+\item{print.meta_dta}{A flag indicating whether the data for the plot should be printed.}
 
 \item{beta.char.len}{The length of the beta values in leaf node
-representation.}
+representation. This is only required when plotting a forestry object with linear
+aggregation functions (linear = TRUE).}
 
 \item{...}{additional arguments that are not used.}
 }

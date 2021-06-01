@@ -12,7 +12,7 @@ NULL
 #'   converting data to dataframe, and encoding categorical data into numerical
 #'   representation.
 #' @inheritParams forestry
-#' @return A list of two datasets along with necessary information that encoding
+#' @return A list of two datasets along with necessary information that encodes
 #'   the preprocessing.
 preprocess_training <- function(x, y) {
   x <- as.data.frame(x)

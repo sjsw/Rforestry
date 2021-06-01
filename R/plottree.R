@@ -7,10 +7,11 @@
 #' @rdname plot-forestry
 #' @description plots a tree in the forest.
 #' @param x A forestry x.
-#' @param tree.id Specifies the tree number that should be visulaized.
-#' @param print.meta_dta Should the data for the plot be printed?
+#' @param tree.id Specifies the tree number that should be visualized.
+#' @param print.meta_dta A flag indicating whether the data for the plot should be printed.
 #' @param beta.char.len The length of the beta values in leaf node
-#' representation.
+#'  representation. This is only required when plotting a forestry object with linear
+#'  aggregation functions (linear = TRUE).
 #' @param ... additional arguments that are not used.
 #' @return A plot of the specified tree in the forest.
 #' @import glmnet

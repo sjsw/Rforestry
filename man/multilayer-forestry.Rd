@@ -187,5 +187,5 @@ time and memory.}
 A `multilayerForestry` object.
 }
 \description{
-Construct a gradient boosted random forest.
+Construct a gradient boosted ensemble with random forest base learners.
 }

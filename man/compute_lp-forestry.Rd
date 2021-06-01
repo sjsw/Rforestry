@@ -10,17 +10,18 @@ compute_lp(object, newdata, feature, p)
 \arguments{
 \item{object}{A `forestry` object.}
 
-\item{newdata}{A data frame of testing predictors.}
+\item{newdata}{A data frame of test predictors.}
 
 \item{feature}{A string denoting the dimension for computing lp distances.}
 
 \item{p}{A positive real number determining the norm p-norm used.}
 }
 \value{
-A vector lp distances.
+A vector of the lp distances.
 }
 \description{
-return lp ditances of selected test observations.
+Return the L_p norm distances of selected test observations
+  relative to the training observations which the forest was trained on.
 }
 \examples{
 

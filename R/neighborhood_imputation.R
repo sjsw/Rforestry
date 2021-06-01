@@ -1,19 +1,19 @@
-#' @title Feature imputation using random forests neigborhoods
+#' @title Feature imputation using random forests neighborhoods
 #' @name impute_features
 #' @description This function uses the neighborhoods implied by a random forest
 #'   to impute missing features. The neighbors of a data point are all the
 #'   training points assigned to the same leaf in at least one tree in the
 #'   forest. The weight of each neighbor is the fraction of trees in the forest
-#'   for which it was assigned to the same leaf. We impute a missing features
-#'   for a point by computing the average, using neighborhoods weights, for all
-#'   of the point's neighbors.
+#'   for which it was assigned to the same leaf. We impute a missing feature
+#'   for a point by computing the weighted average feature value, using
+#'   neighborhood weights, using all of the point's neighbors.
 #' @param object an object of class `forestry`
-#' @param newdata the feature data.frame we will impute
+#' @param newdata the feature data.frame we will impute missing features for.
 #' @param seed a random seed passed to the predict method of forestry
 #' @param use_mean_imputation_fallback if TRUE, mean imputation (for numeric
 #'   variables) and mode imputation (for factor variables) is used for missing
 #'   features for which all neighbors also had the corresponding feature
-#'   missing; if FALSE these missing features remain as NAs in the data frame
+#'   missing; if FALSE these missing features remain NAs in the data frame
 #'   returned by `impute_features`.
 
 #' @return A data.frame that is newdata with imputed missing values.

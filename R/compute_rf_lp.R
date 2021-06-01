@@ -5,12 +5,13 @@
 #' @name compute_lp-forestry
 #' @title compute lp distances
 #' @rdname compute_lp-forestry
-#' @description return lp ditances of selected test observations.
+#' @description Return the L_p norm distances of selected test observations
+#'   relative to the training observations which the forest was trained on.
 #' @param object A `forestry` object.
-#' @param newdata A data frame of testing predictors.
+#' @param newdata A data frame of test predictors.
 #' @param feature A string denoting the dimension for computing lp distances.
 #' @param p A positive real number determining the norm p-norm used.
-#' @return A vector lp distances.
+#' @return A vector of the lp distances.
 #' @examples
 #'
 #' # Set seed for reproductivity
