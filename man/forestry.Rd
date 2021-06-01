@@ -111,21 +111,19 @@ dataset is empty. If the ratio is 0, then the splitting data set is empty
 and all the data is used for the averaging data set (This is not a good
 usage however since there will be no data available for splitting).}
 
-\item{OOBhonest}{In this version of honesty, the out-of-bag examples for each tree are used for
-another bootstrap draw, which then gives the set of observations in the
-honest (averaging) set. This setting also changes how predictions are done
-for new examples. When predicting for observations which are out of sample
+\item{OOBhonest}{In this version of honesty, the out-of-bag observations for each tree are 
+used as the honest (averaging) set. This setting also changes how predictions are done
+for new examples. When predicting for observations which are out-of-sample
 (using Predict(..., aggregation = "average")), all the trees in the forest are used to predict for the
-observation. When predicting for an observation which was in sample (using
+observation. When predicting for an observation which was in-sample (using
 predict(..., aggregation = "oob")), only the trees for which that observation was not in the
-averaging set (or the set of trees for which the observation was in the splitting set) are
-used to make the prediction for the observation. This ensures that the
+averaging set are used to make the prediction for the observation. This ensures that the
 outcome value for an observation is never used to predict for that observation
 even when it is in sample, a feature not shared by the standard honesty
 implementation.}
 
-\item{doubleBootstrap}{The doubleBootstrap flag provides the option to resample
-from the out-of-bag observations set to construct the averaging set when using OOBhonest.
+\item{doubleBootstrap}{The doubleBootstrap flag provides the option to resample with replacement
+from the out-of-bag observations set for each tree to construct the averaging set when using OOBhonest.
 If this is FALSE, the out-of-bag observations are used as the averaging set. By default 
 this option is TRUE when running OOBhonest = TRUE. This option increases diversity across trees.}
 
