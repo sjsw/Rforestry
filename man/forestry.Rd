@@ -158,7 +158,7 @@ linearly on when using linear penalized splits (defaults to use all numerical fe
 continuous features and the outcome. Supplied as a vector of length p with
 entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
 -1 indicating a decreasing monotonic relationship, and 0 indicating no
-relationship. Constraints supplied for categorical will be ignored.}
+constraint. Constraints supplied for categorical will be ignored.}
 
 \item{monotoneAvg}{This is a boolean flag which indicates whether or not
 monotonic constraints should be enforced on the averaging set in addition to the
