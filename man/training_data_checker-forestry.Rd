@@ -45,64 +45,57 @@ replacement. The default value is TRUE.}
 
 \item{sampsize}{The size of total samples to draw for the training data. If
 sampling with replacement, the default value is the length of the training
-data. If samplying without replacement, the default value is two-third of
+data. If sampling without replacement, the default value is two-thirds of
 the length of the training data.}
 
 \item{mtry}{The number of variables randomly selected at each split point.
-The default value is set to be one third of total number of features of the
-training data.}
+The default value is set to be one-third of the total number of features of the training data.}
 
-\item{nodesizeSpl}{Minimum observations contained in terminal nodes. The
-default value is 5.}
+\item{nodesizeSpl}{Minimum observations contained in terminal nodes.
+The default value is 5.}
 
-\item{nodesizeAvg}{Minimum size of terminal nodes for averaging dataset. The
-default value is 5.}
+\item{nodesizeAvg}{Minimum size of terminal nodes for averaging dataset.
+The default value is 5.}
 
-\item{nodesizeStrictSpl}{Minimum observations to follow strictly in terminal
-nodes. The default value is 1.}
-
-\item{nodesizeStrictAvg}{Minimum size of terminal nodes for averaging data set
-to follow strictly when predicting. As of version 0.9.0.8, this parameter
-has been reverted to enforce overlap of the averaging data set while
-training the forest rather than after training. This means that when using
-either version of honesty, splits which leave less than nodesizeStrictAvg
-averaging observations in either child node will be rejected, ensuring every
-leaf node also has at least nodesizeStrictAvg averaging observations.
+\item{nodesizeStrictSpl}{Minimum observations to follow strictly in terminal nodes.
 The default value is 1.}
+
+\item{nodesizeStrictAvg}{The minimum size of terminal nodes for averaging data set to follow when predicting.
+No splits are allowed that result in nodes with observations less than this parameter.
+This parameter enforces overlap of the averaging data set with the splitting set when training.
+When using honesty, splits that leave less than nodesizeStrictAvg averaging
+observations in either child node will be rejected, ensuring every leaf node
+also has at least nodesizeStrictAvg averaging observations. The default value is 1.}
 
 \item{minSplitGain}{Minimum loss reduction to split a node further in a tree.}
 
 \item{maxDepth}{Maximum depth of a tree. The default value is 99.}
 
-\item{interactionDepth}{All splits at or above interaction depth must be on variables
-that are not weighting variables (as provided by the interactionVariables argument)}
+\item{interactionDepth}{All splits at or above interaction depth must be on
+variables that are not weighting variables (as provided by the interactionVariables argument).}
 
-\item{splitratio}{Proportion of the training data used as the splitting
-dataset. It is a ratio between 0 and 1. If the ratio is 1, then essentially
-splitting dataset becomes the total entire sampled set and the averaging
-dataset is empty. If the ratio is 0, then the splitting data set is empty
-and all the data is used for the averaging data set (This is not a good
-usage however since there will be no data available for splitting).}
+\item{splitratio}{Proportion of the training data used as the splitting dataset.
+It is a ratio between 0 and 1. If the ratio is 1 (the default), then the splitting
+set uses the entire data, as does the averaging set---i.e., the standard Breiman RF setup.
+If the ratio is 0, then the splitting data set is empty, and the entire dataset is used
+for the averaging set (This is not a good usage, however, since there will be no data available for splitting).}
 
-\item{OOBhonest}{This is an experimental method of enforcing honesty. In this
-version of honesty, the out-of-bag examples for each tree are used for
-another bootstrap draw, which then gives the set of observations in the
-honest (averaging) set. This setting also changes how predictions are done
-for new examples. When predicting for observations which are out of sample
-(using Predict(..., aggregation = "average")), all the trees in the forest are used to predict for the
-observation. When predicting for an observation which was in sample (using
-predict(..., aggregation = "oob")), only the trees for which the observation was not in the
-averaging set (or the set of trees for which the observation was in the splitting set) are
-used to make the prediction for the observation. This ensures that the
-outcome value for an observation is never used to predict for that observation
-even when it is in sample, a feature not shared by the standard honesty
-implementation.}
+\item{OOBhonest}{In this version of honesty, the out-of-bag observations for each tree
+are used as the honest (averaging) set. This setting also changes how predictions
+are constructed. When predicting for observations that are out-of-sample
+(using Predict(..., aggregation = "average")), all the trees in the forest
+are used to construct predictions. When predicting for an observation that was in-sample (using
+predict(..., aggregation = "oob")), only the trees for which that observation
+was not in the averaging set are used to construct the prediction for that observation.
+aggregation="oob" (out-of-bag) ensures that the outcome value for an observation
+is never used to construct predictions for a given observation even when it is in sample.
+This property does not hold in standard honesty, which relies on an asymptotic subsampling argument.}
 
 \item{nthread}{Number of threads to train and predict the forest. The default
 number is 0 which represents using all cores.}
 
-\item{middleSplit}{if the split value is taking the average of two feature
-values. If false, it will take a point based on a uniform distribution
+\item{middleSplit}{Indicator of whether the split value is takes the average of two feature
+values. If FALSE, it will take a point based on a uniform distribution
 between two feature values. (Default = FALSE)}
 
 \item{doubleTree}{if the number of tree is doubled as averaging and splitting
@@ -111,24 +104,23 @@ data can be exchanged to create decorrelated trees. (Default = FALSE)}
 \item{linFeats}{A vector containing the indices of which features to split
 linearly on when using linear penalized splits (defaults to use all numerical features).}
 
-\item{monotonicConstraints}{Specifies monotonic relationships between the
-continuous features and the outcome. Supplied as a vector of length p with
-entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
--1 indicating a decreasing monotonic relationship, and 0 indicating no
-relationship. Constraints supplied for categorical will be ignored.}
+\item{monotonicConstraints}{Specifies monotonic relationships between the continuous
+features and the outcome. Supplied as a vector of length p with entries in
+1,0,-1 which 1 indicating an increasing monotonic relationship, -1 indicating
+a decreasing monotonic relationship, and 0 indicating no constraint.
+Constraints supplied for categorical variable will be ignored.}
 
 \item{featureWeights}{weights used when subsampling features for nodes above or at interactionDepth.}
 
 \item{deepFeatureWeights}{weights used when subsampling features for nodes below interactionDepth.}
 
-\item{observationWeights}{These denote the weights for each training observation
-which determines how likely the observation is to be selected in each bootstrap
-sample. This option is not allowed when sampling is done without replacement.}
+\item{observationWeights}{Denotes the weights for each training observation
+that determine how likely the observation is to be selected in each bootstrap sample.
+This option is not allowed when sampling is done without replacement.}
 
-\item{linear}{Indicator which enables Ridge penalized splits and linear aggregation
+\item{linear}{Indicator that enables Ridge penalized splits and linear aggregation
 functions in the leaf nodes. This is recommended for data with linear outcomes.
-For implementation details, see: https://arxiv.org/abs/1906.06463. Default
-is FALSE.}
+For implementation details, see: https://arxiv.org/abs/1906.06463. Default is FALSE.}
 
 \item{hasNas}{indicates if there is any missingness in x.}
 }

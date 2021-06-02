@@ -415,103 +415,93 @@ setClass(
 #'   replacement. The default value is TRUE.
 #' @param sampsize The size of total samples to draw for the training data. If
 #'   sampling with replacement, the default value is the length of the training
-#'   data. If samplying without replacement, the default value is two-third of
+#'   data. If sampling without replacement, the default value is two-thirds of
 #'   the length of the training data.
-#' @param sample.fraction if this is given, then sampsize is ignored and set to
-#'   be round(length(y) * sample.fraction). It must be a real number between 0
-#'   and 1
+#' @param sample.fraction If this is given, then sampsize is ignored and set to
+#'   be round(length(y) * sample.fraction). It must be a real number between 0 and 1
 #' @param mtry The number of variables randomly selected at each split point.
-#'   The default value is set to be one third of total number of features of the
-#'   training data.
-#' @param nodesizeSpl Minimum observations contained in terminal nodes. The
-#'   default value is 5.
-#' @param nodesizeAvg Minimum size of terminal nodes for averaging dataset. The
-#'   default value is 5.
-#' @param nodesizeStrictSpl Minimum observations to follow strictly in terminal
-#'   nodes. The default value is 1.
-#' @param nodesizeStrictAvg Minimum size of terminal nodes for averaging data set
-#'   to follow strictly when predicting. As of version 0.9.0.8, this parameter
-#'   has been reverted to enforce overlap of the averaging data set while
-#'   training the forest rather than after training. This means that when using
-#'   either version of honesty, splits which leave less than nodesizeStrictAvg
-#'   averaging observations in either child node will be rejected, ensuring every
-#'   leaf node also has at least nodesizeStrictAvg averaging observations.
+#'   The default value is set to be one-third of the total number of features of the training data.
+#' @param nodesizeSpl Minimum observations contained in terminal nodes.
+#'   The default value is 5.
+#' @param nodesizeAvg Minimum size of terminal nodes for averaging dataset.
+#'   The default value is 5.
+#' @param nodesizeStrictSpl Minimum observations to follow strictly in terminal nodes.
 #'   The default value is 1.
+#' @param nodesizeStrictAvg The minimum size of terminal nodes for averaging data set to follow when predicting.
+#'   No splits are allowed that result in nodes with observations less than this parameter.
+#'   This parameter enforces overlap of the averaging data set with the splitting set when training.
+#'   When using honesty, splits that leave less than nodesizeStrictAvg averaging
+#'   observations in either child node will be rejected, ensuring every leaf node
+#'   also has at least nodesizeStrictAvg averaging observations. The default value is 1.
 #' @param minSplitGain Minimum loss reduction to split a node further in a tree.
 #' @param maxDepth Maximum depth of a tree. The default value is 99.
-#' @param interactionDepth All splits at or above interaction depth must be on variables
-#' that are not weighting variables (as provided by the interactionVariables argument)
+#' @param interactionDepth All splits at or above interaction depth must be on
+#'   variables that are not weighting variables (as provided by the interactionVariables argument).
 #' @param interactionVariables Indices of weighting variables.
-#' @param featureWeights (optional) vector of sampling probablities/weights for
-#'   each feature used when subsampling mtry features at each node above or at
-#'   interactionDepth. The default is to use uniform probabilities.
-#' @param deepFeatureWeights used in place of featureWeights for splits below interactionDepth.
-#' @param observationWeights These denote the weights for each training observation
-#'   which determines how likely the observation is to be selected in each bootstrap
-#'   sample. This option is not allowed when sampling is done without replacement.
-#' @param splitratio Proportion of the training data used as the splitting
-#'   dataset. It is a ratio between 0 and 1. If the ratio is 1, then essentially
-#'   splitting dataset becomes the total entire sampled set and the averaging
-#'   dataset is empty. If the ratio is 0, then the splitting data set is empty
-#'   and all the data is used for the averaging data set (This is not a good
-#'   usage however since there will be no data available for splitting).
-#' @param OOBhonest This is an experimental method of enforcing honesty. In this
-#'   version of honesty, the out-of-bag examples for each tree are used for
-#'   another bootstrap draw, which then gives the set of observations in the
-#'   honest (averaging) set. This setting also changes how predictions are done
-#'   for new examples. When predicting for observations which are out of sample
-#'   (using Predict(..., aggregation = "average")), all the trees in the forest are used to predict for the
-#'   observation. When predicting for an observation which was in sample (using
-#'   predict(..., aggregation = "oob")), only the trees for which the observation was not in the
-#'   averaging set (or the set of trees for which the observation was in the splitting set) are
-#'   used to make the prediction for the observation. This ensures that the
-#'   outcome value for an observation is never used to predict for that observation
-#'   even when it is in sample, a feature not shared by the standard honesty
-#'   implementation.
+#' @param featureWeights (optional) vector of sampling probabilities/weights for each
+#'   feature used when subsampling mtry features at each node above or at interactionDepth.
+#'   The default is to use uniform probabilities.
+#' @param deepFeatureWeights Used in place of featureWeights for splits below interactionDepth.
+#' @param observationWeights Denotes the weights for each training observation
+#'   that determine how likely the observation is to be selected in each bootstrap sample.
+#'   This option is not allowed when sampling is done without replacement.
+#' @param splitratio Proportion of the training data used as the splitting dataset.
+#'   It is a ratio between 0 and 1. If the ratio is 1 (the default), then the splitting
+#'   set uses the entire data, as does the averaging set---i.e., the standard Breiman RF setup.
+#'   If the ratio is 0, then the splitting data set is empty, and the entire dataset is used
+#'   for the averaging set (This is not a good usage, however, since there will be no data available for splitting).
+#' @param OOBhonest In this version of honesty, the out-of-bag observations for each tree
+#'   are used as the honest (averaging) set. This setting also changes how predictions
+#'   are constructed. When predicting for observations that are out-of-sample
+#'   (using Predict(..., aggregation = "average")), all the trees in the forest
+#'   are used to construct predictions. When predicting for an observation that was in-sample (using
+#'   predict(..., aggregation = "oob")), only the trees for which that observation
+#'   was not in the averaging set are used to construct the prediction for that observation.
+#'   aggregation="oob" (out-of-bag) ensures that the outcome value for an observation
+#'   is never used to construct predictions for a given observation even when it is in sample.
+#'   This property does not hold in standard honesty, which relies on an asymptotic subsampling argument.
 #' @param doubleBootstrap The doubleBootstrap flag provides the option to resample
-#'   from the out-of-bag observations set a second time in order to get the
-#'   averaging set when using OOBhonest. Of this is FALSE, the out-of-bag observations
-#'   are used in the averaging set with their default weights. By default this
-#'   is TRUE when running OOBhonest = TRUE.
+#'   with replacement from the out-of-bag observations set for each tree to construct
+#'   the averaging set when using OOBhonest. If this is FALSE, the out-of-bag observations
+#'   are used as the averaging set. By default this option is TRUE when running OOBhonest = TRUE.
+#'   This option increases diversity across trees.
 #' @param seed random seed
 #' @param verbose Indicator to train the forest in verbose mode
 #' @param nthread Number of threads to train and predict the forest. The default
 #'   number is 0 which represents using all cores.
-#' @param splitrule only variance is implemented at this point and it contains
+#' @param splitrule Only variance is implemented at this point and it
 #'   specifies the loss function according to which the splits of random forest
-#'   should be made
-#' @param middleSplit if the split value is taking the average of two feature
-#'   values. If false, it will take a point based on a uniform distribution
+#'   should be made.
+#' @param middleSplit Indicator of whether the split value is takes the average of two feature
+#'   values. If FALSE, it will take a point based on a uniform distribution
 #'   between two feature values. (Default = FALSE)
 #' @param doubleTree if the number of tree is doubled as averaging and splitting
 #'   data can be exchanged to create decorrelated trees. (Default = FALSE)
-#' @param reuseforestry pass in an `forestry` object which will recycle the
+#' @param reuseforestry Pass in an `forestry` object which will recycle the
 #'   dataframe the old object created. It will save some space working on the
-#'   same dataset.
-#' @param maxObs The max number of observations to split on
+#'   same data set.
+#' @param maxObs The max number of observations to split on.
 #' @param savable If TRUE, then RF is created in such a way that it can be
-#'   saved and loaded using save(...) and load(...). Setting it to TRUE
-#'   (default) will, however, take longer and it will use more memory. When
-#'   training many RF, it makes a lot of sense to set this to FALSE to save
-#'   time and memory.
+#'   saved and loaded using save(...) and load(...). However, setting it to TRUE
+#'   (default) will take longer and use more memory. When
+#'   training many RF, it makes sense to set this to FALSE to save time and memory.
 #' @param saveable deprecated. Do not use.
-#' @param linear Indicator which enables Ridge penalized splits and linear aggregation
+#' @param linear Indicator that enables Ridge penalized splits and linear aggregation
 #'   functions in the leaf nodes. This is recommended for data with linear outcomes.
-#'   For implementation details, see: https://arxiv.org/abs/1906.06463. Default
-#'   is FALSE.
+#'   For implementation details, see: https://arxiv.org/abs/1906.06463. Default is FALSE.
 #' @param linFeats A vector containing the indices of which features to split
 #'   linearly on when using linear penalized splits (defaults to use all numerical features).
-#' @param monotonicConstraints Specifies monotonic relationships between the
-#'   continuous features and the outcome. Supplied as a vector of length p with
-#'   entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
-#'   -1 indicating a decreasing monotonic relationship, and 0 indicating no
-#'   relationship. Constraints supplied for categorical will be ignored.
-#' @param monotoneAvg This is a boolean flag which indicates whether or not
-#'   monotonic constraints should be enforced on the averaging set in addition to the
-#'   splitting set. This flag is meaningless unless both honesty and monotonic
-#'   constraints are in use. The default is FALSE.
-#' @param overfitPenalty Value to determine how much to penalize magnitude of
-#' coefficients in ridge regression when using linear splits.
+#' @param monotonicConstraints Specifies monotonic relationships between the continuous
+#'   features and the outcome. Supplied as a vector of length p with entries in
+#'   1,0,-1 which 1 indicating an increasing monotonic relationship, -1 indicating
+#'   a decreasing monotonic relationship, and 0 indicating no constraint.
+#'   Constraints supplied for categorical variable will be ignored.
+#' @param monotoneAvg This is a boolean flag that indicates whether or not monotonic
+#'   constraints should be enforced on the averaging set in addition to the splitting set.
+#'   This flag is meaningless unless both honesty and monotonic constraints are in use.
+#'   The default is FALSE.
+#' @param overfitPenalty Value to determine how much to penalize the magnitude
+#'   of coefficients in ridge regression when using linear splits.
 #' @return A `forestry` object.
 #' @examples
 #' set.seed(292315)
