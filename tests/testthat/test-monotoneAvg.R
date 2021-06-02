@@ -45,5 +45,6 @@ test_that("Tests that Monotone Avg parameter is working correctly", {
                                                          newdata = data.frame(V1 = rep(x, 100))))})
 
   # If we don't use the parameter, monotonicity is broken
+  skip_if_not_mac()
   expect_equal(all.equal(order(pred_means), c(1,5,4,3,2,7,6,9,8)), TRUE)
 })

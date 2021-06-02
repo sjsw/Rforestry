@@ -28,6 +28,7 @@ test_that("Test if nodesizeStrictSpl is working correctly", {
 
   # We expect at least 5 observations were used for the prediction as we have set
   # nodesizeStrictAvg = 5
+  skip_if_not_mac()
   expect_gt(length(which(p$weightMatrix != 0 )), 4)
 
   skip_if_not_mac()
