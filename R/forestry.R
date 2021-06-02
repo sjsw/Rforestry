@@ -1874,7 +1874,6 @@ getCI <- function(object,
                         "Level" = level)
     return(predictions)
   } else if (method == "local-conformal") {
-    library(dplyr)
     OOB_preds <- predict(object, aggregation = "oob")
     OOB_res <- object@processed_dta$y - OOB_preds
 
