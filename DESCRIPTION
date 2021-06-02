@@ -28,7 +28,8 @@ Imports:
     visNetwork, 
     glmnet, 
     grDevices,
-    onehot
+    onehot,
+    dplyr
 LinkingTo: Rcpp,
   RcppArmadillo,
   RcppThread
