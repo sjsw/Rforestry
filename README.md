@@ -82,10 +82,9 @@ predict(monotone_rf, newdata = data_train[,-3])
 ## OOB Predictions
 
 We can return the predictions for the training data set using only the trees in
-which each observation was out-of-bag. Note that when there are few trees, or a
+which each observation was out-of-bag (OOB). Note that when there are few trees, or a
 high proportion of the observations sampled, there may be some observations
-which are not out-of-bag for any trees.
-The predictions for these are returned as `NaN`.
+which are not out-of-bag for any trees. The predictions for these are returned as `NaN`.
 
 
 ```R
@@ -105,5 +104,37 @@ mean((oob_preds -  iris[,1])^2)
 getOOB(rf)
 ```
 
+If OOB predictions are going to be used, it is advised that one use OOB honesty during
+training (OOBhonest=true). In this version of honesty, the OOB observations for each tree
+are used as the honest (averaging) set. OOB honesty also changes how predictions
+are constructed. When predicting for observations that are out-of-sample
+(using Predict(..., aggregation = "average")), all the trees in the forest
+are used to construct predictions. When predicting for an observation that was in-sample (using
+predict(..., aggregation = "oob")), only the trees for which that observation
+was not in the averaging set are used to construct the prediction for that observation.
+aggregation="oob" (out-of-bag) ensures that the outcome value for an observation
+is never used to construct predictions for a given observation even when it is in sample.
+This property does not hold in standard honesty, which relies on an asymptotic subsampling argument.
+OOB honesty, when used in combination with aggregation="oob" at the prediction stage, cannot overfit IID data, 
+at either the training or prediction stage. The outputs of such models are also more stable and more easily
+interpretable. One can observe this if one queries the model using interpretation tools such as
+ALEs, PDPs, LIME, etc.
 
+```R
+library(Rforestry)
+
+# Train a forest
+rf <- forestry(x = iris[,-1],
+               y = iris[,1],
+               nthread = 2,
+               ntree = 500,
+               OOBhonest=TRUE)
+
+# Get the OOB predictions for the training set
+oob_preds <- predict(rf, aggregation = "oob")
+
+# This should be equal to the OOB error
+mean((oob_preds -  iris[,1])^2)
+getOOB(rf)
+```
 
