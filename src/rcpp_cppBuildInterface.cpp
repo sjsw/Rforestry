@@ -467,6 +467,7 @@ Rcpp::List rcpp_cppPredictInterface(
     // then we inialize the empty weight matrix
     arma::Mat<double> weightMatrix;
     arma::Mat<int> terminalNodes;
+    arma::Mat<double> coefficients;
 
     // Have to keep track of tree_weights
     std::vector<size_t>* testForestTreeWeights;
@@ -485,7 +486,25 @@ Rcpp::List rcpp_cppPredictInterface(
       threads_to_use = (size_t) nthread;
     }
 
-    if (aggregation == "weightMatrix") {
+    if (aggregation == "coefs") {
+      size_t nrow = featureData[0].size();
+      // Now we need the number of linear features + 1 for the intercept
+      size_t ncol = (*testFullForest).getTrainingData()->getLinObsData(0).size() + 1;
+      //Set coefficients to be zero
+      coefficients.resize(nrow, ncol);
+      coefficients.zeros(nrow, ncol);
+
+      testForestPrediction = (*testFullForest).predict(&featureData,
+                                                       NULL,
+                                                       &coefficients,
+                                                       NULL,
+                                                       seed,
+                                                       threads_to_use,
+                                                       false,
+                                                       false,
+                                                       NULL);
+
+    } else if (aggregation == "weightMatrix") {
       size_t nrow = featureData[0].size(); // number of features to be predicted
       size_t ncol = (*testFullForest).getNtrain(); // number of train data
       weightMatrix.resize(nrow, ncol); // initialize the space for the matrix
@@ -496,6 +515,7 @@ Rcpp::List rcpp_cppPredictInterface(
       // to run just weightMatrix without terminal nodes (especially on large datasets)
       testForestPrediction = (*testFullForest).predict(&featureData,
                                                        &weightMatrix,
+                                                       NULL,
                                                        NULL,
                                                        seed,
                                                        threads_to_use,
@@ -522,15 +542,17 @@ Rcpp::List rcpp_cppPredictInterface(
       // The idea is that, if the weightMatrix is point to NULL it won't be
       // be updated, but otherwise it will be updated:
       testForestPrediction = (*testFullForest).predict(&featureData,
-                              &weightMatrix,
-                              &terminalNodes,
-                              seed,
-                              threads_to_use,
-                              exact,
-                              false,
-                              NULL);
+                                                       &weightMatrix,
+                                                       NULL,
+                                                       &terminalNodes,
+                                                       seed,
+                                                       threads_to_use,
+                                                       exact,
+                                                       false,
+                                                       NULL);
     } else {
       testForestPrediction = (*testFullForest).predict(&featureData,
+                                                       NULL,
                                                        NULL,
                                                        NULL,
                                                        seed,
@@ -547,7 +569,8 @@ Rcpp::List rcpp_cppPredictInterface(
 
     return Rcpp::List::create(Rcpp::Named("predictions") = predictions,
                               Rcpp::Named("weightMatrix") = weightMatrix,
-                              Rcpp::Named("terminalNodes") = terminalNodes);
+                              Rcpp::Named("terminalNodes") = terminalNodes,
+                              Rcpp::Named("coef") = coefficients);
 
     // return output;
 
@@ -1649,6 +1672,7 @@ std::vector< std::vector<double> > rcpp_cppImputeInterface(
 
   testForestPrediction = (*testFullForest).predict(&featureData,
                                                    &weightMatrix,
+                                                   NULL,
                                                    NULL,
                                                    seed,
                                                    testFullForest->getNthread(),

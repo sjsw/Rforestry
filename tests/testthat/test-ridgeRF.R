@@ -79,4 +79,5 @@ test_that("Tests if ridgeRF works", {
   mean((y_pred - y) ^ 2)
 
   expect_equal(mean((y_pred - y) ^ 2), 0.0200273762841208, tolerance = 1e-3)
+
 })

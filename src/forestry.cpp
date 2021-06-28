@@ -439,6 +439,7 @@ void forestry::addTrees(size_t ntree) {
 std::unique_ptr< std::vector<double> > forestry::predict(
   std::vector< std::vector<double> >* xNew,
   arma::Mat<double>* weightMatrix,
+  arma::Mat<double>* coefficients,
   arma::Mat<int>* terminalNodes,
   unsigned int seed,
   size_t nthread,
@@ -450,6 +451,21 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   size_t numObservations = (*xNew)[0].size();
   for (size_t j=0; j<numObservations; j++) {
     prediction.push_back(0);
+  }
+
+  // If we want to return the ridge coefficients, initialize a matrix
+  if (coefficients) {
+    // Create coefficient vector of vectors of zeros
+    std::vector< std::vector<float> > coef;
+    size_t numObservations = (*xNew)[0].size();
+    size_t numCol = (*coefficients).n_cols;
+    for (size_t i=0; i<numObservations; i++) {
+      std::vector<float> row;
+      for (size_t j = 0; j<numCol; j++) {
+        row.push_back(0);
+      }
+      coef.push_back(row);
+    }
   }
 
   // Only needed if exact = TRUE, vector for storing each tree's predictions
@@ -490,20 +506,42 @@ std::unique_ptr< std::vector<double> > forestry::predict(
           try {
             std::vector<double> currentTreePrediction(numObservations);
             std::vector<int> currentTreeTerminalNodes(numObservations);
+            std::vector< std::vector<double> > currentTreeCoefficients(numObservations);
 
             //If terminal nodes, pass option to tree predict
             forestryTree *currentTree = (*getForest())[i].get();
-            (*currentTree).predict(
-              currentTreePrediction,
-              &currentTreeTerminalNodes,
-              xNew,
-              getTrainingData(),
-              weightMatrix,
-              getlinear(),
-              seed + i,
-              getMinNodeSizeToSplitAvg()
-            );
 
+            if (coefficients) {
+              for (size_t l=0; l<numObservations; l++) {
+                currentTreeCoefficients[l] = std::vector<double>(coefficients->n_cols);
+              }
+
+              (*currentTree).predict(
+                  currentTreePrediction,
+                  &currentTreeTerminalNodes,
+                  currentTreeCoefficients,
+                  xNew,
+                  getTrainingData(),
+                  weightMatrix,
+                  getlinear(),
+                  seed + i,
+                  getMinNodeSizeToSplitAvg()
+              );
+
+            } else {
+              (*currentTree).predict(
+                  currentTreePrediction,
+                  &currentTreeTerminalNodes,
+                  currentTreeCoefficients,
+                  xNew,
+                  getTrainingData(),
+                  weightMatrix,
+                  getlinear(),
+                  seed + i,
+                  getMinNodeSizeToSplitAvg()
+              );
+
+            }
 
             // HERE IF NEED TERMINAL NODES, pass option to tree predict, then
             // lock thread (shouldn't really need to), use i as offset and flip
@@ -523,6 +561,14 @@ std::unique_ptr< std::vector<double> > forestry::predict(
             } else {
               for (size_t j = 0; j < numObservations; j++) {
                 prediction[j] += currentTreePrediction[j];
+              }
+
+              if (coefficients) {
+                for (size_t k = 0; k < numObservations; k++) {
+                  for (size_t l = 0; l < coefficients->n_cols; l++) {
+                    (*coefficients)(k,l) += currentTreeCoefficients[k][l];
+                  }
+                }
               }
 
               if (terminalNodes) {
@@ -600,7 +646,6 @@ std::unique_ptr< std::vector<double> > forestry::predict(
     prediction[j] /= total_weights;
   }
 
-
   std::unique_ptr< std::vector<double> > prediction_ (
     new std::vector<double>(prediction)
   );
@@ -614,6 +659,14 @@ std::unique_ptr< std::vector<double> > forestry::predict(
     for ( size_t i = 0; i < nrow; i++) {
       for (size_t j = 0; j < ncol; j++) {
         (*weightMatrix)(i,j) = (*weightMatrix)(i,j) / _ntree;
+      }
+    }
+  }
+
+  if (coefficients) {
+    for (size_t k = 0; k < numObservations; k++) {
+      for (size_t l = 0; l < coefficients->n_cols; l++) {
+        (*coefficients)(k,l) /= total_weights;
       }
     }
   }

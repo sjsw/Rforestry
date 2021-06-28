@@ -224,6 +224,7 @@ void forestryTree::setDummyTree(
 void forestryTree::predict(
     std::vector<double> &outputPrediction,
     std::vector<int>* terminalNodes,
+    std::vector< std::vector<double> > &outputCoefficients,
     std::vector< std::vector<double> >* xNew,
     DataFrame* trainingData,
     arma::Mat<double>* weightMatrix,
@@ -241,8 +242,17 @@ void forestryTree::predict(
   std::vector<size_t> updateIndex(outputPrediction.size());
   rangeGenerator _rangeGenerator(0);
   std::generate(updateIndex.begin(), updateIndex.end(), _rangeGenerator);
-  (*getRoot()).predict(outputPrediction, terminalNodes, &updateIndex, xNew, trainingData,
-   weightMatrix, linear, getOverfitPenalty(), seed, nodesizeStrictAvg);
+  (*getRoot()).predict(outputPrediction,
+                       terminalNodes,
+                       outputCoefficients,
+                       &updateIndex,
+                       xNew,
+                       trainingData,
+                       weightMatrix,
+                       linear,
+                       getOverfitPenalty(),
+                       seed,
+                       nodesizeStrictAvg);
   //Rcpp::Rcout << "Seed is" << seed << ".\n";
 }
 
@@ -1267,6 +1277,7 @@ void forestryTree::getOOBPrediction(
 
   std::vector<double> currentTreePrediction(OOBIndex.size());
   std::vector<int>* currentTreeTerminalNodes = nullptr;
+  std::vector< std::vector<double> > currentTreeCoefficients(OOBIndex.size());
 
   std::vector< std::vector<double> > xnew(trainingData->getNumColumns());
 
@@ -1286,6 +1297,7 @@ void forestryTree::getOOBPrediction(
   predict(
     currentTreePrediction,
     currentTreeTerminalNodes,
+    currentTreeCoefficients,
     &xnew,
     trainingData,
     NULL,
@@ -1329,6 +1341,7 @@ void forestryTree::getShuffledOOBPrediction(
 
     // Predict current oob sample
     std::vector<double> currentTreePrediction(1);
+    std::vector< std::vector<double> > currentTreeCoefficients(1);
     std::vector<int>* currentTreeTerminalNodes = nullptr;
     std::vector<double> OOBSampleObservation((*trainingData).getNumColumns());
     (*trainingData).getShuffledObservationData(OOBSampleObservation,
@@ -1346,6 +1359,7 @@ void forestryTree::getShuffledOOBPrediction(
     predict(
       currentTreePrediction,
       currentTreeTerminalNodes,
+      currentTreeCoefficients,
       &OOBSampleObservation_,
       trainingData,
       NULL,

@@ -66,6 +66,7 @@ void RFNode::setSplitNode(
 
 void RFNode::ridgePredict(
   std::vector<double> &outputPrediction,
+  std::vector< std::vector<double> > &outputCoefficients,
   std::vector<size_t>* updateIndex,
   std::vector< std::vector<double> >* xNew,
   DataFrame* trainingData,
@@ -135,11 +136,23 @@ void RFNode::ridgePredict(
   for (size_t i = 0; i < updateIndex->size(); i++) {
     outputPrediction[(*updateIndex)[i]] = predictions(i, 0);
   }
+
+  // Want coefficients vector
+  std::vector<double> c_vector =
+    arma::conv_to< std::vector<double> >::from(coefficients.col(0));
+
+  // If we want to update coefficients, update the vector as well
+  if (!(outputCoefficients.empty())) {
+    for (size_t k = 0; k < updateIndex->size(); k++) {
+      outputCoefficients[(*updateIndex)[k]] = c_vector;
+    }
+  }
 }
 
 void RFNode::predict(
   std::vector<double> &outputPrediction,
   std::vector<int>* terminalNodes,
+  std::vector< std::vector<double> > &outputCoefficients,
   std::vector<size_t>* updateIndex,
   std::vector< std::vector<double> >* xNew,
   DataFrame* trainingData,
@@ -157,6 +170,7 @@ void RFNode::predict(
 
         //Use ridgePredict (fit linear model on leaf avging obs + evaluate it)
         ridgePredict(outputPrediction,
+                     outputCoefficients,
                      updateIndex,
                      xNew,
                      trainingData,
@@ -383,6 +397,7 @@ void RFNode::predict(
         (*getLeftChild()).predict(
             outputPrediction,
             terminalNodes,
+            outputCoefficients,
             leftPartitionIndex,
             xNew,
             trainingData,
@@ -454,6 +469,7 @@ void RFNode::predict(
         (*getRightChild()).predict(
           outputPrediction,
           terminalNodes,
+          outputCoefficients,
           rightPartitionIndex,
           xNew,
           trainingData,

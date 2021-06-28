@@ -46,7 +46,11 @@ were left out of bag during the splitting set selection. This leaves a third
 set which is the observations which were not selected in either bootstrap sample.
 This predict flag gives the predictions using- for each observation- only the trees
 in which the observation fell into this third set (so was neither a splitting
-nor averaging example).}
+nor averaging example).
+`coefs` is an aggregation option which works only when linear aggregation
+functions have been used. This returns the linear coefficients for each
+linear feature which were used in the leaf node regression of each predicted
+point.}
 
 \item{seed}{random seed}
 

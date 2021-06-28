@@ -48,6 +48,7 @@ public:
   std::unique_ptr< std::vector<double> > predict(
     std::vector< std::vector<double> >* xNew,
     arma::Mat<double>* weightMatrix,
+    arma::Mat<double>* coefficients,
     arma::Mat<int>* terminalNodes,
     unsigned int seed,
     size_t nthread,

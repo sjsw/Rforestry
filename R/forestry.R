@@ -1295,6 +1295,10 @@ multilayerForestry <- function(x,
 #'   This predict flag gives the predictions using- for each observation- only the trees
 #'   in which the observation fell into this third set (so was neither a splitting
 #'   nor averaging example).
+#'   `coefs` is an aggregation option which works only when linear aggregation
+#'   functions have been used. This returns the linear coefficients for each
+#'   linear feature which were used in the leaf node regression of each predicted
+#'   point.
 #' @param seed random seed
 #' @param nthread The number of threads with which to run the predictions with.
 #'   This will default to the number of threads with which the forest was trained
@@ -1328,6 +1332,10 @@ predict.forestry <- function(object,
 
   if (is.null(newdata) && !(aggregation == "oob" || aggregation == "doubleOOB")) {
     stop("When using an aggregation that is not oob or doubleOOB, one must supply newdata")
+  }
+
+  if ((!(object@linear)) && (aggregation == "coefs")) {
+    stop("Aggregation can only be linear with setting the parameter linear = TRUE.")
   }
 
   # Preprocess the data. We only run the data checker if ridge is turned on,
@@ -1467,6 +1475,17 @@ predict.forestry <- function(object,
     })
   }
 
+  # In the case aggregation is set to "linear"
+  # rccpPrediction is a list with an entry $coef
+  # which gives pointwise regression coeffficients averaged across the forest
+  if (aggregation == "coefs") {
+    if(length(object@linFeats) == 1) {
+      newdata <- data.frame(newdata)
+    }
+    coef_names <- colnames(newdata)[object@linFeats + 1]
+    coef_names <- c(coef_names, "Intercept")
+    colnames(rcppPrediction$coef) <- coef_names
+  }
 
   if (aggregation == "average") {
     return(rcppPrediction$prediction)
@@ -1475,6 +1494,8 @@ predict.forestry <- function(object,
   } else if (aggregation == "doubleOOB") {
     return(rcppPrediction)
   } else if (aggregation == "weightMatrix") {
+    return(rcppPrediction)
+  } else if (aggregation == "coefs") {
     return(rcppPrediction)
   } else if (aggregation == "terminalNodes") {
     terminalNodes <- rcppPrediction$terminalNodes
@@ -1883,14 +1904,15 @@ getCI <- function(object,
     CI_local <- data.frame(lower = NA, upper = NA)
 
     for (i in 1:nrow(newdata)) {
-      data.frame(val = OOB_res, prob = weights[i,]) %>%
-        dplyr::filter(prob > 0) %>%
-        dplyr::arrange(val) %>%
-        dplyr::mutate(cdf = cumsum(prob)) %>%
-        dplyr::filter(cdf > .025, cdf < .975) %>%
+      cur_weights = weights[i,]
+      data.frame(OOB_res, cur_weights) %>%
+        dplyr::filter(cur_weights > 0) %>%
+        dplyr::arrange(OOB_res) %>%
+        dplyr::mutate(cur_weights = cumsum(cur_weights)) %>%
+        dplyr::filter(cur_weights >= .025, cur_weights <= .975) %>%
         dplyr::summarise(
-          lower = dplyr::first(val),
-          upper = dplyr::last(val)
+          lower = dplyr::first(OOB_res),
+          upper = dplyr::last(OOB_res)
         ) -> cur_bound
 
       CI_local <- rbind(CI_local, cur_bound)

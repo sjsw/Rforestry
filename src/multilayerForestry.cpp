@@ -174,6 +174,7 @@ void multilayerForestry::addForests(size_t ntree) {
       residualForest->predict(getTrainingData()->getAllFeatureData(),
                               NULL,
                               NULL,
+                              NULL,
                               _seed,
                               1,
                               false,
@@ -247,6 +248,7 @@ std::unique_ptr< std::vector<double> > multilayerForestry::predict(
     multilayerForests[0]->predict(xNew,
                                   weightMatrix,
                                   NULL,
+                                  NULL,
                                   seed,
                                   nthread,
                                   exact,
@@ -266,6 +268,7 @@ std::unique_ptr< std::vector<double> > multilayerForestry::predict(
     std::unique_ptr< std::vector<double> > predictedResiduals =
       multilayerForests[i]->predict(xNew,
                                     weightMatrix,
+                                    NULL,
                                     NULL,
                                     seed,
                                     nthread,
