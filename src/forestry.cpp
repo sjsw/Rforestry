@@ -553,10 +553,15 @@ std::unique_ptr< std::vector<double> > forestry::predict(
 
             // If we need to use the exact seeding order we save the tree
             // predictions and the tree seeds
+
+            // For now store tree seeds even when not running exact,
+            // hopefully this solves a valgrind error relating to the sorting
+            // based on tree seeds when tree seeds might be uninitialized
+            tree_seeds.push_back(currentTree->getSeed());
+
             if (exact) {
               tree_preds.push_back(currentTreePrediction);
               tree_nodes.push_back(currentTreeTerminalNodes);
-              tree_seeds.push_back(currentTree->getSeed());
               tree_total_nodes.push_back(currentTree->getNodeCount());
             } else {
               for (size_t j = 0; j < numObservations; j++) {
