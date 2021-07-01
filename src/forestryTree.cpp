@@ -1391,6 +1391,9 @@ std::unique_ptr<tree_info> forestryTree::getTreeInfo(
     treeInfo->splittingSampleIndex.push_back((*_splittingSampleIndex)[i] + 1);
   }
 
+  // set seed of the current tree
+  treeInfo->seed = getSeed();
+
   return treeInfo;
 }
 
@@ -1406,6 +1409,7 @@ void forestryTree::reconstruct_tree(
     bool hasNas,
     bool linear,
     double overfitPenalty,
+    unsigned int seed,
     std::vector<size_t> categoricalFeatureColsRcpp,
     std::vector<int> var_ids,
     std::vector<double> split_vals,
@@ -1430,6 +1434,7 @@ void forestryTree::reconstruct_tree(
   _linear = linear;
   _overfitPenalty = overfitPenalty;
   _nodeCount = 0;
+  _seed = seed;
 
   _averagingSampleIndex = std::unique_ptr< std::vector<size_t> > (
     new std::vector<size_t>

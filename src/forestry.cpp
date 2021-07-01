@@ -1035,6 +1035,7 @@ void forestry::fillinTreeInfo(
 
 void forestry::reconstructTrees(
     std::unique_ptr< std::vector<size_t> > & categoricalFeatureColsRcpp,
+    std::unique_ptr< std::vector<unsigned int> > & tree_seeds,
     std::unique_ptr< std::vector< std::vector<int> >  > & var_ids,
     std::unique_ptr< std::vector< std::vector<double> >  > & split_vals,
     std::unique_ptr< std::vector< std::vector<int> >  > & naLeftCounts,
@@ -1062,6 +1063,7 @@ void forestry::reconstructTrees(
                 gethasNas(),
                 getlinear(),
                 getOverfitPenalty(),
+                (*tree_seeds)[i],
                 (*categoricalFeatureColsRcpp),
                 (*var_ids)[i],
                 (*split_vals)[i],

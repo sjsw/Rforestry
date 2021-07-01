@@ -47,6 +47,10 @@ struct tree_info {
   std::vector< int > naRightCount;
   // Contains the count of NA's which fell to the right for each split value
   // (-1 indicates leaf node, 0 indicates no NA's fell that way)
+  unsigned int seed;
+  // The seed that the tree was given (this uniquely identifies each tree
+  // so that we can tell them apart. Very important for prediction when
+  // exact = TRUE as we must aggregate the trees in the right order)
 };
 
 // Contains the information to help with monotonic constraints on splitting

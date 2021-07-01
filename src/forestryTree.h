@@ -81,6 +81,7 @@ public:
       bool hasNas,
       bool linear,
       double overfitPenalty,
+      unsigned int seed,
       std::vector<size_t> categoricalFeatureColsRcpp,
       std::vector<int> var_ids,
       std::vector<double> split_vals,
