@@ -1113,11 +1113,6 @@ Rcpp::List rcpp_reconstructree(
     (*categoricalFeatureColsRcpp_copy).push_back(
         (*categoricalFeatureColsRcpp)[i]);
   }
-  (
-      new std::vector<size_t>(
-          Rcpp::as< std::vector<size_t> >(catCols)
-      )
-  ); // contains the col indices of categorical features.
 
   std::unique_ptr<std::vector< std::vector<double> > > featureDataRcpp (
       new std::vector< std::vector<double> >(
@@ -1395,11 +1390,6 @@ Rcpp::List rcpp_reconstruct_forests(
       (*categoricalFeatureColsRcpp_copy).push_back(
           (*categoricalFeatureColsRcpp)[i]);
     }
-    (
-        new std::vector<size_t>(
-            Rcpp::as< std::vector<size_t> >(catCols)
-        )
-    ); // contains the col indices of categorical features.
 
     std::unique_ptr<std::vector< std::vector<double> > > featureDataRcpp (
         new std::vector< std::vector<double> >(
@@ -1524,59 +1514,65 @@ Rcpp::List rcpp_reconstruct_forests(
           Rcpp::as< std::vector<size_t> >(catCols)
       )
   ); // contains the col indices of categorical features.
+
   std::unique_ptr< std::vector<size_t> > categoricalFeatureColsRcpp_copy(
       new std::vector<size_t>
   );
+
   for(size_t i=0; i<(*categoricalFeatureColsRcpp).size(); i++){
     (*categoricalFeatureColsRcpp_copy).push_back(
         (*categoricalFeatureColsRcpp)[i]);
   }
-  (
-      new std::vector<size_t>(
-          Rcpp::as< std::vector<size_t> >(catCols)
-      )
-  ); // contains the col indices of categorical features.
+
   std::unique_ptr<std::vector< std::vector<double> > > featureDataRcpp (
       new std::vector< std::vector<double> >(
           Rcpp::as< std::vector< std::vector<double> > >(x)
       )
   );
+
   std::unique_ptr< std::vector<double> > outcomeDataRcpp (
       new std::vector<double>(
           Rcpp::as< std::vector<double> >(y)
       )
   );
+
   std::unique_ptr< std::vector<size_t> > linearFeats (
       new std::vector<size_t>(
           Rcpp::as< std::vector<size_t> >(linCols)
       )
   );
+
   std::sort(linearFeats->begin(), linearFeats->end());
   std::unique_ptr< std::vector<double> > featureWeightsRcpp (
       new std::vector<double>(
           Rcpp::as< std::vector<double> >(featureWeights)
       )
   );
+
   std::unique_ptr< std::vector<size_t> > featureWeightsVariablesRcpp (
       new std::vector<size_t>(
           Rcpp::as< std::vector<size_t> >(featureWeightsVariables)
       )
   );
+
   std::unique_ptr< std::vector<double> > deepFeatureWeightsRcpp (
       new std::vector<double>(
           Rcpp::as< std::vector<double> >(deepFeatureWeights)
       )
   );
+
   std::unique_ptr< std::vector<size_t> > deepFeatureWeightsVariablesRcpp (
       new std::vector<size_t>(
           Rcpp::as< std::vector<size_t> >(deepFeatureWeightsVariables)
       )
   );
+
   std::unique_ptr< std::vector<double> > observationWeightsRcpp (
       new std::vector<double>(
           Rcpp::as< std::vector<double> >(observationWeights)
       )
   );
+
   std::unique_ptr< std::vector<int> > monotonicConstraintsRcpp (
       new std::vector<int>(
           Rcpp::as< std::vector<int> >(monotonicConstraints)
