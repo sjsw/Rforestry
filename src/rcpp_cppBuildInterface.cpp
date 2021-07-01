@@ -567,6 +567,9 @@ Rcpp::List rcpp_cppPredictInterface(
 
     Rcpp::NumericVector predictions = Rcpp::wrap(*testForestPrediction_);
 
+    delete testForestPrediction_;
+    delete testForestTreeWeights;
+
     return Rcpp::List::create(Rcpp::Named("predictions") = predictions,
                               Rcpp::Named("weightMatrix") = weightMatrix,
                               Rcpp::Named("terminalNodes") = terminalNodes,

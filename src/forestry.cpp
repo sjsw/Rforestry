@@ -612,7 +612,7 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   if (exact) {
     std::vector<size_t> indices(tree_seeds.size());
     std::iota(indices.begin(), indices.end(), 0);
-    // Order the indices by the seeds of the corresponding trees
+    Order the indices by the seeds of the corresponding trees
     std::sort(indices.begin(), indices.end(),
               [&](size_t a, size_t b) -> bool {
                 return tree_seeds[a] > tree_seeds[b];
