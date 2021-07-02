@@ -169,12 +169,11 @@ forestryTree::forestryTree(
                                       [](int i) { return i==0; });;
   struct monotonic_info monotonic_details;
 
-  if (monotone_splits) {
-    monotonic_details.monotonic_constraints = (*trainingData->getMonotonicConstraints());
-    monotonic_details.upper_bound = std::numeric_limits<double>::max();
-    monotonic_details.lower_bound = -std::numeric_limits<double>::max();
-    monotonic_details.monotoneAvg = trainingData->getMonotoneAvg();
-  }
+  monotonic_details.monotonic_constraints = (*trainingData->getMonotonicConstraints());
+  monotonic_details.upper_bound = std::numeric_limits<double>::max();
+  monotonic_details.lower_bound = -std::numeric_limits<double>::max();
+  monotonic_details.monotoneAvg = (bool) trainingData->getMonotoneAvg();
+
 
   /* Recursively grow the tree */
   recursivePartition(

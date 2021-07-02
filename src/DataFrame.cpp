@@ -38,7 +38,7 @@ DataFrame::DataFrame(
   this->_deepFeatureWeightsVariables = std::move(deepFeatureWeightsVariables);
   this->_observationWeights = std::move(observationWeights);
   this->_monotonicConstraints = std::move(monotonicConstraints);
-  this->_monotoneAvg = monotoneAvg;
+  this->_monotoneAvg = (bool) monotoneAvg;
 
   // define the row numbers to be the numbers from 1 to nrow:
   std::vector<size_t> rowNumberss;
