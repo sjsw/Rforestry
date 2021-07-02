@@ -71,6 +71,10 @@ struct monotonic_info {
   // This flag indicates whether or not to enforce monotonicity on the averaging
   // set as well as the splitting set
   bool monotoneAvg;
+
+  monotonic_info(){
+    monotoneAvg = false;
+  };
 };
 
 #endif //FORESTRYCPP_UTILS_H
