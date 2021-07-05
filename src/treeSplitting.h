@@ -231,6 +231,25 @@ void findBestSplitImputeCategorical(
         size_t maxObs
 );
 
+void findBestSplitSymmetric(
+        std::vector<size_t>* averagingSampleIndex,
+        std::vector<size_t>* splittingSampleIndex,
+        size_t bestSplitTableIndex,
+        size_t currentFeature,
+        double* bestSplitLossAll,
+        double* bestSplitValueAll,
+        size_t* bestSplitFeatureAll,
+        size_t* bestSplitCountAll,
+        DataFrame* trainingData,
+        size_t splitNodeSize,
+        size_t averageNodeSize,
+        std::mt19937_64& random_number_generator,
+        bool splitMiddle,
+        size_t maxObs,
+        bool monotone_splits,
+        monotonic_info monotone_details
+);
+
 void determineBestSplit(
         size_t &bestSplitFeature,
         double &bestSplitValue,

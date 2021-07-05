@@ -1782,6 +1782,49 @@ void findBestSplitImputeCategorical(
   }
 }
 
+
+void findBestSplitSymmetric(
+    std::vector<size_t>* averagingSampleIndex,
+    std::vector<size_t>* splittingSampleIndex,
+    size_t bestSplitTableIndex,
+    size_t currentFeature,
+    double* bestSplitLossAll,
+    double* bestSplitValueAll,
+    size_t* bestSplitFeatureAll,
+    size_t* bestSplitCountAll,
+    DataFrame* trainingData,
+    size_t splitNodeSize,
+    size_t averageNodeSize,
+    std::mt19937_64& random_number_generator,
+    bool splitMiddle,
+    size_t maxObs,
+    bool monotone_splits,
+    monotonic_info monotone_details
+) {
+  // In order to model an outcome which is a symmetric function of the inputs
+  // we devise a way to select nonlinear splits which (when given appropriate
+  // symmetric outcomes) minimizes the mse of the three resulting partitions.
+
+  // Pseudo code of the splitting algorithm is as follows:
+
+  // For epsilon > 0, we start with symmetric splits at +- epsilon, and
+  // consider consecutive split points at each +- feature value, working
+  // from smallest in absolute value to greatest.
+
+  // At each possible pairs of splits, we have three partitions, the inner,
+  // the left, and the right. At each point, we take the mean outcome of the
+  // inner outcomes, and +- n_L * |M_L| + n_R * |M_R| / (n_L + n_R) the weighted
+  // magnitude of the left and right means, with signs based on the appropriate
+  // ordering.
+
+  // The loss of these constant aggregations is calculated for each split point,
+  // and the split is rejected if it does not respect monotonicity.
+
+  // The size of these three partitions are checked against the nodesizeStrict
+  // and the pseudo outcomes are also taken for predictions.
+
+}
+
 void determineBestSplit(
     size_t &bestSplitFeature,
     double &bestSplitValue,
