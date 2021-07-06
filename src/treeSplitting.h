@@ -250,6 +250,30 @@ void findBestSplitSymmetric(
         monotonic_info monotone_details
 );
 
+double calcSymmetricLoss(
+        double leftSum,
+        double midSum,
+        double rightSum,
+        size_t nLeft,
+        size_t nRight,
+        size_t nMid,
+        double leftWeight,
+        double rightWeight,
+        double midWeight
+);
+
+void updatePartitionWeights(
+        double leftMean,
+        double midMean,
+        double rightMean,
+        size_t nLeft,
+        size_t nRight,
+        size_t nMid,
+        double &leftWeight,
+        double &rightWeight,
+        double &midWeight
+);
+
 void determineBestSplit(
         size_t &bestSplitFeature,
         double &bestSplitValue,

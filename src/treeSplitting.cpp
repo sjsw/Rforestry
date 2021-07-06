@@ -1823,6 +1823,289 @@ void findBestSplitSymmetric(
   // The size of these three partitions are checked against the nodesizeStrict
   // and the pseudo outcomes are also taken for predictions.
 
+  typedef std::tuple<double,double,double> dataPair;
+  std::vector<dataPair> splittingData;
+  std::vector<dataPair> averagingData;
+
+  double leftRunningSum = 0;
+  double rightRunningSum = 0;
+  double midRunningSum = 0;
+
+  for (size_t j=0; j<(*splittingSampleIndex).size(); j++) {
+    // Retrieve the current feature value
+    double tmpFeatureValue = (*trainingData).
+    getPoint((*splittingSampleIndex)[j], currentFeature);
+    double tmpOutcomeValue = (*trainingData).
+    getOutcomePoint((*splittingSampleIndex)[j]);
+
+    // Adding data to the internal data vector (Note: R index)
+    splittingData.push_back(
+      std::make_tuple(
+        tmpFeatureValue,
+        std::abs(tmpFeatureValue),
+        tmpOutcomeValue
+      )
+    );
+  }
+
+
+  for (size_t j=0; j<(*averagingSampleIndex).size(); j++) {
+    // Retrieve the current feature value
+    double tmpFeatureValue = (*trainingData).
+    getPoint((*averagingSampleIndex)[j], currentFeature);
+    double tmpOutcomeValue = (*trainingData).
+    getOutcomePoint((*averagingSampleIndex)[j]);
+
+    // Adding data to the internal data vector (Note: R index)
+    averagingData.push_back(
+      std::make_tuple(
+        tmpFeatureValue,
+        std::abs(tmpFeatureValue),
+        tmpOutcomeValue
+      )
+    );
+  }
+
+  // Now sort possible splitting points by absolute feature value
+  sort(
+    splittingData.begin(),
+    splittingData.end(),
+    [](const dataPair &lhs, const dataPair &rhs) {
+      return std::get<1>(lhs) < std::get<1>(rhs);
+    }
+  );
+
+  size_t nLeft = 0;
+  size_t nRight = 0;
+  size_t nMid = 0;
+
+  size_t nAvgLeft = 0;
+  size_t nAvgRight = 0;
+  size_t nAvgMid = 0;
+
+  double midWeight;
+  double leftWeight;
+  double rightWeight;
+
+  double newFeatureValue;
+  bool oneValueDistinctFlag = true;
+
+  // Now iterate through split points, and initialize lhs and rhs sums
+  for (const auto& dataPoint : splittingData) {
+    if (std::get<0>(dataPoint) > 0) {
+      rightRunningSum += std::get<2>(dataPoint);
+      nLeft++;
+    } else {
+      leftRunningSum += std::get<2>(dataPoint);
+      nRight++;
+    }
+  }
+
+  for (const auto& dataPoint : averagingData) {
+    if (std::get<0>(dataPoint) > 0) {
+      nAvgLeft++;
+    } else {
+      nAvgRight++;
+    }
+  }
+
+  // Now work on determining the optimal split
+  std::vector<dataPair>::iterator splittingDataIter = splittingData.begin();
+  std::vector<dataPair>::iterator averagingDataIter = averagingData.begin();
+
+  // Initialize the split value to be minimum of first value in two datasets
+  double featureValue = std::min(
+    std::get<1>(*splittingDataIter),
+    std::get<1>(*averagingDataIter)
+  );
+
+  while (
+      splittingDataIter < splittingData.end() ||
+        averagingDataIter < averagingData.end()
+  ) {
+
+    // Exhaust all current feature value in both datasets as partitioning
+    while (
+        splittingDataIter < splittingData.end() &&
+          std::get<1>(*splittingDataIter) == featureValue
+    ) {
+      // We check if the current value is in the left or right partition
+      if (std::get<0>(*splittingDataIter) > 0) {
+        nMid++;
+        nRight--;
+        rightRunningSum -= std::get<2>(*splittingDataIter);
+        midRunningSum += std::get<2>(*splittingDataIter);
+      } else {
+        nMid++;
+        nLeft--;
+        leftRunningSum -= std::get<2>(*splittingDataIter);
+        midRunningSum += std::get<2>(*splittingDataIter);
+      }
+    }
+
+    while (
+        averagingDataIter < averagingData.end() &&
+          std::get<1>(*averagingDataIter) == featureValue
+    ) {
+      // We check if the current value is in the left or right partition
+      if (std::get<0>(*averagingDataIter) > 0) {
+        nAvgMid++;
+        nAvgRight--;
+      } else {
+        nAvgMid++;
+        nAvgLeft--;
+      }
+    }
+
+    // Test if the all the values for the feature are the same, then proceed
+    if (oneValueDistinctFlag) {
+      oneValueDistinctFlag = false;
+      if (
+          splittingDataIter == splittingData.end() &&
+            averagingDataIter == averagingData.end()
+      ) {
+        break;
+      }
+    }
+
+    // Update the splitting value to the next feature value with the smallest absolute value
+    if (
+        splittingDataIter == splittingData.end() &&
+          averagingDataIter == averagingData.end()
+    ) {
+      break;
+    } else if (splittingDataIter == splittingData.end()) {
+      newFeatureValue = std::get<1>(*averagingDataIter);
+    } else if (averagingDataIter == averagingData.end()) {
+      newFeatureValue = std::get<1>(*splittingDataIter);
+    } else {
+      newFeatureValue = std::min(
+        std::get<1>(*splittingDataIter),
+        std::get<1>(*averagingDataIter)
+      );
+    }
+
+    // Check nodesize for all three partitions
+    if (
+        std::min(
+          nLeft,
+          std::min(nRight,nMid)
+        ) < splitNodeSize ||
+          std::min(
+            nAvgLeft,
+            std::min(nAvgRight,nAvgMid)
+          ) < averageNodeSize
+    ) {
+      featureValue = newFeatureValue;
+      continue;
+    }
+
+    // Get the appropriate partition weights given the means and counts
+    updatePartitionWeights(leftRunningSum/(double) nLeft,
+                           midRunningSum / (double) nMid,
+                           rightRunningSum/(double) nRight,
+                           nLeft,
+                           nRight,
+                           nMid,
+                           leftWeight,
+                           rightWeight,
+                           midWeight);
+
+    // Calculate the variance of the splitting
+    double currentSplitLoss = calcSymmetricLoss(
+      leftRunningSum,
+      midRunningSum,
+      rightRunningSum,
+      nLeft,
+      nRight,
+      nMid,
+      leftWeight,
+      rightWeight,
+      midWeight);
+
+
+    double currentSplitValue;
+    if (splitMiddle) {
+      currentSplitValue = (newFeatureValue + featureValue) / 2.0;
+    } else {
+      std::uniform_real_distribution<double> unif_dist;
+      double tmp_random = unif_dist(random_number_generator) *
+        (newFeatureValue - featureValue);
+      double epsilon_lower = std::nextafter(featureValue, newFeatureValue);
+      double epsilon_upper = std::nextafter(newFeatureValue, featureValue);
+      currentSplitValue = tmp_random + featureValue;
+      if (currentSplitValue > epsilon_upper) {
+        currentSplitValue = epsilon_upper;
+      }
+      if (currentSplitValue < epsilon_lower) {
+        currentSplitValue = epsilon_lower;
+      }
+    }
+
+    updateBestSplit(
+      bestSplitLossAll,
+      bestSplitValueAll,
+      bestSplitFeatureAll,
+      bestSplitCountAll,
+      -currentSplitLoss, // Standard RF split loss we want to maximize due to
+      currentSplitValue, // the splitting trick, here we want to minimize, so we
+      currentFeature,    // flip the sign when picking the best.
+      bestSplitTableIndex,
+      random_number_generator
+    );
+
+    // Update the old feature value
+    featureValue = newFeatureValue;
+  }
+}
+
+double calcSymmetricLoss(
+    double leftSum,
+    double midSum,
+    double rightSum,
+    size_t nLeft,
+    size_t nRight,
+    size_t nMid,
+    double leftWeight,
+    double rightWeight,
+    double midWeight
+) {
+  return(((double) nLeft)*leftWeight*leftWeight +
+         ((double) nMid)*midWeight*midWeight +
+         ((double) nRight)*rightWeight*rightWeight -
+         2*(leftWeight*leftSum + midWeight*midSum + rightWeight*rightSum));
+}
+
+void updatePartitionWeights(
+    double leftMean,
+    double midMean,
+    double rightMean,
+    size_t nLeft,
+    size_t nRight,
+    size_t nMid,
+    double &leftWeight,
+    double &rightWeight,
+    double &midWeight
+) {
+  // Update the partition weights given new partition means and sizes in order
+  // to ensure symmetric weights
+
+  midWeight = midMean;
+
+  double average_diff = std::abs(midWeight - (((double) nLeft) * leftMean + ((double) nRight) * rightMean)/
+                                   (((double) nLeft) + ((double) nRight))
+                                );
+
+  if (leftMean < rightMean)
+    {
+    leftWeight = midWeight - average_diff;
+    rightWeight = midWeight + average_diff;
+    }
+  else
+    {
+    leftWeight = midWeight + average_diff;
+    rightWeight = midWeight - average_diff;
+    }
 }
 
 void determineBestSplit(
