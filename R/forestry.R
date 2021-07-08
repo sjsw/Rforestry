@@ -37,6 +37,7 @@ training_data_checker <- function(x,
                                   deepFeatureWeights,
                                   observationWeights,
                                   linear,
+                                  symmetric,
                                   hasNas
                                   ) {
   x <- as.data.frame(x)
@@ -347,6 +348,7 @@ setClass(
     maxObs = "numeric",
     hasNas = "logical",
     linear = "logical",
+    symmetric = "logical",
     linFeats = "numeric",
     monotonicConstraints = "numeric",
     monotoneAvg = "logical",
@@ -390,6 +392,7 @@ setClass(
     y = "vector",
     maxObs = "numeric",
     linear = "logical",
+    symmetric = "logical",
     linFeats = "numeric",
     monotonicConstraints = "numeric",
     monotoneAvg = "logical",
@@ -489,6 +492,11 @@ setClass(
 #' @param linear Indicator that enables Ridge penalized splits and linear aggregation
 #'   functions in the leaf nodes. This is recommended for data with linear outcomes.
 #'   For implementation details, see: https://arxiv.org/abs/1906.06463. Default is FALSE.
+#' @param symmetric Indicator of whether or not we use symmetric splitting points
+#'   for a trinary split with pseudo outcome which are selected to provide symmetric
+#'   aggregation functions. When TRUE, we assume that all continuous features are
+#'   split on in a symmetric manner, and all categorical feaures are split on in
+#'   a standard way. Default is FALSE.
 #' @param linFeats A vector containing the indices of which features to split
 #'   linearly on when using linear penalized splits (defaults to use all numerical features).
 #' @param monotonicConstraints Specifies monotonic relationships between the continuous
@@ -581,6 +589,7 @@ forestry <- function(x,
                      middleSplit = FALSE,
                      maxObs = length(y),
                      linear = FALSE,
+                     symmetric = FALSE,
                      linFeats = 0:(ncol(x)-1),
                      monotonicConstraints = rep(0, ncol(x)),
                      monotoneAvg = FALSE,
@@ -648,6 +657,7 @@ forestry <- function(x,
       deepFeatureWeights = deepFeatureWeights,
       observationWeights = observationWeights,
       linear = linear,
+      symmetric = symmetric,
       hasNas = hasNas)
 
   for (variable in names(updated_variables)) {
@@ -737,6 +747,7 @@ forestry <- function(x,
         monotoneAvg,
         hasNas,
         linear,
+        symmetric,
         overfitPenalty,
         doubleTree,
         TRUE,
@@ -785,6 +796,7 @@ forestry <- function(x,
           observationWeights = observationWeights,
           hasNas = hasNas,
           linear = linear,
+          symmetric = symmetric,
           linFeats = linFeats,
           monotonicConstraints = monotonicConstraints,
           monotoneAvg = monotoneAvg,
@@ -851,6 +863,7 @@ forestry <- function(x,
         monotoneAvg,
         hasNas,
         linear,
+        symmetric,
         overfitPenalty,
         doubleTree,
         TRUE,
@@ -887,6 +900,7 @@ forestry <- function(x,
           observationWeights = observationWeights,
           hasNas = hasNas,
           linear = linear,
+          symmetric = symmetric,
           linFeats = linFeats,
           monotonicConstraints = monotonicConstraints,
           monotoneAvg = monotoneAvg,
@@ -944,6 +958,7 @@ multilayerForestry <- function(x,
                      middleSplit = TRUE,
                      maxObs = length(y),
                      linear = FALSE,
+                     symmetric = FALSE,
                      linFeats = 0:(ncol(x)-1),
                      monotonicConstraints = rep(0, ncol(x)),
                      monotoneAvg = FALSE,
@@ -1012,6 +1027,7 @@ multilayerForestry <- function(x,
       deepFeatureWeights = deepFeatureWeights,
       observationWeights = observationWeights,
       linear = linear,
+      symmetric = symmetric,
       hasNas = hasNas)
 
   for (variable in names(updated_variables)) {
@@ -1151,6 +1167,7 @@ multilayerForestry <- function(x,
           monotonicConstraints = monotonicConstraints,
           monotoneAvg = monotoneAvg,
           linear = linear,
+          symmetric = symmetric,
           linFeats = linFeats,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree,
@@ -1244,6 +1261,7 @@ multilayerForestry <- function(x,
           featureWeights = featureWeights,
           observationWeights = observationWeights,
           linear = linear,
+          symmetric = symmetric,
           linFeats = linFeats,
           monotonicConstraints = monotonicConstraints,
           monotoneAvg = monotoneAvg,
@@ -1769,7 +1787,7 @@ getOOBpreds <- function(object,
 #' @return The variable importance of the forest.
 #' @export
 getVI <- function(object,
-                           noWarning) {
+                  noWarning) {
   forest_checker(object)
     # Keep warning for small sample size
     if (!object@replace &&

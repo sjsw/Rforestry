@@ -172,6 +172,7 @@ SEXP rcpp_cppBuildInterface(
   bool monotoneAvg,
   bool hasNas,
   bool linear,
+  bool symmetric,
   double overfitPenalty,
   bool doubleTree,
   bool existing_dataframe_flag,
@@ -206,6 +207,7 @@ SEXP rcpp_cppBuildInterface(
         (size_t) maxObs,
         hasNas,
         linear,
+        symmetric,
         (double) overfitPenalty,
         doubleTree
       );
@@ -329,6 +331,7 @@ SEXP rcpp_cppBuildInterface(
         (size_t) maxObs,
         hasNas,
         linear,
+        symmetric,
         (double) overfitPenalty,
         doubleTree
       );
@@ -1216,6 +1219,7 @@ Rcpp::List rcpp_reconstructree(
     (int) maxObs,
     (bool) hasNas,
     (bool) linear,
+    (bool) false,
     (double) overfitPenalty,
     doubleTree
   );
@@ -1506,6 +1510,7 @@ Rcpp::List rcpp_reconstruct_forests(
       (int) maxObs,
       false,
       (bool) linear,
+      (bool) false,
       (double) overfitPenalty,
       doubleTree
     );

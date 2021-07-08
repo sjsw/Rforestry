@@ -157,6 +157,7 @@ void multilayerForestry::addForests(size_t ntree) {
       _maxObs,
       false,  // This is hasNAs being set to false
       _linear,
+      false, // This is symmetric being set to false
       _overfitPenalty,
       _doubleTree
     );

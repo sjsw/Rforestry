@@ -41,6 +41,7 @@ public:
     size_t maxObs,
     bool hasNas,
     bool linear,
+    bool symmetric,
     double overfitPenalty,
     bool doubleTree
   );

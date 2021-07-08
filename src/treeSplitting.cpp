@@ -2002,7 +2002,7 @@ void findBestSplitSymmetric(
 
     // Get the appropriate partition weights given the means and counts
     updatePartitionWeights(leftRunningSum/(double) nLeft,
-                           midRunningSum / (double) nMid,
+                           midRunningSum/(double) nMid,
                            rightRunningSum/(double) nRight,
                            nLeft,
                            nRight,
@@ -2012,18 +2012,18 @@ void findBestSplitSymmetric(
                            midWeight);
 
     // Calculate the variance of the splitting
-    double currentSplitLoss = calcSymmetricLoss(
-      leftRunningSum,
-      midRunningSum,
-      rightRunningSum,
-      nLeft,
-      nRight,
-      nMid,
-      leftWeight,
-      rightWeight,
-      midWeight);
+    double currentSplitLoss = calcSymmetricLoss(leftRunningSum,
+                                                midRunningSum,
+                                                rightRunningSum,
+                                                nLeft,
+                                                nRight,
+                                                nMid,
+                                                leftWeight,
+                                                rightWeight,
+                                                midWeight);
 
-
+    // This is a little weird, but basically we are working with the absolute
+    // values, so it is okay to use the half values
     double currentSplitValue;
     if (splitMiddle) {
       currentSplitValue = (newFeatureValue + featureValue) / 2.0;

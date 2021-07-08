@@ -12,8 +12,8 @@ std::mutex mutex_weightMatrix;
 
 RFNode::RFNode():
   _averagingSampleIndex(nullptr), _splittingSampleIndex(nullptr),
-  _splitFeature(0), _splitValue(0),
-  _leftChild(nullptr), _rightChild(nullptr),
+  _splitFeature(0), _splitValue(0), _trinary(false),
+  _leftChild(nullptr), _rightChild(nullptr), _centerChild(nullptr),
   _naLeftCount(0), _naRightCount(0), _averageCount(0), _splitCount(0) {}
 
 RFNode::~RFNode() {
@@ -46,16 +46,13 @@ void RFNode::setSplitNode(
   double splitValue,
   std::unique_ptr< RFNode > leftChild,
   std::unique_ptr< RFNode > rightChild,
-  std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
   size_t naLeftCount,
   size_t naRightCount
 ) {
   // Split node constructor
-  _averageCount = (*averagingSampleIndex).size();
   _splitCount = 0;
   _splitFeature = splitFeature;
   _splitValue = splitValue;
-  this->_averagingSampleIndex = std::move(averagingSampleIndex);
   // Give the ownership of the child pointer to the RFNode object
   _leftChild = std::move(leftChild);
   _rightChild = std::move(rightChild);
@@ -339,61 +336,6 @@ void RFNode::predict(
 
     // Recursively get predictions from its children
     if ((*leftPartitionIndex).size() > 0) {
-
-      // Here we want to now make sure the left node has averaging indices,
-      // otherwise we give it predictions from the parent
-      if (getLeftChild()->getAverageCount() < std::max(nodesizeStrictAvg, (size_t) 1)) {
-
-        double predictedMean;
-        // Calculate the mean of current node
-        if (getAverageCount() == 0) {
-          predictedMean = std::numeric_limits<double>::quiet_NaN();;
-        } else{
-          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
-        }
-
-        // Give all updateIndex the mean of the node as prediction values
-        for (
-            std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
-            it != (*leftPartitionIndex).end();
-            ++it
-        ) {
-          outputPrediction[*it] = predictedMean;
-        }
-
-        if (weightMatrix){
-          // If weightMatrix is not a NULL pointer, then we want to update it,
-          // because we have choosen aggregation = "weightmatrix".
-          std::vector<size_t> idx_in_leaf =
-            (*trainingData).get_all_row_idx(getAveragingIndex());
-          // The following will lock the access to weightMatrix
-          std::lock_guard<std::mutex> lock(mutex_weightMatrix);
-          for (
-              std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
-              it != (*leftPartitionIndex).end();
-              ++it ) {
-            for (size_t i = 0; i<idx_in_leaf.size(); i++) {
-              (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
-                (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
-                (double) 1.0 / ((double) idx_in_leaf.size());
-            }
-          }
-        }
-
-        if (terminalNodes) {
-          // If terminalNodes not a NULLPTR, set the terminal node for all X in this
-          // leaf to be the leaf node_id
-          size_t node_id = getNodeId();
-          for (
-              std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
-              it != (*leftPartitionIndex).end();
-              ++it
-          ) {
-            (*terminalNodes)[*it] = node_id;
-          }
-        }
-
-      } else {
         (*getLeftChild()).predict(
             outputPrediction,
             terminalNodes,
@@ -407,65 +349,10 @@ void RFNode::predict(
             seed,
             nodesizeStrictAvg
         );
-      }
-
     }
+
     if ((*rightPartitionIndex).size() > 0) {
 
-      // Here we want to now make sure the right node has averaging indices,
-      // otherwise we give it predictions from the parent
-      if (getRightChild()->getAverageCount() < std::max(nodesizeStrictAvg,(size_t) 1)) {
-
-
-        double predictedMean;
-        // Calculate the mean of current node
-        if (getAverageCount() == 0) {
-          predictedMean = std::numeric_limits<double>::quiet_NaN();;
-        } else{
-          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
-        }
-
-        //Give all rightPartitionIndex the mean of the node as prediction values
-        for (
-            std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
-            it != (*rightPartitionIndex).end();
-            ++it
-        ) {
-          outputPrediction[*it] = predictedMean;
-        }
-
-        if (weightMatrix){
-          // If weightMatrix is not a NULL pointer, then we want to update it,
-          // because we have choosen aggregation = "weightmatrix".
-          std::vector<size_t> idx_in_leaf =
-            (*trainingData).get_all_row_idx(getAveragingIndex());
-          // The following will lock the access to weightMatrix
-          std::lock_guard<std::mutex> lock(mutex_weightMatrix);
-          for (
-              std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
-              it != (*rightPartitionIndex).end();
-              ++it ) {
-            for (size_t i = 0; i<idx_in_leaf.size(); i++) {
-              (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
-                (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
-                (double) 1.0 / ((double) idx_in_leaf.size());
-            }
-          }
-        }
-
-        if (terminalNodes) {
-          // If terminalNodes not a NULLPTR, set the terminal node for all X in this
-          // leaf to be the leaf node_id
-          size_t node_id = getNodeId();
-          for (
-              std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
-              it != (*rightPartitionIndex).end();
-              ++it
-          ) {
-            (*terminalNodes)[*it] = node_id;
-          }
-        }
-      } else {
         (*getRightChild()).predict(
           outputPrediction,
           terminalNodes,
@@ -479,7 +366,6 @@ void RFNode::predict(
           seed,
           nodesizeStrictAvg
         );
-      }
     }
 
     delete(leftPartitionIndex);

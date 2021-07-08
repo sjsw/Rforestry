@@ -803,18 +803,11 @@ void forestryTree::recursivePartition(
       monotonic_details_right
     );
 
-    // For now we want to give each splitNode the avging sample idx
-    std::vector<size_t> agv_idx_copy(*averagingSampleIndex);
-    std::unique_ptr<std::vector<size_t> > averagingSampleIndex_forsplit(
-        new std::vector<size_t>(agv_idx_copy)
-    );
-
     (*rootNode).setSplitNode(
         bestSplitFeature,
         bestSplitValue,
         std::move(leftChild),
         std::move(rightChild),
-        std::move(averagingSampleIndex_forsplit),
         naLeftCount,
         naRightCount
     );
@@ -1525,14 +1518,6 @@ void forestryTree::recursive_reconstruction(
     // delete indices when we get to leaf nodes, so we want to copy them all
     // before we hit any leaf nodes.
 
-    std::unique_ptr<std::vector<size_t> > averagingSampleIndex_(
-        new std::vector<size_t>
-    );
-
-    for(size_t i=0; i < leafAveidxs->size(); i++){
-      averagingSampleIndex_->push_back((*leafAveidxs)[i] - 1);
-    }
-
 
     recursive_reconstruction(
       leftChild.get(),
@@ -1559,7 +1544,6 @@ void forestryTree::recursive_reconstruction(
         split_val,
         std::move(leftChild),
         std::move(rightChild),
-        std::move(averagingSampleIndex_),
         naLeftCount,
         naRightCount
     );

@@ -27,7 +27,6 @@ public:
     double splitValue,
     std::unique_ptr< RFNode > leftChild,
     std::unique_ptr< RFNode > rightChild,
-    std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
     size_t naLeftCount,
     size_t naRightCount
   );
@@ -96,6 +95,18 @@ public:
     }
   }
 
+  RFNode* getCenterChild() {
+    if (is_leaf()) {
+      throw "Cannot get right child for a leaf.";
+    } else {
+      return _centerChild.get();
+    }
+  }
+
+  bool getTrinary() {
+    return _trinary;
+  }
+
   size_t getSplitCount() {
     return _splitCount;
   }
@@ -129,8 +140,10 @@ private:
   std::unique_ptr< std::vector<size_t> > _splittingSampleIndex;
   size_t _splitFeature;
   double _splitValue;
+  bool _trinary;
   std::unique_ptr< RFNode > _leftChild;
   std::unique_ptr< RFNode > _rightChild;
+  std::unique_ptr< RFNode > _centerChild;
   size_t _naLeftCount;
   size_t _naRightCount;
   size_t _averageCount;
