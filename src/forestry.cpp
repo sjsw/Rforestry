@@ -77,6 +77,7 @@ forestry::forestry(
   this->_linear = linear;
   this->_overfitPenalty = overfitPenalty;
   this->_doubleTree = doubleTree;
+  this->_symmetric = symmetric;
 
   if (splitRatio > 1 || splitRatio < 0) {
     throw std::runtime_error("splitRatio shoule be between 0 and 1.");
@@ -360,6 +361,7 @@ void forestry::addTrees(size_t ntree) {
                 getMaxObs(),
                 gethasNas(),
                 getlinear(),
+                getSymmetric(),
                 getOverfitPenalty(),
                 myseed
               )
@@ -385,6 +387,7 @@ void forestry::addTrees(size_t ntree) {
                     getMaxObs(),
                     gethasNas(),
                     getlinear(),
+                    getSymmetric(),
                     getOverfitPenalty(),
                     myseed
                  );

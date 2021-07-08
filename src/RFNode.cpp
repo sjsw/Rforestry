@@ -46,6 +46,8 @@ void RFNode::setSplitNode(
   double splitValue,
   std::unique_ptr< RFNode > leftChild,
   std::unique_ptr< RFNode > rightChild,
+  std::unique_ptr< RFNode > centerChild,
+  bool trinary,
   size_t naLeftCount,
   size_t naRightCount
 ) {
@@ -59,6 +61,10 @@ void RFNode::setSplitNode(
   _naLeftCount = naLeftCount;
   _naRightCount = naRightCount;
   _nodeId = -1;
+  _trinary = trinary;
+  if (trinary) {
+    _centerChild = std::move(centerChild);
+  }
 }
 
 void RFNode::ridgePredict(

@@ -34,6 +34,7 @@ public:
     size_t maxObs,
     bool hasNas,
     bool linear,
+    bool symmetric,
     double overfitPenalty,
     unsigned int seed
   );
@@ -116,7 +117,8 @@ public:
     std::shared_ptr< arma::Mat<double> > gtotal,
     std::shared_ptr< arma::Mat<double> > stotal,
     bool monotone_splits,
-    monotonic_info monotone_details
+    monotonic_info monotone_details,
+    bool trinary
   );
 
   void selectBestFeature(

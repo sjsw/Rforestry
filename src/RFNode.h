@@ -27,6 +27,8 @@ public:
     double splitValue,
     std::unique_ptr< RFNode > leftChild,
     std::unique_ptr< RFNode > rightChild,
+    std::unique_ptr< RFNode > centerChild,
+    bool trinary,
     size_t naLeftCount,
     size_t naRightCount
   );

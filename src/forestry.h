@@ -213,6 +213,10 @@ public:
     return _linear;
   }
 
+  bool getSymmetric() {
+    return _symmetric;
+  }
+
   double getOverfitPenalty() {
     return _overfitPenalty;
   }
@@ -248,6 +252,7 @@ private:
   size_t _maxObs;
   bool _hasNas;
   bool _linear;
+  bool _symmetric;
   double _overfitPenalty;
   bool _doubleTree;
 };
