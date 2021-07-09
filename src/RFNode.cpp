@@ -170,7 +170,6 @@ void RFNode::predict(
   if (is_leaf()) {
 
       if (linear) {
-
         //Use ridgePredict (fit linear model on leaf avging obs + evaluate it)
         ridgePredict(outputPrediction,
                      outputCoefficients,
@@ -179,7 +178,6 @@ void RFNode::predict(
                      trainingData,
                      lambda);
       } else {
-
 
         double predictedMean;
         // Calculate the mean of current node
@@ -237,6 +235,7 @@ void RFNode::predict(
     // Separate prediction tasks to two children
     std::vector<size_t>* leftPartitionIndex = new std::vector<size_t>();
     std::vector<size_t>* rightPartitionIndex = new std::vector<size_t>();
+    std::vector<size_t>* centerPartitionIndex = new std::vector<size_t>();
 
     size_t naLeftCount = getNaLeftCount();
     size_t naRightCount = getNaRightCount();
@@ -331,14 +330,25 @@ void RFNode::predict(
             (*rightPartitionIndex).push_back(*it);
           }
 
-        } else if (currentValue < getSplitValue()) {
-          (*leftPartitionIndex).push_back(*it);
         } else {
-          (*rightPartitionIndex).push_back(*it);
+        if (!getTrinary()) {
+          if (currentValue < getSplitValue()) {
+            (*leftPartitionIndex).push_back(*it);
+          } else {
+            (*rightPartitionIndex).push_back(*it);
+          }
+        } else {
+          if (currentValue < -getSplitValue()) {
+            (*leftPartitionIndex).push_back(*it);
+          } else if (currentValue > getSplitValue()) {
+            (*rightPartitionIndex).push_back(*it);
+          } else {
+            (*centerPartitionIndex).push_back(*it);
+          }
         }
       }
-
-    }
+      }
+      }
 
     // Recursively get predictions from its children
     if ((*leftPartitionIndex).size() > 0) {
@@ -357,8 +367,24 @@ void RFNode::predict(
         );
     }
 
-    if ((*rightPartitionIndex).size() > 0) {
+    // We also get recursive predictions from center child when doing symmetric
+    if (centerPartitionIndex->size() > 0 && getTrinary()) {
+      getCenterChild()->predict(
+          outputPrediction,
+          terminalNodes,
+          outputCoefficients,
+          centerPartitionIndex,
+          xNew,
+          trainingData,
+          weightMatrix,
+          linear,
+          lambda,
+          seed,
+          nodesizeStrictAvg
+      );
+    }
 
+    if ((*rightPartitionIndex).size() > 0) {
         (*getRightChild()).predict(
           outputPrediction,
           terminalNodes,
@@ -376,6 +402,7 @@ void RFNode::predict(
 
     delete(leftPartitionIndex);
     delete(rightPartitionIndex);
+    delete(centerPartitionIndex);
 
   }
 
@@ -436,6 +463,9 @@ void RFNode::printSubtree(int indentSpace) {
     R_ProcessEvents();
     // Recursively calling its children
     (*getLeftChild()).printSubtree(indentSpace+2);
+    if (getTrinary()) {
+      (*getCenterChild()).printSubtree(indentSpace+2);
+    }
     (*getRightChild()).printSubtree(indentSpace+2);
 
   }

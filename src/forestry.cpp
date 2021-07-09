@@ -402,7 +402,7 @@ void forestry::addTrees(size_t ntree) {
               R_FlushConsole();
               R_ProcessEvents();
             }
-
+            oneTree->printTree();
             (*getForest()).emplace_back(oneTree);
             _ntree = _ntree + 1;
             if (_doubleTree) {
