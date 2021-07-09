@@ -138,6 +138,7 @@ public:
       bool splitMiddle,
       size_t maxObs,
       bool linear,
+      bool trinary,
       double overfitPenalty,
       std::shared_ptr< arma::Mat<double> > gtotal,
       std::shared_ptr< arma::Mat<double> > stotal,

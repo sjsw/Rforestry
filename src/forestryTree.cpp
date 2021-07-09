@@ -781,6 +781,7 @@ void forestryTree::recursivePartition(
     splitMiddle,
     maxObs,
     linear,
+    trinary,
     overfitPenalty,
     gtotal,
     stotal,
@@ -1032,6 +1033,7 @@ void forestryTree::selectBestFeature(
     bool splitMiddle,
     size_t maxObs,
     bool linear,
+    bool trinary,
     double overfitPenalty,
     std::shared_ptr< arma::Mat<double> > gtotal,
     std::shared_ptr< arma::Mat<double> > stotal,
@@ -1165,6 +1167,27 @@ void forestryTree::selectBestFeature(
         monotone_splits,
         monotone_details
       );
+    } else if (trinary) {
+      // Run symmetric get best split
+      findBestSplitSymmetric(
+        averagingSampleIndex,
+        splittingSampleIndex,
+        i,
+        currentFeature,
+        bestSplitLossAll,
+        bestSplitValueAll,
+        bestSplitFeatureAll,
+        bestSplitCountAll,
+        trainingData,
+        getMinNodeSizeToSplitSpt(),
+        getMinNodeSizeToSplitAvg(),
+        random_number_generator,
+        splitMiddle,
+        maxObs,
+        monotone_splits,
+        monotone_details
+      );
+
     } else {
       // Run Standard CART split
       findBestSplitValueNonCategorical(
