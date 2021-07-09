@@ -831,6 +831,7 @@ void forestryTree::recursivePartition(
     // Recursively grow the tree
     std::unique_ptr< RFNode > leftChild ( new RFNode() );
     std::unique_ptr< RFNode > rightChild ( new RFNode() );
+    std::unique_ptr< RFNode > centerChild ( new RFNode() );
 
     size_t childDepth = depth + 1;
 
@@ -904,6 +905,26 @@ void forestryTree::recursivePartition(
       monotonic_details_left,
       trinary
     );
+    // If doing trinary splits, we do a third recursion
+    if (trinary) {
+      recursivePartition(
+        centerChild.get(),
+        &averagingCenterPartitionIndex,
+        &splittingCenterPartitionIndex,
+        trainingData,
+        random_number_generator,
+        childDepth,
+        splitMiddle,
+        maxObs,
+        linear,
+        overfitPenalty,
+        g_ptr_r,
+        s_ptr_r,
+        monotone_splits,
+        monotonic_details_right, // Pass appropriate monotone details
+        trinary
+      );
+    }
     recursivePartition(
       rightChild.get(),
       &averagingRightPartitionIndex,
@@ -922,16 +943,29 @@ void forestryTree::recursivePartition(
       trinary
     );
 
-    (*rootNode).setSplitNode(
-        bestSplitFeature,
-        bestSplitValue,
-        std::move(leftChild),
-        std::move(rightChild),
-        nullptr,
-        false,
-        naLeftCount,
-        naRightCount
-    );
+    if (trinary) {
+      (*rootNode).setSplitNode(
+          bestSplitFeature,
+          bestSplitValue,
+          std::move(leftChild),
+          std::move(rightChild),
+          std::move(centerChild),
+          true,
+          naLeftCount,
+          naRightCount
+      );
+    } else {
+      (*rootNode).setSplitNode(
+          bestSplitFeature,
+          bestSplitValue,
+          std::move(leftChild),
+          std::move(rightChild),
+          nullptr,
+          false,
+          naLeftCount,
+          naRightCount
+      );
+    }
   }
 }
 
