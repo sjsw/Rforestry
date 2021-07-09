@@ -684,6 +684,24 @@ forestry <- function(x,
     categoricalFeatureMapping <-
       preprocessedData$categoricalFeatureMapping
 
+    if (symmetric) {
+      # Need to check that all variables are both positive and negative
+      if (is.list(categoricalFeatureCols) & length(categoricalFeatureCols) == 0) {
+        col_obeys <- apply(processed_x,
+                           2,
+                           function(x){return((min(x) < 0) & (max(x) > 0))})
+      } else {
+        col_obeys <- apply(processed_x[,-unname(categoricalFeatureCols[[1]])],
+                           2,
+                           function(x){return((min(x) < 0) & (max(x) > 0))})
+      }
+
+      if (!all(col_obeys)) {
+        stop(paste0("When running Symmetric splits, all continuous variables ",
+                    " must have positive and negative supports"))
+      }
+    }
+
     categoricalFeatureCols_cpp <- unlist(categoricalFeatureCols)
     if (is.null(categoricalFeatureCols_cpp)) {
       categoricalFeatureCols_cpp <- vector(mode = "numeric", length = 0)

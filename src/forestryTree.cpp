@@ -175,7 +175,6 @@ forestryTree::forestryTree(
   monotonic_details.lower_bound = -std::numeric_limits<double>::max();
   monotonic_details.monotoneAvg = (bool) trainingData->getMonotoneAvg();
 
-
   /* Recursively grow the tree */
   recursivePartition(
     getRoot(),
@@ -1169,6 +1168,25 @@ void forestryTree::selectBestFeature(
       );
     } else if (trinary) {
       // Run symmetric get best split
+
+      // findBestSplitValueNonCategorical(
+      //   averagingSampleIndex,
+      //   splittingSampleIndex,
+      //   i,
+      //   currentFeature,
+      //   bestSplitLossAll,
+      //   bestSplitValueAll,
+      //   bestSplitFeatureAll,
+      //   bestSplitCountAll,
+      //   trainingData,
+      //   getMinNodeSizeToSplitSpt(),
+      //   getMinNodeSizeToSplitAvg(),
+      //   random_number_generator,
+      //   splitMiddle,
+      //   maxObs,
+      //   monotone_splits,
+      //   monotone_details
+      // );
       findBestSplitSymmetric(
         averagingSampleIndex,
         splittingSampleIndex,

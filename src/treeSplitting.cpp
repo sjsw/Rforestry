@@ -1842,12 +1842,11 @@ void findBestSplitSymmetric(
     splittingData.push_back(
       std::make_tuple(
         tmpFeatureValue,
-        std::abs(tmpFeatureValue),
+        std::fabs(tmpFeatureValue),
         tmpOutcomeValue
       )
     );
   }
-
 
   for (size_t j=0; j<(*averagingSampleIndex).size(); j++) {
     // Retrieve the current feature value
@@ -1860,7 +1859,7 @@ void findBestSplitSymmetric(
     averagingData.push_back(
       std::make_tuple(
         tmpFeatureValue,
-        std::abs(tmpFeatureValue),
+        std::fabs(tmpFeatureValue),
         tmpOutcomeValue
       )
     );
@@ -1919,6 +1918,7 @@ void findBestSplitSymmetric(
     std::get<1>(*averagingDataIter)
   );
 
+
   while (
       splittingDataIter < splittingData.end() ||
         averagingDataIter < averagingData.end()
@@ -1941,6 +1941,7 @@ void findBestSplitSymmetric(
         leftRunningSum -= std::get<2>(*splittingDataIter);
         midRunningSum += std::get<2>(*splittingDataIter);
       }
+      splittingDataIter++;
     }
 
     while (
@@ -1955,6 +1956,7 @@ void findBestSplitSymmetric(
         nAvgMid++;
         nAvgLeft--;
       }
+      averagingDataIter++;
     }
 
     // Test if the all the values for the feature are the same, then proceed
@@ -2024,23 +2026,23 @@ void findBestSplitSymmetric(
 
     // This is a little weird, but basically we are working with the absolute
     // values, so it is okay to use the half values
-    double currentSplitValue;
-    if (splitMiddle) {
-      currentSplitValue = (newFeatureValue + featureValue) / 2.0;
-    } else {
-      std::uniform_real_distribution<double> unif_dist;
-      double tmp_random = unif_dist(random_number_generator) *
-        (newFeatureValue - featureValue);
-      double epsilon_lower = std::nextafter(featureValue, newFeatureValue);
-      double epsilon_upper = std::nextafter(newFeatureValue, featureValue);
-      currentSplitValue = tmp_random + featureValue;
-      if (currentSplitValue > epsilon_upper) {
-        currentSplitValue = epsilon_upper;
-      }
-      if (currentSplitValue < epsilon_lower) {
-        currentSplitValue = epsilon_lower;
-      }
-    }
+    double currentSplitValue = featureValue;
+    // if (splitMiddle) {
+    //   currentSplitValue = (newFeatureValue + featureValue) / 2.0;
+    // } else {
+    //   std::uniform_real_distribution<double> unif_dist;
+    //   double tmp_random = unif_dist(random_number_generator) *
+    //     (newFeatureValue - featureValue);
+    //   double epsilon_lower = std::nextafter(featureValue, newFeatureValue);
+    //   double epsilon_upper = std::nextafter(newFeatureValue, featureValue);
+    //   currentSplitValue = tmp_random + featureValue;
+    //   if (currentSplitValue > epsilon_upper) {
+    //     currentSplitValue = epsilon_upper;
+    //   }
+    //   if (currentSplitValue < epsilon_lower) {
+    //     currentSplitValue = epsilon_lower;
+    //   }
+    // }
 
     updateBestSplit(
       bestSplitLossAll,
@@ -2092,7 +2094,7 @@ void updatePartitionWeights(
 
   midWeight = midMean;
 
-  double average_diff = std::abs(midWeight - (((double) nLeft) * leftMean + ((double) nRight) * rightMean)/
+  double average_diff = std::fabs(midWeight - (((double) nLeft) * leftMean + ((double) nRight) * rightMean)/
                                    (((double) nLeft) + ((double) nRight))
                                 );
 
