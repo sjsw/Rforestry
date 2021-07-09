@@ -12,7 +12,7 @@ std::mutex mutex_weightMatrix;
 
 RFNode::RFNode():
   _averagingSampleIndex(nullptr), _splittingSampleIndex(nullptr),
-  _splitFeature(0), _splitValue(0), _trinary(false),
+  _splitFeature(0), _splitValue(0), _trinary(false), _weight(0),
   _leftChild(nullptr), _rightChild(nullptr), _centerChild(nullptr),
   _naLeftCount(0), _naRightCount(0), _averageCount(0), _splitCount(0) {}
 
@@ -23,7 +23,9 @@ RFNode::~RFNode() {
 void RFNode::setLeafNode(
   std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
   std::unique_ptr< std::vector<size_t> > splittingSampleIndex,
-  size_t nodeId
+  size_t nodeId,
+  bool trinary,
+  double weight
 ) {
   if (
       (*averagingSampleIndex).size() == 0 &&
@@ -39,6 +41,10 @@ void RFNode::setLeafNode(
   this->_averageCount = (*_averagingSampleIndex).size();
   this->_splittingSampleIndex = std::move(splittingSampleIndex);
   this->_splitCount = (*_splittingSampleIndex).size();
+  if (trinary) {
+    this->_trinary = trinary;
+    this->_weight = weight;
+  }
 }
 
 void RFNode::setSplitNode(
@@ -183,6 +189,8 @@ void RFNode::predict(
         // Calculate the mean of current node
         if (getAveragingIndex()->size() == 0) {
           predictedMean = std::numeric_limits<double>::quiet_NaN();
+        } else if (getTrinary()) {
+          predictedMean = getWeight();
         } else {
           predictedMean = (*trainingData).partitionMean(getAveragingIndex());
         }

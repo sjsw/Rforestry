@@ -19,7 +19,9 @@ public:
   void setLeafNode(
     std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
     std::unique_ptr< std::vector<size_t> > splittingSampleIndex,
-    size_t nodeId
+    size_t nodeId,
+    bool trinary,
+    double weight
   );
 
   void setSplitNode(
@@ -105,6 +107,10 @@ public:
     }
   }
 
+  double getWeight() {
+    return _weight;
+  }
+
   bool getTrinary() {
     return _trinary;
   }
@@ -143,6 +149,7 @@ private:
   size_t _splitFeature;
   double _splitValue;
   bool _trinary;
+  double _weight;
   std::unique_ptr< RFNode > _leftChild;
   std::unique_ptr< RFNode > _rightChild;
   std::unique_ptr< RFNode > _centerChild;

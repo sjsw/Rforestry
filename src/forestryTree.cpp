@@ -191,7 +191,8 @@ forestryTree::forestryTree(
     s_ptr,
     monotone_splits,
     monotonic_details,
-    symmetric
+    symmetric,
+    0
   );
 }
 
@@ -678,7 +679,6 @@ double crossValidatedRSquared (
   return (totalRSquaredChildren/numTimesCV) - (totalRSquaredParent/numTimesCV);
 }
 
-
 void forestryTree::recursivePartition(
     RFNode* rootNode,
     std::vector<size_t>* averagingSampleIndex,
@@ -694,7 +694,8 @@ void forestryTree::recursivePartition(
     std::shared_ptr< arma::Mat<double> > stotal,
     bool monotone_splits,
     monotonic_info monotone_details,
-    bool trinary
+    bool trinary,
+    double weight
 ){
   if ((*averagingSampleIndex).size() < getMinNodeSizeAvg() ||
       (*splittingSampleIndex).size() < getMinNodeSizeSpt() ||
@@ -711,7 +712,9 @@ void forestryTree::recursivePartition(
     (*rootNode).setLeafNode(
         std::move(averagingSampleIndex_),
         std::move(splittingSampleIndex_),
-        node_id
+        node_id,
+        trinary,
+        weight
     );
     return;
   }
@@ -802,7 +805,9 @@ void forestryTree::recursivePartition(
     (*rootNode).setLeafNode(
         std::move(averagingSampleIndex_),
         std::move(splittingSampleIndex_),
-        node_id
+        node_id,
+        trinary,
+        weight
     );
 
   } else {
@@ -866,7 +871,9 @@ void forestryTree::recursivePartition(
         (*rootNode).setLeafNode(
             std::move(averagingSampleIndex_),
             std::move(splittingSampleIndex_),
-            node_id
+            node_id,
+            trinary,
+            1
         );
         return;
       }
@@ -910,6 +917,23 @@ void forestryTree::recursivePartition(
         );
     }
 
+    // Update the weights we give to different nodes
+    double lWeight=0;
+    double rWeight=0;
+    double cWeight = 0;
+    if (trinary) {
+      updatePartitionWeights(
+        trainingData->partitionMean(&averagingLeftPartitionIndex),
+        trainingData->partitionMean(&averagingCenterPartitionIndex),
+        trainingData->partitionMean(&averagingRightPartitionIndex),
+        averagingLeftPartitionIndex.size(),
+        averagingRightPartitionIndex.size(),
+        averagingCenterPartitionIndex.size(),
+        lWeight,
+        rWeight,
+        cWeight);
+    }
+
     recursivePartition(
       leftChild.get(),
       &averagingLeftPartitionIndex,
@@ -925,7 +949,8 @@ void forestryTree::recursivePartition(
       s_ptr_l,
       monotone_splits,
       monotonic_details_left,
-      trinary
+      trinary,
+      lWeight
     );
     // If doing trinary splits, we do a third recursion
     if (trinary) {
@@ -944,7 +969,8 @@ void forestryTree::recursivePartition(
         s_ptr_r,
         monotone_splits,
         monotonic_details_right, // Pass appropriate monotone details
-        trinary
+        trinary,
+        cWeight
       );
     }
     recursivePartition(
@@ -962,7 +988,8 @@ void forestryTree::recursivePartition(
       s_ptr_r,
       monotone_splits,
       monotonic_details_right,
-      trinary
+      trinary,
+      rWeight
     );
 
     if (trinary) {
@@ -1723,7 +1750,9 @@ void forestryTree::recursive_reconstruction(
     (*currentNode).setLeafNode(
         std::move(averagingSampleIndex_),
         std::move(splittingSampleIndex_),
-        node_id
+        node_id,
+        false,
+        0
     );
     return;
   } else {

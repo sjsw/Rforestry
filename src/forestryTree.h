@@ -118,7 +118,8 @@ public:
     std::shared_ptr< arma::Mat<double> > stotal,
     bool monotone_splits,
     monotonic_info monotone_details,
-    bool trinary
+    bool trinary,
+    double weight
   );
 
   void selectBestFeature(
