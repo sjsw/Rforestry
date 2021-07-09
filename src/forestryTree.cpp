@@ -471,6 +471,51 @@ void splitDataIntoThreeParts(
   }
 }
 
+void updateMonotoneConstraints(
+  monotonic_info& monotone_details,
+  monotonic_info& monotonic_details_left,
+  monotonic_info& monotonic_details_right,
+  std::vector<int> monotonic_constraints,
+  double leftMean,
+  double rightMean,
+  size_t bestSplitFeature
+) {
+  int monotone_direction = monotone_details.monotonic_constraints[bestSplitFeature];
+  monotonic_details_left.monotonic_constraints = monotonic_constraints;
+  monotonic_details_right.monotonic_constraints = monotonic_constraints;
+
+  // Also need to pass down the monotone Average Flag
+  monotonic_details_left.monotoneAvg = monotone_details.monotoneAvg;
+  monotonic_details_right.monotoneAvg = monotone_details.monotoneAvg;
+
+  double leftNodeMean = calculateMonotonicBound(leftMean,
+                                                monotone_details);
+  double rightNodeMean = calculateMonotonicBound(rightMean,
+                                                 monotone_details);
+  double midMean = (leftNodeMean + rightNodeMean )/(2);
+
+  // Pass down the new upper and lower bounds if it is a monotonic split,
+  if (monotone_direction == -1) {
+    monotonic_details_left.lower_bound = midMean;
+    monotonic_details_right.upper_bound = midMean;
+
+    monotonic_details_left.upper_bound = monotone_details.upper_bound;
+    monotonic_details_right.lower_bound = monotone_details.lower_bound;
+  } else if (monotone_direction == 1) {
+    monotonic_details_left.upper_bound = midMean;
+    monotonic_details_right.lower_bound = midMean;
+
+    monotonic_details_left.lower_bound =  monotone_details.lower_bound;
+    monotonic_details_right.upper_bound = monotone_details.upper_bound;
+  } else {
+    // otherwise keep the old ones
+    monotonic_details_left.upper_bound = monotone_details.upper_bound;
+    monotonic_details_left.lower_bound = monotone_details.lower_bound;
+    monotonic_details_right.upper_bound = monotone_details.upper_bound;
+    monotonic_details_right.lower_bound = monotone_details.lower_bound;
+  }
+}
+
 void splitData(
     DataFrame* trainingData,
     std::vector<size_t>* averagingSampleIndex,
@@ -854,38 +899,15 @@ void forestryTree::recursivePartition(
     struct monotonic_info monotonic_details_right;
 
     if (monotone_splits) {
-      int monotone_direction = monotone_details.monotonic_constraints[bestSplitFeature];
-      monotonic_details_left.monotonic_constraints = (*trainingData->getMonotonicConstraints());
-      monotonic_details_right.monotonic_constraints = (*trainingData->getMonotonicConstraints());
-
-      // Also need to pass down the monotone Average Flag
-      monotonic_details_left.monotoneAvg = monotone_details.monotoneAvg;
-      monotonic_details_right.monotoneAvg = monotone_details.monotoneAvg;
-
-      double leftNodeMean = calculateMonotonicBound(trainingData->partitionMean(&splittingLeftPartitionIndex), monotone_details);
-      double rightNodeMean = calculateMonotonicBound(trainingData->partitionMean(&splittingRightPartitionIndex), monotone_details);
-      double midMean = (leftNodeMean + rightNodeMean )/(2);
-
-      // Pass down the new upper and lower bounds if it is a monotonic split,
-      if (monotone_direction == -1) {
-        monotonic_details_left.lower_bound = midMean;
-        monotonic_details_right.upper_bound = midMean;
-
-        monotonic_details_left.upper_bound = monotone_details.upper_bound;
-        monotonic_details_right.lower_bound = monotone_details.lower_bound;
-      } else if (monotone_direction == 1) {
-        monotonic_details_left.upper_bound = midMean;
-        monotonic_details_right.lower_bound = midMean;
-
-        monotonic_details_left.lower_bound =  monotone_details.lower_bound;
-        monotonic_details_right.upper_bound = monotone_details.upper_bound;
-      } else {
-        // otherwise keep the old ones
-        monotonic_details_left.upper_bound = monotone_details.upper_bound;
-        monotonic_details_left.lower_bound = monotone_details.lower_bound;
-        monotonic_details_right.upper_bound = monotone_details.upper_bound;
-        monotonic_details_right.lower_bound = monotone_details.lower_bound;
-      }
+      updateMonotoneConstraints(
+        monotone_details,
+        monotonic_details_left,
+        monotonic_details_right,
+        (*trainingData->getMonotonicConstraints()),
+        trainingData->partitionMean(&splittingLeftPartitionIndex),
+        trainingData->partitionMean(&splittingRightPartitionIndex),
+        bestSplitFeature
+        );
     }
 
     recursivePartition(
