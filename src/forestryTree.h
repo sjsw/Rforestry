@@ -170,6 +170,12 @@ public:
       size_t nRows
   );
 
+  void getOOGIndex(
+      std::vector<size_t> &outputOOBIndex,
+      std::vector<size_t> groupMemberships,
+      size_t nRows
+  );
+
   void getOOBPrediction(
     std::vector<double> &outputOOBPrediction,
     std::vector<size_t> &outputOOBCount,

@@ -1232,6 +1232,15 @@ void forestryTree::getOOBhonestIndex(
   }
 }
 
+void forestryTree::getOOGIndex(
+    std::vector<size_t> &outputOOBIndex,
+    std::vector<size_t> groupMemberships,
+    size_t nRows
+) {
+
+
+}
+
 void forestryTree::getOOBPrediction(
     std::vector<double> &outputOOBPrediction,
     std::vector<size_t> &outputOOBCount,

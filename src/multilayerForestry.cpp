@@ -117,6 +117,9 @@ void multilayerForestry::addForests(size_t ntree) {
     std::unique_ptr< std::vector<int> > monotonicConstraintsRcpp_(
         new std::vector<int>(*(trainingData->getMonotonicConstraints()))
     );
+    std::unique_ptr< std::vector<size_t> > groupMembershipRcpp_(
+        new std::vector<size_t>(*(trainingData->getGroups()))
+    );
 
     DataFrame* residualDataFrame = new DataFrame(
       residualFeatureData_,
@@ -131,6 +134,7 @@ void multilayerForestry::addForests(size_t ntree) {
       std::move(residualdeepFeatureWeightsVariables_),
       std::move(residualobservationWeights_),
       std::move(monotonicConstraintsRcpp_),
+      std::move(groupMembershipRcpp_),
       false
     );
 

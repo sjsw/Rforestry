@@ -364,7 +364,8 @@ setClass(
     observationWeights = "numeric",
     overfitPenalty = "numeric",
     doubleTree = "logical",
-    groupsMapping = "list"
+    groupsMapping = "list",
+    groups = "numeric"
   )
 )
 
@@ -409,7 +410,8 @@ setClass(
     overfitPenalty = "numeric",
     gammas = "numeric",
     doubleTree = "logical",
-    groupsMapping = "list"
+    groupsMapping = "list",
+    groups = "numeric"
   )
 )
 
@@ -687,6 +689,12 @@ forestry <- function(x,
 
   }
 
+  if (!is.null(groups)) {
+    groupVector <- as.integer(groups)
+  } else {
+    groupVector <- rep(0, nrow(x))
+  }
+
   if (is.null(reuseforestry)) {
     preprocessedData <- preprocess_training(x, y)
     processed_x <- preprocessedData$x
@@ -720,6 +728,7 @@ forestry <- function(x,
         deepFeatureWeightsVariables = deepFeatureWeightsVariables,
         observationWeights = observationWeights,
         monotonicConstraints = monotonicConstraints,
+        groupMemberships = groupVector,
         monotoneAvg = monotoneAvg
       )
 
@@ -755,6 +764,7 @@ forestry <- function(x,
         deepFeatureWeightsVariables,
         observationWeights,
         monotonicConstraints,
+        groupVector,
         monotoneAvg,
         hasNas,
         linear,
@@ -811,7 +821,8 @@ forestry <- function(x,
           monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree,
-          groupsMapping = groupsMapping
+          groupsMapping = groupsMapping,
+          groups = groupVector
         )
       )
     },
@@ -870,6 +881,7 @@ forestry <- function(x,
         deepFeatureWeightsVariables = deepFeatureWeightsVariables,
         observationWeights,
         monotonicConstraints,
+        groupVector,
         monotoneAvg,
         hasNas,
         linear,
@@ -914,7 +926,8 @@ forestry <- function(x,
           monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree,
-          groupsMapping = groupsMapping
+          groupsMapping = groupsMapping,
+          groups = groupVector
         )
       )
     }, error = function(err) {
@@ -1061,6 +1074,11 @@ multilayerForestry <- function(x,
                           "groupNumericValue" = 1:length(levels(groups)))
 
   }
+  if (!is.null(groups)) {
+    groupVector <- as.integer(groups)
+  } else {
+    groupVector <- rep(0, nrow(x))
+  }
 
   if (is.null(reuseforestry)) {
     preprocessedData <- preprocess_training(x, y)
@@ -1094,6 +1112,7 @@ multilayerForestry <- function(x,
         deepFeatureWeightsVariables = deepFeatureWeightsVariables,
         observationWeights = observationWeights,
         monotonicConstraints = monotonicConstraints,
+        groupMemberships = groupVector,
         monotoneAvg = monotoneAvg
       )
 
@@ -1187,7 +1206,8 @@ multilayerForestry <- function(x,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree,
           groupsMapping = groupsMapping,
-          gammas = gammas
+          gammas = gammas,
+          groups = groupVector
         )
       )
     },
@@ -1283,7 +1303,8 @@ multilayerForestry <- function(x,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree,
           groupsMapping = reuseforestry@groupsMapping,
-          gammas = reuseforestry@gammas
+          gammas = reuseforestry@gammas,
+          groups = groupVector
         )
       )
     }, error = function(err) {
@@ -2315,6 +2336,7 @@ relinkCPP_prt <- function(object) {
           deepFeatureWeightsVariables = object@deepFeatureWeightsVariables,
           observationWeights = object@observationWeights,
           monotonicConstraints = object@monotonicConstraints,
+          groupMemberships = as.integer(object@groups),
           monotoneAvg = object@monotoneAvg,
           linear = object@linear,
           overfitPenalty = object@overfitPenalty,
@@ -2363,6 +2385,7 @@ relinkCPP_prt <- function(object) {
           deepFeatureWeightsVariables = object@deepFeatureWeightsVariables,
           observationWeights = object@observationWeights,
           monotonicConstraints = object@monotonicConstraints,
+          groupMemberships = as.integer(object@groups),
           monotoneAvg = object@monotoneAvg,
           gammas = object@gammas,
           linear = object@linear,

@@ -41,6 +41,7 @@ SEXP rcpp_cppDataFrameInterface(
     Rcpp::NumericVector deepFeatureWeightsVariables,
     Rcpp::NumericVector observationWeights,
     Rcpp::NumericVector monotonicConstraints,
+    Rcpp::NumericVector groupMemberships,
     bool monotoneAvg
 ){
 
@@ -107,6 +108,12 @@ SEXP rcpp_cppDataFrameInterface(
         )
     );
 
+    std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+        new std::vector<size_t>(
+            Rcpp::as< std::vector<size_t> >(groupMemberships)
+        )
+    );
+
 
     DataFrame* trainingData = new DataFrame(
         std::move(featureDataRcpp),
@@ -121,6 +128,7 @@ SEXP rcpp_cppDataFrameInterface(
         std::move(deepFeatureWeightsVariablesRcpp),
         std::move(observationWeightsRcpp),
         std::move(monotonicConstraintsRcpp),
+        std::move(groupMembershipsRcpp),
         (bool) monotoneAvg
     );
 
@@ -169,6 +177,7 @@ SEXP rcpp_cppBuildInterface(
   Rcpp::NumericVector deepFeatureWeightsVariables,
   Rcpp::NumericVector observationWeights,
   Rcpp::NumericVector monotonicConstraints,
+  Rcpp::NumericVector groupMemberships,
   bool monotoneAvg,
   bool hasNas,
   bool linear,
@@ -290,6 +299,12 @@ SEXP rcpp_cppBuildInterface(
           )
       );
 
+      std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+          new std::vector<size_t>(
+              Rcpp::as< std::vector<size_t> >(groupMemberships)
+          )
+      );
+
       DataFrame* trainingData = new DataFrame(
           std::move(featureDataRcpp),
           std::move(outcomeDataRcpp),
@@ -303,6 +318,7 @@ SEXP rcpp_cppBuildInterface(
           std::move(deepFeatureWeightsVariablesRcpp),
           std::move(observationWeightsRcpp),
           std::move(monotoneConstraintsRcpp),
+          std::move(groupMembershipsRcpp),
           (bool) monotoneAvg
       );
 
@@ -1038,6 +1054,7 @@ Rcpp::List rcpp_reconstructree(
   Rcpp::NumericVector deepFeatureWeightsVariables,
   Rcpp::NumericVector observationWeights,
   Rcpp::NumericVector monotonicConstraints,
+  Rcpp::NumericVector groupMemberships,
   bool monotoneAvg,
   bool hasNas,
   bool linear,
@@ -1176,6 +1193,11 @@ Rcpp::List rcpp_reconstructree(
           Rcpp::as< std::vector<int> >(monotonicConstraints)
       )
   );
+  std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+      new std::vector<size_t>(
+          Rcpp::as< std::vector<size_t> >(groupMemberships)
+      )
+  );
 
   DataFrame* trainingData = new DataFrame(
     std::move(featureDataRcpp),
@@ -1190,6 +1212,7 @@ Rcpp::List rcpp_reconstructree(
     std::move(deepFeatureWeightsVariablesRcpp),
     std::move(observationWeightsRcpp),
     std::move(monotonicConstraintsRcpp),
+    std::move(groupMembershipsRcpp),
     (bool) monotoneAvg
   );
 
@@ -1279,6 +1302,7 @@ Rcpp::List rcpp_reconstruct_forests(
     Rcpp::NumericVector deepFeatureWeightsVariables,
     Rcpp::NumericVector observationWeights,
     Rcpp::NumericVector monotonicConstraints,
+    Rcpp::NumericVector groupMemberships,
     Rcpp::NumericVector gammas,
     bool monotoneAvg,
     bool linear,
@@ -1463,6 +1487,12 @@ Rcpp::List rcpp_reconstruct_forests(
             Rcpp::as< std::vector<int> >(monotonicConstraints)
         )
     );
+    std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+        new std::vector<size_t>(
+            Rcpp::as< std::vector<size_t> >(groupMemberships)
+        )
+    );
+
 
     DataFrame* trainingData = new DataFrame(
       std::move(featureDataRcpp),
@@ -1477,6 +1507,7 @@ Rcpp::List rcpp_reconstruct_forests(
       std::move(deepFeatureWeightsVariablesRcpp),
       std::move(observationWeightsRcpp),
       std::move(monotonicConstraintsRcpp),
+      std::move(groupMembershipsRcpp),
       (bool) monotoneAvg
     );
 
@@ -1599,6 +1630,11 @@ Rcpp::List rcpp_reconstruct_forests(
           Rcpp::as< std::vector<int> >(monotonicConstraints)
       )
   );
+  std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+      new std::vector<size_t>(
+          Rcpp::as< std::vector<size_t> >(groupMemberships)
+      )
+  );
 
   DataFrame* trainingData = new DataFrame(
     std::move(featureDataRcpp),
@@ -1613,6 +1649,7 @@ Rcpp::List rcpp_reconstruct_forests(
     std::move(deepFeatureWeightsVariablesRcpp),
     std::move(observationWeightsRcpp),
     std::move(monotonicConstraintsRcpp),
+    std::move(groupMembershipsRcpp),
     (bool) monotoneAvg
   );
 
