@@ -235,6 +235,11 @@ training_data_checker <- function(x,
   if (!is.logical(middleSplit)) {
     stop("middleSplit must be TRUE or FALSE.")
   }
+
+  if (symmetric && linear) {
+    stop("Linear splits are not compatible with Symmetric splits, switch linear to FALSE to run symmetric splits")
+  }
+
   return(list("x" = x,
               "y" = y,
               "ntree" = ntree,

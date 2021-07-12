@@ -475,6 +475,7 @@ void updateMonotoneConstraints(
   monotonic_info& monotone_details,
   monotonic_info& monotonic_details_left,
   monotonic_info& monotonic_details_right,
+  monotonic_info& monotonic_details_center,
   std::vector<int> monotonic_constraints,
   double leftMean,
   double rightMean,
@@ -904,12 +905,14 @@ void forestryTree::recursivePartition(
     // uncle mean, and right and left child indicators
     struct monotonic_info monotonic_details_left;
     struct monotonic_info monotonic_details_right;
+    struct monotonic_info monotonic_details_center;
 
     if (monotone_splits) {
       updateMonotoneConstraints(
         monotone_details,
         monotonic_details_left,
         monotonic_details_right,
+        monotonic_details_center,
         (*trainingData->getMonotonicConstraints()),
         trainingData->partitionMean(&splittingLeftPartitionIndex),
         trainingData->partitionMean(&splittingRightPartitionIndex),
