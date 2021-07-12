@@ -1830,6 +1830,9 @@ void findBestSplitSymmetric(
   double leftRunningSum = 0;
   double rightRunningSum = 0;
   double midRunningSum = 0;
+  double leftAvgRunningSum = 0;
+  double rightAvgRunningSum = 0;
+  double midAvgRunningSum = 0;
 
   for (size_t j=0; j<(*splittingSampleIndex).size(); j++) {
     // Retrieve the current feature value
@@ -1885,6 +1888,7 @@ void findBestSplitSymmetric(
   double midWeight;
   double leftWeight;
   double rightWeight;
+
 
   double newFeatureValue;
   bool oneValueDistinctFlag = true;
@@ -1952,9 +1956,13 @@ void findBestSplitSymmetric(
       if (std::get<0>(*averagingDataIter) > 0) {
         nAvgMid++;
         nAvgRight--;
+        rightAvgRunningSum -= std::get<2>(*averagingDataIter);
+        midAvgRunningSum += std::get<2>(*averagingDataIter);
       } else {
         nAvgMid++;
         nAvgLeft--;
+        leftAvgRunningSum -= std::get<2>(*averagingDataIter);
+        midAvgRunningSum += std::get<2>(*averagingDataIter);
       }
       averagingDataIter++;
     }
@@ -2012,6 +2020,48 @@ void findBestSplitSymmetric(
                            leftWeight,
                            rightWeight,
                            midWeight);
+
+
+    // If we are using monotonic constraints, we need to work out whether
+    // the monotone constraints will reject a split
+    if (monotone_splits) {
+      bool keepMonotoneSplit = acceptMonotoneTrinarySplit(monotone_details,
+                                                          currentFeature,
+                                                          leftWeight,
+                                                          rightWeight,
+                                                          midWeight);
+
+      bool avgKeepMonotoneSplit = true;
+      // If monotoneAvg, we also need to check the monotonicity of the avg set
+      if (monotone_details.monotoneAvg) {
+        double midAvgWeight;
+        double leftAvgWeight;
+        double rightAvgWeight;
+
+        updatePartitionWeights(leftAvgRunningSum/(double) nAvgLeft,
+                               midAvgRunningSum/(double) nAvgMid,
+                               rightAvgRunningSum/(double) nAvgRight,
+                               nAvgLeft,
+                               nAvgRight,
+                               nAvgMid,
+                               leftAvgWeight,
+                               rightAvgWeight,
+                               midAvgWeight);
+
+        avgKeepMonotoneSplit = acceptMonotoneTrinarySplit(monotone_details,
+                                                          currentFeature,
+                                                          leftAvgWeight,
+                                                          rightAvgWeight,
+                                                          midAvgWeight);
+
+      }
+
+      if (!(keepMonotoneSplit && avgKeepMonotoneSplit)) {
+        // Update the oldFeature value before proceeding
+        featureValue = newFeatureValue;
+        continue;
+      }
+    }
 
     // Calculate the variance of the splitting
     double currentSplitLoss = calcSymmetricLoss(leftRunningSum,
@@ -2198,6 +2248,50 @@ bool acceptMonotoneSplit(
   } else if (monotone_direction == 0) {
     if (std::min(leftPartitionMean, rightPartitionMean) < lower_bound ||
         std::max(leftPartitionMean, rightPartitionMean) > upper_bound) {
+      return false;
+    } else {
+      return true;
+    }
+  } else {
+    return true;
+  }
+}
+
+bool acceptMonotoneTrinarySplit(
+    monotonic_info &monotone_details,
+    size_t currentFeature,
+    double leftPartitionMean,
+    double rightPartitionMean,
+    double centerPartitionMean
+) {
+  // If we have the uncle mean equal to infinity, then we enforce a simple
+  // monotone split without worrying about the uncle bounds
+  int monotone_direction = monotone_details.monotonic_constraints[currentFeature];
+  double upper_bound = monotone_details.upper_bound;
+  double lower_bound = monotone_details.lower_bound;
+
+  // This is not right. I should check the split is correctly monotonic and then
+  // check that neither node violates the upper and lower bounds
+
+    // Monotone increasing
+  if ((monotone_direction == 1) && !((rightPartitionMean > centerPartitionMean) &&
+                                      (centerPartitionMean > leftPartitionMean)) ) {
+    return false;
+    // Monotone decreasing
+  } else if ((monotone_direction == -1) && !((rightPartitionMean > centerPartitionMean) &&
+                                               (centerPartitionMean > leftPartitionMean))) {
+    return false;
+  } else if ((monotone_direction == 1) && (rightPartitionMean > upper_bound)) {
+    return false;
+  } else if ((monotone_direction == 1) && (leftPartitionMean < lower_bound)) {
+    return false;
+  } else if ((monotone_direction == -1) && (rightPartitionMean < lower_bound)) {
+    return false;
+  } else if ((monotone_direction == -1) && (leftPartitionMean > upper_bound)) {
+    return false;
+  } else if (monotone_direction == 0) {
+    if (std::min(leftPartitionMean, std::min(rightPartitionMean, centerPartitionMean)) < lower_bound ||
+        std::max(leftPartitionMean, std::max(rightPartitionMean, centerPartitionMean)) > upper_bound) {
       return false;
     } else {
       return true;
