@@ -295,6 +295,14 @@ bool acceptMonotoneSplit(
     double rightPartitionMean
 );
 
+bool acceptMonotoneTrinarySplit(
+        monotonic_info &monotone_details,
+        size_t currentFeature,
+        double leftPartitionMean,
+        double rightPartitionMean,
+        double centerPartitionMean
+);
+
 double calculateMonotonicBound(
     double node_mean,
     monotonic_info& monotone_details

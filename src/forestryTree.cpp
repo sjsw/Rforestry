@@ -479,7 +479,9 @@ void updateMonotoneConstraints(
   std::vector<int> monotonic_constraints,
   double leftMean,
   double rightMean,
-  size_t bestSplitFeature
+  double centerMean,
+  size_t bestSplitFeature,
+  bool update_center
 ) {
   int monotone_direction = monotone_details.monotonic_constraints[bestSplitFeature];
   monotonic_details_left.monotonic_constraints = monotonic_constraints;
@@ -493,27 +495,69 @@ void updateMonotoneConstraints(
                                                 monotone_details);
   double rightNodeMean = calculateMonotonicBound(rightMean,
                                                  monotone_details);
+  double centerNodeMean;
+  double leftMidMean;
+  double rightMidMean;
+
+  if (update_center) {
+    centerNodeMean = calculateMonotonicBound(centerMean,
+                                             monotone_details);
+    leftMidMean = (leftNodeMean + centerNodeMean)/2.0;
+    rightMidMean = (rightNodeMean + centerNodeMean)/2.0;
+
+    monotonic_details_center.monotoneAvg = monotone_details.monotoneAvg;
+    monotonic_details_center.monotonic_constraints = monotonic_constraints;
+  }
+
   double midMean = (leftNodeMean + rightNodeMean )/(2);
 
   // Pass down the new upper and lower bounds if it is a monotonic split,
-  if (monotone_direction == -1) {
-    monotonic_details_left.lower_bound = midMean;
-    monotonic_details_right.upper_bound = midMean;
+  if (update_center) {
+    if (monotone_direction == -1) {
+      monotonic_details_left.lower_bound = leftMidMean;
+      monotonic_details_right.upper_bound = rightMidMean;
+      monotonic_details_center.upper_bound = leftMidMean;
+      monotonic_details_center.lower_bound = rightMidMean;
 
-    monotonic_details_left.upper_bound = monotone_details.upper_bound;
-    monotonic_details_right.lower_bound = monotone_details.lower_bound;
-  } else if (monotone_direction == 1) {
-    monotonic_details_left.upper_bound = midMean;
-    monotonic_details_right.lower_bound = midMean;
+      monotonic_details_left.upper_bound = monotone_details.upper_bound;
+      monotonic_details_right.lower_bound = monotone_details.lower_bound;
+    } else if (monotone_direction == 1) {
+      monotonic_details_left.upper_bound = leftMidMean;
+      monotonic_details_right.lower_bound = rightMidMean;
+      monotonic_details_center.upper_bound = rightMidMean;
+      monotonic_details_center.lower_bound = leftMidMean;
 
-    monotonic_details_left.lower_bound =  monotone_details.lower_bound;
-    monotonic_details_right.upper_bound = monotone_details.upper_bound;
+      monotonic_details_left.lower_bound =  monotone_details.lower_bound;
+      monotonic_details_right.upper_bound = monotone_details.upper_bound;
+    } else {
+      monotonic_details_left.upper_bound = monotone_details.upper_bound;
+      monotonic_details_left.lower_bound = monotone_details.lower_bound;
+      monotonic_details_right.upper_bound = monotone_details.upper_bound;
+      monotonic_details_right.lower_bound = monotone_details.lower_bound;
+      monotonic_details_center.upper_bound = monotone_details.upper_bound;
+      monotonic_details_center.lower_bound = monotone_details.lower_bound;
+    }
+
   } else {
-    // otherwise keep the old ones
-    monotonic_details_left.upper_bound = monotone_details.upper_bound;
-    monotonic_details_left.lower_bound = monotone_details.lower_bound;
-    monotonic_details_right.upper_bound = monotone_details.upper_bound;
-    monotonic_details_right.lower_bound = monotone_details.lower_bound;
+    if (monotone_direction == -1) {
+      monotonic_details_left.lower_bound = midMean;
+      monotonic_details_right.upper_bound = midMean;
+
+      monotonic_details_left.upper_bound = monotone_details.upper_bound;
+      monotonic_details_right.lower_bound = monotone_details.lower_bound;
+    } else if (monotone_direction == 1) {
+      monotonic_details_left.upper_bound = midMean;
+      monotonic_details_right.lower_bound = midMean;
+
+      monotonic_details_left.lower_bound =  monotone_details.lower_bound;
+      monotonic_details_right.upper_bound = monotone_details.upper_bound;
+    } else {
+      // otherwise keep the old ones
+      monotonic_details_left.upper_bound = monotone_details.upper_bound;
+      monotonic_details_left.lower_bound = monotone_details.lower_bound;
+      monotonic_details_right.upper_bound = monotone_details.upper_bound;
+      monotonic_details_right.lower_bound = monotone_details.lower_bound;
+    }
   }
 }
 
@@ -907,19 +951,6 @@ void forestryTree::recursivePartition(
     struct monotonic_info monotonic_details_right;
     struct monotonic_info monotonic_details_center;
 
-    if (monotone_splits) {
-      updateMonotoneConstraints(
-        monotone_details,
-        monotonic_details_left,
-        monotonic_details_right,
-        monotonic_details_center,
-        (*trainingData->getMonotonicConstraints()),
-        trainingData->partitionMean(&splittingLeftPartitionIndex),
-        trainingData->partitionMean(&splittingRightPartitionIndex),
-        bestSplitFeature
-        );
-    }
-
     // Update the weights we give to different nodes
     double lWeight=0;
     double rWeight=0;
@@ -935,6 +966,21 @@ void forestryTree::recursivePartition(
         lWeight,
         rWeight,
         cWeight);
+    }
+
+    if (monotone_splits) {
+      updateMonotoneConstraints(
+        monotone_details,
+        monotonic_details_left,
+        monotonic_details_right,
+        monotonic_details_center,
+        (*trainingData->getMonotonicConstraints()),
+        trinary ? lWeight : trainingData->partitionMean(&splittingLeftPartitionIndex),
+        trinary ? rWeight : trainingData->partitionMean(&splittingRightPartitionIndex),
+        trinary ? cWeight : 0,
+        bestSplitFeature,
+        trinary
+      );
     }
 
     recursivePartition(
@@ -1500,7 +1546,6 @@ void forestryTree::getOOBPrediction(
     // Standard OOB indices in the non honest case
     getOOBindex(OOBIndex, trainingData->getNumRows());
   }
-
 
   // Xnew has first access being the feature selection and second access being
   // the observation selection.
