@@ -33,6 +33,7 @@ training_data_checker <- function(x,
                                   doubleTree,
                                   linFeats,
                                   monotonicConstraints,
+                                  groups,
                                   featureWeights,
                                   deepFeatureWeights,
                                   observationWeights,
@@ -200,6 +201,12 @@ training_data_checker <- function(x,
     stop("splitratio must in between 0 and 1.")
   }
 
+  if (!is.null(groups)) {
+    if (!is.factor(groups)) {
+      stop("groups must be supplied as a vector of factors")
+    }
+  }
+
   if (OOBhonest && (splitratio != 1)) {
     warning("OOBhonest is set to true, so we will run OOBhonesty rather
             than standard honesty")
@@ -356,7 +363,8 @@ setClass(
     deepFeatureWeightsVariables = "numeric",
     observationWeights = "numeric",
     overfitPenalty = "numeric",
-    doubleTree = "logical"
+    doubleTree = "logical",
+    groupsMapping = "list"
   )
 )
 
@@ -400,7 +408,8 @@ setClass(
     observationWeights = "numeric",
     overfitPenalty = "numeric",
     gammas = "numeric",
-    doubleTree = "logical"
+    doubleTree = "logical",
+    groupsMapping = "list"
   )
 )
 
@@ -496,6 +505,9 @@ setClass(
 #'   1,0,-1 which 1 indicating an increasing monotonic relationship, -1 indicating
 #'   a decreasing monotonic relationship, and 0 indicating no constraint.
 #'   Constraints supplied for categorical variable will be ignored.
+#' @param groups A vector of factors specifying the group membership of each training ovbservation.
+#'   these groups are used in the aggregation when doing out of bag predictions in
+#'   order to predict with only trees where the entire group was not used for aggregation.
 #' @param monotoneAvg This is a boolean flag that indicates whether or not monotonic
 #'   constraints should be enforced on the averaging set in addition to the splitting set.
 #'   This flag is meaningless unless both honesty and monotonic constraints are in use.
@@ -583,6 +595,7 @@ forestry <- function(x,
                      linear = FALSE,
                      linFeats = 0:(ncol(x)-1),
                      monotonicConstraints = rep(0, ncol(x)),
+                     groups = NULL,
                      monotoneAvg = FALSE,
                      overfitPenalty = 1,
                      doubleTree = FALSE,
@@ -644,6 +657,7 @@ forestry <- function(x,
       doubleTree = doubleTree,
       linFeats = linFeats,
       monotonicConstraints = monotonicConstraints,
+      groups = groups,
       featureWeights = featureWeights,
       deepFeatureWeights = deepFeatureWeights,
       observationWeights = observationWeights,
@@ -665,6 +679,13 @@ forestry <- function(x,
   # Total number of obervations
   nObservations <- length(y)
   numColumns <- ncol(x)
+
+  groupsMapping <- list()
+  if (!is.null(groups)) {
+    groupsMapping <- list("groupValue" = levels(groups),
+                          "groupNumericValue" = 1:length(levels(groups)))
+
+  }
 
   if (is.null(reuseforestry)) {
     preprocessedData <- preprocess_training(x, y)
@@ -789,7 +810,8 @@ forestry <- function(x,
           monotonicConstraints = monotonicConstraints,
           monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
-          doubleTree = doubleTree
+          doubleTree = doubleTree,
+          groupsMapping = groupsMapping
         )
       )
     },
@@ -891,7 +913,8 @@ forestry <- function(x,
           monotonicConstraints = monotonicConstraints,
           monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
-          doubleTree = doubleTree
+          doubleTree = doubleTree,
+          groupsMapping = groupsMapping
         )
       )
     }, error = function(err) {
@@ -946,6 +969,7 @@ multilayerForestry <- function(x,
                      linear = FALSE,
                      linFeats = 0:(ncol(x)-1),
                      monotonicConstraints = rep(0, ncol(x)),
+                     groups = NULL,
                      monotoneAvg = FALSE,
                      featureWeights = rep(1, ncol(x)),
                      deepFeatureWeights = featureWeights,
@@ -1011,6 +1035,7 @@ multilayerForestry <- function(x,
       featureWeights = featureWeights,
       deepFeatureWeights = deepFeatureWeights,
       observationWeights = observationWeights,
+      groups = groups,
       linear = linear,
       hasNas = hasNas)
 
@@ -1029,6 +1054,13 @@ multilayerForestry <- function(x,
   # Total number of obervations
   nObservations <- length(y)
   numColumns <- ncol(x)
+
+  groupsMapping <- list()
+  if (!is.null(groups)) {
+    groupsMapping <- list("groupValue" = levels(groups),
+                          "groupNumericValue" = 1:length(levels(groups)))
+
+  }
 
   if (is.null(reuseforestry)) {
     preprocessedData <- preprocess_training(x, y)
@@ -1154,6 +1186,7 @@ multilayerForestry <- function(x,
           linFeats = linFeats,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree,
+          groupsMapping = groupsMapping,
           gammas = gammas
         )
       )
@@ -1249,6 +1282,7 @@ multilayerForestry <- function(x,
           monotoneAvg = monotoneAvg,
           overfitPenalty = overfitPenalty,
           doubleTree = doubleTree,
+          groupsMapping = reuseforestry@groupsMapping,
           gammas = reuseforestry@gammas
         )
       )
