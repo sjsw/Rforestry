@@ -48,4 +48,12 @@ test_that("Tests if RF with symmetric splits works", {
 
   expect_equal(all.equal(order(y_pred), 1:150), TRUE)
 
+
+  context("Make sure monotone symmetry works with deeper trees")
+  forest <- forestry(x,y,symmetric = TRUE, monotonicConstraints = c(1,0,0))
+  y_pred <- predict(forest, newdata = data.frame(Sepal.Length = seq(-1,1,length.out = 150),
+                                                 Sepal.Width = rep(1,150),
+                                                 Petal.Length = rep(.5,150)))
+  expect_equal(all.equal(order(y_pred), 1:150), TRUE)
+
 })
