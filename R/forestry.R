@@ -510,6 +510,10 @@ setClass(
 #' @param groups A vector of factors specifying the group membership of each training ovbservation.
 #'   these groups are used in the aggregation when doing out of bag predictions in
 #'   order to predict with only trees where the entire group was not used for aggregation.
+#'   This allows the user to specify custom subgroups which will be used to create
+#'   predictions which do not use any data from a common group to make predictions for
+#'   any observation in the group. This can be used to create general custom
+#'   resampling schemes, and provide predictions consistent with the Out-of-Group set.
 #' @param monotoneAvg This is a boolean flag that indicates whether or not monotonic
 #'   constraints should be enforced on the averaging set in addition to the splitting set.
 #'   This flag is meaningless unless both honesty and monotonic constraints are in use.

@@ -1237,8 +1237,42 @@ void forestryTree::getOOGIndex(
     std::vector<size_t> groupMemberships,
     size_t nRows
 ) {
+  // For a given tree, we cycle through all averaging indices and get their
+  // group memberships. Then we take the set of observations which are in groups
+  // which haven't been seen by the current tree, and output this to outputOOBIndex
+  std::sort(
+    getAveragingIndex()->begin(),
+    getAveragingIndex()->end()
+  );
 
+  struct IncGenerator {
+    size_t current_;
+    IncGenerator(size_t start): current_(start) {}
+    size_t operator()() { return current_++; }
+  };
+  std::vector<size_t> allIndex(nRows);
+  IncGenerator g(0);
+  std::generate(allIndex.begin(), allIndex.end(), g);
 
+  // Add all in sample groups to a set
+  std::set<size_t> in_sample_groups;
+  for (std::vector<size_t>::iterator iter = getAveragingIndex()->begin();
+       iter != getAveragingIndex()->end();
+       iter++) {
+    in_sample_groups.insert(groupMemberships[*iter]);
+  }
+
+  for (
+      std::vector<size_t>::iterator it_ = allIndex.begin();
+      it_ != allIndex.end();
+      ++it_
+  ) {
+    // If the group the current observation is in isn't included in the tree,
+    // we ad that observation to the Out of Group index set
+    if (in_sample_groups.find(groupMemberships[*it_]) == in_sample_groups.end()) {
+      outputOOBIndex.push_back(*it_);
+    }
+  }
 }
 
 void forestryTree::getOOBPrediction(
@@ -1256,18 +1290,24 @@ void forestryTree::getOOBPrediction(
   // OOB with and without using the OOB set as the averaging set requires
   // different sets of trees to be used (we want the set of trees)
   // without the averaging set
-  if (OOBhonest) {
-    if (doubleOOB) {
-      // Get setDiff(1:nrow(x), union(splittingIndices, averagingIndices))
-      getDoubleOOBIndex(OOBIndex, trainingData->getNumRows());
-    } else {
-      // Get setDiff(1:nrow(x), averagingIndices)
-      getOOBhonestIndex(OOBIndex, trainingData->getNumRows());
-    }
+  if (trainingData->getGroups()->at(0) != 0) {
+    std::vector<size_t> group_membership_vector = *(trainingData->getGroups());
+    getOOGIndex(OOBIndex, group_membership_vector, trainingData->getNumRows());
   } else {
-    // Standard OOB indices in the non honest case
-    getOOBindex(OOBIndex, trainingData->getNumRows());
+    if (OOBhonest) {
+      if (doubleOOB) {
+        // Get setDiff(1:nrow(x), union(splittingIndices, averagingIndices))
+        getDoubleOOBIndex(OOBIndex, trainingData->getNumRows());
+      } else {
+        // Get setDiff(1:nrow(x), averagingIndices)
+        getOOBhonestIndex(OOBIndex, trainingData->getNumRows());
+      }
+    } else {
+      // Standard OOB indices in the non honest case
+      getOOBindex(OOBIndex, trainingData->getNumRows());
+    }
   }
+
 
 
   // Xnew has first access being the feature selection and second access being
