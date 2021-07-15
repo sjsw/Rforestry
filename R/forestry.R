@@ -1479,7 +1479,7 @@ predict.forestry <- function(object,
   } else if (aggregation == "doubleOOB") {
 
     if (!is.null(newdata) && (object@sampsize != nrow(newdata))) {
-      warning(paste(
+      stop(paste(
         "Attempting to do OOB predictions on a dataset which doesn't match the",
         "training data!"
       ))
@@ -1487,7 +1487,7 @@ predict.forestry <- function(object,
     }
 
     if (!object@doubleBootstrap) {
-      warning(paste(
+      stop(paste(
         "Attempting to do double OOB predictions with a forest that was not trained
         with doubleBootstrap = TRUE"
       ))
