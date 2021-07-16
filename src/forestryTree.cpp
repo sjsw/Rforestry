@@ -1282,7 +1282,8 @@ void forestryTree::getOOBPrediction(
     bool OOBhonest,
     bool doubleOOB,
     size_t nodesizeStrictAvg,
-    std::vector< std::vector<double> >* xNew
+    std::vector< std::vector<double> >* xNew,
+    arma::Mat<double>* weightMatrix
 ){
 
   std::vector<size_t> OOBIndex;
@@ -1348,7 +1349,7 @@ void forestryTree::getOOBPrediction(
     currentTreeCoefficients,
     &xnew,
     trainingData,
-    NULL,
+    weightMatrix,
     false,
     44,
     nodesizeStrictAvg
