@@ -1330,6 +1330,14 @@ void forestryTree::getOOBPrediction(
 
   std::vector< std::vector<double> > xnew(trainingData->getNumColumns());
 
+
+  arma::Mat<double> curWeightMatrix;
+  size_t nrow = OOBIndex.size(); // number of features to be predicted
+  size_t ncol = trainingData->getNumRows(); // number of train data
+  curWeightMatrix.resize(nrow, ncol); // initialize the space for the matrix
+  curWeightMatrix.zeros(nrow, ncol);// set it all to 0
+
+
   for (size_t k = 0; k < trainingData->getNumColumns(); k++)
     {
       // Populate all values of the Kth feature
@@ -1349,7 +1357,7 @@ void forestryTree::getOOBPrediction(
     currentTreeCoefficients,
     &xnew,
     trainingData,
-    weightMatrix,
+    &curWeightMatrix,
     false,
     44,
     nodesizeStrictAvg
@@ -1359,6 +1367,10 @@ void forestryTree::getOOBPrediction(
     // Update the global OOB vector
     outputOOBPrediction[OOBIndex[i]] += currentTreePrediction[i];
     outputOOBCount[OOBIndex[i]] += 1;
+
+    for (size_t j = 0; j < ncol; j++) {
+      (*weightMatrix)(OOBIndex[i], j) += curWeightMatrix(i, j);
+    }
   }
 }
 

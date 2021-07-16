@@ -772,6 +772,10 @@ std::vector<double> forestry::predictOOB(
       OOB_MSE +=
         pow(trueValue - outputOOBPrediction[j] / outputOOBCount[j], 2);
       outputOOBPrediction[j] = outputOOBPrediction[j] / outputOOBCount[j];
+      //Also divide the weightMatrix
+      for (size_t i = 0; i < numObservations; i++) {
+        (*weightMatrix)(j,i) = (*weightMatrix)(j,i) / outputOOBCount[j];
+      }
     } else {
       outputOOBPrediction[j] = std::numeric_limits<double>::quiet_NaN();
     }
