@@ -247,25 +247,27 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
       ###
       y_leaf <- dta_y[leaf_idx[[leaf_id]]]
       single_feat <- ncol(remat) == 1
+      # Checking if all features are the same
       constant_y <- length(y_leaf) == 1 || var(y_leaf, na.rm = TRUE) < .Machine$double.eps * 10
-      # This threshold is arbitrary
-      #if(constant_y) browser()
       if(!constant_y) {
         x_names <- colnames(remat)
         if(single_feat) {
+          # This is a hack to work around the fact that glmnet does not permit
+          # fitting models with a single feature.
           remat <- cbind(1, remat)
-          intercept <- TRUE
           penalty.factor <- c(0, 1)
         } else {
-          intercept <- TRUE
           penalty.factor <- rep(1, ncol(remat))
         }
         plm <- glmnet::glmnet(x = remat,
                               y = y_leaf,
                               lambda = forestry_tree@overfitPenalty * sd(y_leaf)/nrow(remat),
-                              alpha	= 0, intercept = intercept, penalty.factor = penalty.factor)
+                              alpha	= 0, penalty.factor = penalty.factor)
 
         plm_pred <- predict(plm, type = "coef")
+        # Removing duplicates of intercept.
+        # This relies on a bug in glmnet
+        # https://stackoverflow.com/questions/49495494
         if(single_feat) plm_pred <- plm_pred[-2, , drop = FALSE]
         plm_pred_names <- c("interc", x_names)
       } else {
