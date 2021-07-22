@@ -12,8 +12,8 @@ forestry(
   sampsize = if (replace) nrow(x) else ceiling(0.632 * nrow(x)),
   sample.fraction = NULL,
   mtry = max(floor(ncol(x)/3), 1),
-  nodesizeSpl = 3,
-  nodesizeAvg = 3,
+  nodesizeSpl = 5,
+  nodesizeAvg = 5,
   nodesizeStrictSpl = 1,
   nodesizeStrictAvg = 1,
   minSplitGain = 0,
@@ -24,6 +24,8 @@ forestry(
   deepFeatureWeights = NULL,
   observationWeights = NULL,
   splitratio = 1,
+  OOBhonest = FALSE,
+  doubleBootstrap = if (OOBhonest) TRUE else FALSE,
   seed = as.integer(runif(1) * 1000),
   verbose = FALSE,
   nthread = 0,
@@ -33,6 +35,8 @@ forestry(
   linear = FALSE,
   linFeats = 0:(ncol(x) - 1),
   monotonicConstraints = rep(0, ncol(x)),
+  groups = NULL,
+  monotoneAvg = FALSE,
   overfitPenalty = 1,
   doubleTree = FALSE,
   reuseforestry = NULL,
@@ -53,98 +57,126 @@ replacement. The default value is TRUE.}
 
 \item{sampsize}{The size of total samples to draw for the training data. If
 sampling with replacement, the default value is the length of the training
-data. If samplying without replacement, the default value is two-third of
+data. If sampling without replacement, the default value is two-thirds of
 the length of the training data.}
 
-\item{sample.fraction}{if this is given, then sampsize is ignored and set to
-be round(length(y) * sample.fraction). It must be a real number between 0
-and 1}
+\item{sample.fraction}{If this is given, then sampsize is ignored and set to
+be round(length(y) * sample.fraction). It must be a real number between 0 and 1}
 
 \item{mtry}{The number of variables randomly selected at each split point.
-The default value is set to be one third of total number of features of the
-training data.}
+The default value is set to be one-third of the total number of features of the training data.}
 
-\item{nodesizeSpl}{Minimum observations contained in terminal nodes. The
-default value is 3.}
+\item{nodesizeSpl}{Minimum observations contained in terminal nodes.
+The default value is 5.}
 
-\item{nodesizeAvg}{Minimum size of terminal nodes for averaging dataset. The
-default value is 3.}
+\item{nodesizeAvg}{Minimum size of terminal nodes for averaging dataset.
+The default value is 5.}
 
-\item{nodesizeStrictSpl}{Minimum observations to follow strictly in terminal
-nodes. The default value is 1.}
+\item{nodesizeStrictSpl}{Minimum observations to follow strictly in terminal nodes.
+The default value is 1.}
 
-\item{nodesizeStrictAvg}{Minimum size of terminal nodes for averaging dataset
-to follow strictly. The default value is 1.}
+\item{nodesizeStrictAvg}{The minimum size of terminal nodes for averaging data set to follow when predicting.
+No splits are allowed that result in nodes with observations less than this parameter.
+This parameter enforces overlap of the averaging data set with the splitting set when training.
+When using honesty, splits that leave less than nodesizeStrictAvg averaging
+observations in either child node will be rejected, ensuring every leaf node
+also has at least nodesizeStrictAvg averaging observations. The default value is 1.}
 
 \item{minSplitGain}{Minimum loss reduction to split a node further in a tree.}
 
 \item{maxDepth}{Maximum depth of a tree. The default value is 99.}
 
-\item{interactionDepth}{All splits at or above interaction depth must be on variables
-that are not weighting variables (as provided by the interactionVariables argument)}
+\item{interactionDepth}{All splits at or above interaction depth must be on
+variables that are not weighting variables (as provided by the interactionVariables argument).}
 
 \item{interactionVariables}{Indices of weighting variables.}
 
-\item{featureWeights}{(optional) vector of sampling probablities/weights for
-each feature used when subsampling mtry features at each node above or at
-interactionDepth. The default is to use uniform probabilities.}
+\item{featureWeights}{(optional) vector of sampling probabilities/weights for each
+feature used when subsampling mtry features at each node above or at interactionDepth.
+The default is to use uniform probabilities.}
 
-\item{deepFeatureWeights}{used in place of featureWeights for splits below interactionDepth.}
+\item{deepFeatureWeights}{Used in place of featureWeights for splits below interactionDepth.}
 
-\item{observationWeights}{These denote the weights for each training observation
-which determines how likely the observation is to be selected in each bootstrap
-sample. This option is not allowed when sampling is done without replacement.}
+\item{observationWeights}{Denotes the weights for each training observation
+that determine how likely the observation is to be selected in each bootstrap sample.
+This option is not allowed when sampling is done without replacement.}
 
-\item{splitratio}{Proportion of the training data used as the splitting
-dataset. It is a ratio between 0 and 1. If the ratio is 1, then essentially
-splitting dataset becomes the total entire sampled set and the averaging
-dataset is empty. If the ratio is 0, then the splitting data set is empty
-and all the data is used for the averaging data set (This is not a good
-usage however since there will be no data available for splitting).}
+\item{splitratio}{Proportion of the training data used as the splitting dataset.
+It is a ratio between 0 and 1. If the ratio is 1 (the default), then the splitting
+set uses the entire data, as does the averaging set---i.e., the standard Breiman RF setup.
+If the ratio is 0, then the splitting data set is empty, and the entire dataset is used
+for the averaging set (This is not a good usage, however, since there will be no data available for splitting).}
+
+\item{OOBhonest}{In this version of honesty, the out-of-bag observations for each tree
+are used as the honest (averaging) set. This setting also changes how predictions
+are constructed. When predicting for observations that are out-of-sample
+(using Predict(..., aggregation = "average")), all the trees in the forest
+are used to construct predictions. When predicting for an observation that was in-sample (using
+predict(..., aggregation = "oob")), only the trees for which that observation
+was not in the averaging set are used to construct the prediction for that observation.
+aggregation="oob" (out-of-bag) ensures that the outcome value for an observation
+is never used to construct predictions for a given observation even when it is in sample.
+This property does not hold in standard honesty, which relies on an asymptotic subsampling argument.}
+
+\item{doubleBootstrap}{The doubleBootstrap flag provides the option to resample
+with replacement from the out-of-bag observations set for each tree to construct
+the averaging set when using OOBhonest. If this is FALSE, the out-of-bag observations
+are used as the averaging set. By default this option is TRUE when running OOBhonest = TRUE.
+This option increases diversity across trees.}
 
 \item{seed}{random seed}
 
-\item{verbose}{if training process in verbose mode}
+\item{verbose}{Indicator to train the forest in verbose mode}
 
 \item{nthread}{Number of threads to train and predict the forest. The default
 number is 0 which represents using all cores.}
 
-\item{splitrule}{only variance is implemented at this point and it contains
+\item{splitrule}{Only variance is implemented at this point and it
 specifies the loss function according to which the splits of random forest
-should be made}
+should be made.}
 
-\item{middleSplit}{if the split value is taking the average of two feature
-values. If false, it will take a point based on a uniform distribution
+\item{middleSplit}{Indicator of whether the split value is takes the average of two feature
+values. If FALSE, it will take a point based on a uniform distribution
 between two feature values. (Default = FALSE)}
 
-\item{maxObs}{The max number of observations to split on}
+\item{maxObs}{The max number of observations to split on.}
 
-\item{linear}{Fit the model with a ridge regression or not}
+\item{linear}{Indicator that enables Ridge penalized splits and linear aggregation
+functions in the leaf nodes. This is recommended for data with linear outcomes.
+For implementation details, see: https://arxiv.org/abs/1906.06463. Default is FALSE.}
 
-\item{linFeats}{Specify which features to split linearly on when using
-linear (defaults to use all numerical features)}
+\item{linFeats}{A vector containing the indices of which features to split
+linearly on when using linear penalized splits (defaults to use all numerical features).}
 
-\item{monotonicConstraints}{Specifies monotonic relationships between the
-continuous features and the outcome. Supplied as a vector of length p with
-entries in 1,0,-1 which 1 indicating an increasing monotonic relationship,
--1 indicating a decreasing monotonic relationship, and 0 indicating no
-relationship. Constraints supplied for categorical will be ignored.}
+\item{monotonicConstraints}{Specifies monotonic relationships between the continuous
+features and the outcome. Supplied as a vector of length p with entries in
+1,0,-1 which 1 indicating an increasing monotonic relationship, -1 indicating
+a decreasing monotonic relationship, and 0 indicating no constraint.
+Constraints supplied for categorical variable will be ignored.}
 
-\item{overfitPenalty}{Value to determine how much to penalize magnitude of
-coefficients in ridge regression}
+\item{groups}{A vector of factors specifying the group membership of each training ovbservation.
+these groups are used in the aggregation when doing out of bag predictions in
+order to predict with only trees where the entire group was not used for aggregation.}
+
+\item{monotoneAvg}{This is a boolean flag that indicates whether or not monotonic
+constraints should be enforced on the averaging set in addition to the splitting set.
+This flag is meaningless unless both honesty and monotonic constraints are in use.
+The default is FALSE.}
+
+\item{overfitPenalty}{Value to determine how much to penalize the magnitude
+of coefficients in ridge regression when using linear splits.}
 
 \item{doubleTree}{if the number of tree is doubled as averaging and splitting
 data can be exchanged to create decorrelated trees. (Default = FALSE)}
 
-\item{reuseforestry}{pass in an `forestry` object which will recycle the
+\item{reuseforestry}{Pass in an `forestry` object which will recycle the
 dataframe the old object created. It will save some space working on the
-same dataset.}
+same data set.}
 
 \item{savable}{If TRUE, then RF is created in such a way that it can be
-saved and loaded using save(...) and load(...). Setting it to TRUE
-(default) will, however, take longer and it will use more memory. When
-training many RF, it makes a lot of sense to set this to FALSE to save
-time and memory.}
+saved and loaded using save(...) and load(...). However, setting it to TRUE
+(default) will take longer and use more memory. When
+training many RF, it makes sense to set this to FALSE to save time and memory.}
 
 \item{saveable}{deprecated. Do not use.}
 }
@@ -155,46 +187,15 @@ A `forestry` object.
 forestry
 }
 \note{
-Treatment of missing data
+Treatment of Missing Data
 
-When training the forest, if a splitting feature is missing for an
-observation, we assign that observation to the child node which has
-an average y closer to the observed y of the observation with the
-missing feature, and record how many observations with missingness
-went to each child.
-
-At predict time, if there were missing observations in a node at
-training time, we randomly assign an observation with a missing
-feature to a child node with probability proportional to the number
-of observations with a missing splitting variable that went to each
-child at training time. If there was no missingness at training
-time, we assign to the child nodes with probability proportional to
-the number of observations in each child node.
-
-This procedure is a generalization of the usual recommended
-approach to missingness for forests---i.e., at each point add a
-decision to send the NAs to the left, right or to split on NA
-versus no NA. This usual recommendation is heuristically equivalent
-to adding an indicator for each feature plus a recoding of each
-missing variable where the missigness is the maximum and then the
-minimum observed value. This recommendation, however, allows the
-method to pickup time effects for when variables are missing
-because of the indicator. We, therefore, do not allow splitting on
-NAs. This should increase MSE in training but hopefully allows for
-better learning of universal relationships. Importantly, it is
-straightforward to show that our approach is weakly dominant in
-expected MSE to the always left or right approach. We should also
-note that almost no software package actually implements even the
-usual recommended approach---e.g., ranger does not.
-
-In version 0.8.2.09, the procedure for identifying the best variable to split
-on when there is missing training data was modified. Previously candidate
-variables were evaluated by computing the MSE taken over all observations,
-including those for which the splitting variable was missing. In the current
-implementation we only use observations for which the splitting variable is
-not missing. The previous approach was biased towards splitting on variables
-with missingness because observations with a missing splitting variable are
-assigned to the leaf that minimized the MSE.
+In version 0.9.0.34, we have modified the handling of missing data. Instead of
+the greedy approach used in previous iterations, we now test any potential
+split by putting all NA's to the right, and all NA's to the left, and taking
+the choice which gives the best MSE for the split. Under this version of handling
+the potential splits, we will still respect monotonic constraints. So if we put all
+NA's to either side, and the resulting leaf nodes have means which violate
+the monotone constraints, the split will be rejected.
 }
 \examples{
 set.seed(292315)
@@ -204,10 +205,7 @@ x_train <- iris[-test_idx, -1]
 y_train <- iris[-test_idx, 1]
 x_test <- iris[test_idx, -1]
 
-rf <- forestry(x = x_train, y = y_train)
-weights = predict(rf, x_test, aggregation = "weightMatrix")$weightMatrix
-
-weights \%*\% y_train
+rf <- forestry(x = x_train, y = y_train, nthread = 2)
 predict(rf, x_test)
 
 set.seed(49)
@@ -227,6 +225,7 @@ forest <- forestry(
           replace = TRUE,
           nodesizeStrictSpl = 5,
           nodesizeStrictAvg = 5,
+          nthread = 2,
           linear = TRUE
           )
 

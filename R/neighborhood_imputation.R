@@ -1,22 +1,22 @@
-#' @title Feature imputation using random forests neigborhoods
+#' @title Feature imputation using random forests neighborhoods
 #' @name impute_features
 #' @description This function uses the neighborhoods implied by a random forest
 #'   to impute missing features. The neighbors of a data point are all the
 #'   training points assigned to the same leaf in at least one tree in the
 #'   forest. The weight of each neighbor is the fraction of trees in the forest
-#'   for which it was assigned to the same leaf. We impute a missing features
-#'   for a point by computing the average, using neighborhoods weights, for all
-#'   of the point's neighbors.
+#'   for which it was assigned to the same leaf. We impute a missing feature
+#'   for a point by computing the weighted average feature value, using
+#'   neighborhood weights, using all of the point's neighbors.
 #' @param object an object of class `forestry`
-#' @param feature.new the feature data.frame we will impute
+#' @param newdata the feature data.frame we will impute missing features for.
 #' @param seed a random seed passed to the predict method of forestry
 #' @param use_mean_imputation_fallback if TRUE, mean imputation (for numeric
 #'   variables) and mode imputation (for factor variables) is used for missing
 #'   features for which all neighbors also had the corresponding feature
-#'   missing; if FALSE these missing features remain as NAs in the data frame
+#'   missing; if FALSE these missing features remain NAs in the data frame
 #'   returned by `impute_features`.
 
-#' @return A data.frame that is feature.new with imputed missing values.
+#' @return A data.frame that is newdata with imputed missing values.
 
 #' @examples
 #' iris_with_missing <- iris
@@ -28,27 +28,27 @@
 #' x <- iris_with_missing[,-1]
 #' y <- iris_with_missing[, 1]
 #'
-#' forest <- forestry(x, y, ntree = 500, seed = 2)
+#' forest <- forestry(x, y, ntree = 500, seed = 2,nthread = 2)
 #' imputed_x <- impute_features(forest, x, seed = 2)
 #' @export
-impute_features <- function(object, feature.new,
+impute_features <- function(object, newdata,
                             seed = round(runif(1)*10000),
                             use_mean_imputation_fallback = FALSE) {
   # Sanity checking
   features.train <- object@processed_dta$processed_x
-  if(ncol(features.train) != ncol(feature.new)) {
+  if(ncol(features.train) != ncol(newdata)) {
     stop("Training data and imputation data have a different number of columns")
   }
-  if(!all(colnames(feature.new) == colnames(features.train))) {
-    stop("feature.new and training features have discordant names.")
+  if(!all(colnames(newdata) == colnames(features.train))) {
+    stop("newdata and training features have discordant names.")
   }
-  if(!any(is.na(feature.new))) {
-    message("No values in feature.new were missing. Returning the data without modification")
-    return(feature.new)
+  if(!any(is.na(newdata))) {
+    message("No values in newdata were missing. Returning the data without modification")
+    return(newdata)
   }
   imputed_data <- rcpp_cppImputeInterface(
     object@forest,
-    feature.new,
+    newdata,
     seed
   )
   for(catCol in object@categoricalFeatureMapping) {
@@ -58,7 +58,7 @@ impute_features <- function(object, feature.new,
       labels = catCol$uniqueFeatureValues)
   }
   imputed_data <- as.data.frame(imputed_data)
-  names(imputed_data) <- names(feature.new)
+  names(imputed_data) <- names(newdata)
 
   if(use_mean_imputation_fallback & any(is.na(imputed_data))) {
     message("Some missing observations had empty neighborhoods or consisted only of other missing observations.",

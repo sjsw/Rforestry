@@ -5,7 +5,8 @@ DataFrame::DataFrame():
   _categoricalFeatureCols(nullptr), _numericalFeatureCols(nullptr),
   _linearFeatureCols(nullptr), _numRows(0), _numColumns(0),
   _featureWeights(nullptr), _featureWeightsVariables(nullptr),  _deepFeatureWeights(nullptr),
-  _deepFeatureWeightsVariables(nullptr), _observationWeights(nullptr), _monotonicConstraints(nullptr){}
+  _deepFeatureWeightsVariables(nullptr), _observationWeights(nullptr),
+  _monotonicConstraints(nullptr), _groupMemberships(nullptr){}
 
 DataFrame::~DataFrame() {
 //  std::cout << "DataFrame() destructor is called." << std::endl;
@@ -23,7 +24,9 @@ DataFrame::DataFrame(
   std::unique_ptr<std::vector<double>> deepFeatureWeights,
   std::unique_ptr<std::vector<size_t>> deepFeatureWeightsVariables,
   std::unique_ptr< std::vector<double> > observationWeights,
-  std::shared_ptr< std::vector<int> > monotonicConstraints
+  std::shared_ptr< std::vector<int> > monotonicConstraints,
+  std::unique_ptr< std::vector<size_t> > groupMemberships,
+  bool monotoneAvg
 ) {
   this->_featureData = std::move(featureData);
   this->_outcomeData = std::move(outcomeData);
@@ -37,6 +40,8 @@ DataFrame::DataFrame(
   this->_deepFeatureWeightsVariables = std::move(deepFeatureWeightsVariables);
   this->_observationWeights = std::move(observationWeights);
   this->_monotonicConstraints = std::move(monotonicConstraints);
+  this->_groupMemberships = std::move(groupMemberships);
+  this->_monotoneAvg = (bool) monotoneAvg;
 
   // define the row numbers to be the numbers from 1 to nrow:
   std::vector<size_t> rowNumberss;
@@ -147,7 +152,7 @@ double DataFrame::partitionMean(
   ) {
     accummulatedSum += getOutcomePoint(*it);
   }
-  return accummulatedSum / totalSampleSize;
+  return accummulatedSum / ((double) totalSampleSize);
 }
 
 std::vector<size_t> DataFrame::get_all_row_idx(

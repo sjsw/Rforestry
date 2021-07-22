@@ -7,16 +7,19 @@
 #' @rdname plot-forestry
 #' @description plots a tree in the forest.
 #' @param x A forestry x.
-#' @param tree.id Specifies the tree number that should be visulaized.
-#' @param print.meta_dta Should the data for the plot be printed?
+#' @param tree.id Specifies the tree number that should be visualized.
+#' @param print.meta_dta A flag indicating whether the data for the plot should be printed.
 #' @param beta.char.len The length of the beta values in leaf node
-#' representation.
+#'  representation. This is only required when plotting a forestry object with linear
+#'  aggregation functions (linear = TRUE).
 #' @param ... additional arguments that are not used.
+#' @return A plot of the specified tree in the forest.
 #' @import glmnet
 #' @examples
 #' set.seed(292315)
 #' rf <- forestry(x = iris[,-1],
-#'                y = iris[, 1])
+#'                y = iris[, 1],
+#'                nthread = 2)
 #'
 #' plot(x = rf)
 #' plot(x = rf, tree.id = 2)
@@ -31,6 +34,7 @@
 #'   ntree = 1000,
 #'   minSplitGain = .004,
 #'   linear = TRUE,
+#'   nthread = 2,
 #'   overfitPenalty = 1.65,
 #'   linFeats = 1:2)
 #'

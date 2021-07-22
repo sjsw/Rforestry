@@ -9,6 +9,9 @@ relinkCPP_prt(object)
 \arguments{
 \item{object}{an object of class `forestry` or class `multilayerForestry`}
 }
+\value{
+Relinks the pointer to the correct C++ object.
+}
 \description{
 When a `foresty` object is saved and then reloaded the Cpp
   pointers for the data set and the Cpp forest have to be reconstructed

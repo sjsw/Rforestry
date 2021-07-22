@@ -24,6 +24,8 @@ public:
     bool replace,
     size_t sampSize,
     double splitRatio,
+    bool OOBhonest,
+    bool doubleBootstrap,
     size_t mtry,
     size_t minNodeSizeSpt,
     size_t minNodeSizeAvg,
@@ -46,9 +48,19 @@ public:
   std::unique_ptr< std::vector<double> > predict(
     std::vector< std::vector<double> >* xNew,
     arma::Mat<double>* weightMatrix,
+    arma::Mat<double>* coefficients,
     arma::Mat<int>* terminalNodes,
     unsigned int seed,
-    size_t nthread
+    size_t nthread,
+    bool exact,
+    bool use_weights,
+    std::vector<size_t>* tree_weights
+  );
+
+  std::vector<double> predictOOB(
+    std::vector< std::vector<double> >* xNew,
+    arma::Mat<double>* weightMatrix,
+    bool doubleOOB
   );
 
   void fillinTreeInfo(
@@ -57,6 +69,7 @@ public:
 
   void reconstructTrees(
       std::unique_ptr< std::vector<size_t> > & categoricalFeatureColsRcpp,
+      std::unique_ptr< std::vector<unsigned int> > & tree_seeds,
       std::unique_ptr< std::vector< std::vector<int> >  > & var_ids,
       std::unique_ptr< std::vector< std::vector<double> >  > & split_vals,
       std::unique_ptr< std::vector< std::vector<int> >  > & naLeftCounts,
@@ -70,7 +83,9 @@ public:
 
   size_t getTotalNodeCount();
 
-  void calculateOOBError();
+  void calculateOOBError(
+      bool doubleOOB = false
+  );
 
   void calculateVariableImportance();
 
@@ -92,8 +107,10 @@ public:
     return _OOBError;
   }
 
-  std::vector<double> getOOBpreds() {
-    calculateOOBError();
+  std::vector<double> getOOBpreds(
+      bool doubleOOB = false
+  ) {
+    calculateOOBError(doubleOOB);
     return _OOBpreds;
   }
 
@@ -152,6 +169,14 @@ public:
     return _splitRatio;
   }
 
+  bool getOOBhonest() {
+    return _OOBhonest;
+  }
+
+  bool getDoubleBootstrap() {
+    return _doubleBootstrap;
+  }
+
   bool isReplacement() {
     return _replace;
   }
@@ -202,6 +227,8 @@ private:
   bool _replace;
   size_t _sampSize;
   double _splitRatio;
+  bool _OOBhonest;
+  bool _doubleBootstrap;
   size_t _mtry;
   size_t _minNodeSizeSpt;
   size_t _minNodeSizeAvg;

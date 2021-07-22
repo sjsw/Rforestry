@@ -17,11 +17,13 @@ test_that("Tests if OOB calculation is working correctly", {
     nthread = 2,
     splitrule = "variance",
     splitratio = 1,
-    nodesizeStrictAvg = 5
+    OOBhonest = FALSE,
+    seed = 8921,
+    nodesizeStrictAvg = 0
   )
 
   # Test OOB
-  expect_lt(mean((getOOB(forest) - 15.79849)^2), .1)
+  expect_lt(mean((getOOB(forest) - 0.1063211)^2), .1)
 
   # Test a very extreme setting
   forest <- forestry(

@@ -7,7 +7,7 @@ test_that("Tests if variable importance works", {
   y <- iris[, 1]
 
   # Test forestry (mimic RF)
-  forest <- forestry(x, y, ntree = 1000)
+  forest <- forestry(x, y, ntree = 1000, nthread = 1)
 
   vi <- getVI(forest)
 

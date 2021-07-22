@@ -4,20 +4,6 @@
 #include <iostream>
 
 void print_vector(
-  std::vector<size_t> v
-){
-  for (auto i = v.begin(); i != v.end(); ++i){
-    Rcpp::Rcout << *i << ' ';
-    // Rcpp's equivalent of std::flush
-    R_FlushConsole();
-    R_ProcessEvents();
-    R_CheckUserInterrupt();
-  }
-  Rcpp::Rcout << std::endl;
-  Rcpp::Rcout << std::endl;
-}
-
-void print_vector(
     std::vector<unsigned int> v
 ){
   for (auto i = v.begin(); i != v.end(); ++i){
@@ -54,4 +40,10 @@ int add_vector(
     sum += (*v)[i];
   }
   return sum;
+}
+
+double square(
+  double x
+) {
+  return (x*x);
 }

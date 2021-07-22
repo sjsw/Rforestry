@@ -18,12 +18,13 @@ test_that("Tests that Monotone splits parameter is working correctly in the case
     ntree = 500,
     nodesizeStrictSpl = 5,
     maxDepth = 10,
+    nthread = 2,
     monotonicConstraints = c(1),
     seed = 2
   )
   # Test predictions are monotonic increasing in the first feature
   pred_means <- sapply(c(1:9), function(x) {mean(predict(monotone_forest,
-                                                         feature.new = data.frame(V1 = rep(x, 100))))})
+                                                         newdata = data.frame(V1 = rep(x, 100))))})
 
   # predictions should be monotonically increasing
   expect_equal(all.equal(order(pred_means), 1:9), TRUE)
@@ -35,18 +36,27 @@ test_that("Tests that Monotone splits parameter is working correctly in the case
     ntree = 500,
     nodesizeStrictSpl = 3,
     maxDepth = 10,
+    nthread = 2,
     monotonicConstraints = c(-1),
     seed = 2
   )
   # Test predictions are monotonic decreasing in the first feature
   pred_means <- sapply(c(1,4,9,15), function(x) {mean(predict(monotone_forest,
-                                                             feature.new = data.frame(V1 = rep(x, 100))))})
+                                                              newdata = data.frame(V1 = rep(x, 100))))})
+
+  skip_if_not_mac()
 
   # Mean Square Error
   #print(pred_means)
-  expect_equal(all.equal(order(pred_means), 4:1), TRUE)
 
+  expect_equal(all.equal(order(pred_means), 4:1), TRUE)
+})
+
+
+test_that("Tests that Monotone splits parameter is working correctly in the case of missing data (sine wave)", {
   set.seed(23423324)
+
+  context('Positive monotone splits with missing data')
 
   # Sine wave example. Suppose we have a slight trend upwards, but this is
   # complicated by some oscillations, we can then constrain monotonicity to avoid
@@ -69,7 +79,7 @@ test_that("Tests that Monotone splits parameter is working correctly in the case
                           ntree = 500,
                           seed = 10)
 
-  preds <- predict(monotone_rf, feature.new = data.frame(x1 = c(2, 7,7), x2 = c(4,4,9)))
+  preds <- predict(monotone_rf, newdata = data.frame(x1 = c(2, 7,7), x2 = c(4,4,9)))
   # Now should be monotone increasing in first feature
   expect_equal(preds[2] >= preds[1], TRUE)
 

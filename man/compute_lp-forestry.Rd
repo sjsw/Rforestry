@@ -5,22 +5,23 @@
 \alias{compute_lp}
 \title{compute lp distances}
 \usage{
-compute_lp(object, feature.new, feature, p)
+compute_lp(object, newdata, feature, p)
 }
 \arguments{
 \item{object}{A `forestry` object.}
 
-\item{feature.new}{A data frame of testing predictors.}
+\item{newdata}{A data frame of test predictors.}
 
 \item{feature}{A string denoting the dimension for computing lp distances.}
 
 \item{p}{A positive real number determining the norm p-norm used.}
 }
 \value{
-A vector lp distances.
+A vector of the lp distances.
 }
 \description{
-return lp ditances of selected test observations.
+Return the L_p norm distances of selected test observations
+  relative to the training observations which the forest was trained on.
 }
 \examples{
 
@@ -33,12 +34,12 @@ x_train <- iris[-test_idx, -1]
 y_train <- iris[-test_idx, 1]
 x_test <- iris[test_idx, -1]
 
-rf <- forestry(x = x_train, y = y_train)
+rf <- forestry(x = x_train, y = y_train,nthread = 2)
 predict(rf, x_test)
 
 # Compute the l2 distances in the "Petal.Length" dimension
 distances_2 <- compute_lp(object = rf,
-                          feature.new = x_test,
+                          newdata = x_test,
                           feature = "Petal.Length",
                           p = 2)
 }

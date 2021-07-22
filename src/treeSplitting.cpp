@@ -137,6 +137,48 @@ void updateBestSplit(
   }
 }
 
+// Best split impute only additionally updates the NA direction for the splits
+void updateBestSplitImpute(
+    double* bestSplitLossAll,
+    double* bestSplitValueAll,
+    size_t* bestSplitFeatureAll,
+    size_t* bestSplitCountAll,
+    int* bestSplitNaDirectionAll,
+    double currentSplitLoss,
+    double currentSplitValue,
+    size_t currentFeature,
+    size_t bestSplitTableIndex,
+    int currentSplitNaDirection,
+    std::mt19937_64& random_number_generator
+) {
+
+  // Update the value if a higher value has been seen
+  if (currentSplitLoss > bestSplitLossAll[bestSplitTableIndex]) {
+    bestSplitLossAll[bestSplitTableIndex] = currentSplitLoss;
+    bestSplitFeatureAll[bestSplitTableIndex] = currentFeature;
+    bestSplitValueAll[bestSplitTableIndex] = currentSplitValue;
+    bestSplitCountAll[bestSplitTableIndex] = 1;
+    bestSplitNaDirectionAll[bestSplitTableIndex] = currentSplitNaDirection;
+  } else {
+
+    //If we are as good as the best split
+    if (currentSplitLoss == bestSplitLossAll[bestSplitTableIndex]) {
+      bestSplitCountAll[bestSplitTableIndex] =
+        bestSplitCountAll[bestSplitTableIndex] + 1;
+
+      // Only update with probability 1/nseen
+      std::uniform_real_distribution<double> unif_dist;
+      double tmp_random = unif_dist(random_number_generator);
+      if (tmp_random * bestSplitCountAll[bestSplitTableIndex] <= 1) {
+        bestSplitLossAll[bestSplitTableIndex] = currentSplitLoss;
+        bestSplitFeatureAll[bestSplitTableIndex] = currentFeature;
+        bestSplitValueAll[bestSplitTableIndex] = currentSplitValue;
+        bestSplitNaDirectionAll[bestSplitTableIndex] = currentSplitNaDirection;
+      }
+    }
+  }
+}
+
 void updateBestSplitS(
     arma::Mat<double> &bestSplitSL,
     arma::Mat<double> &bestSplitSR,
@@ -599,6 +641,7 @@ void findBestSplitValueCategorical(
       (*trainingData).getOutcomePoint(splittingIndices[j]);
     splitTotalCount++;
   }
+
   for (size_t j=0; j<averagingIndices.size(); j++) {
     all_categories.insert(
       (*trainingData).getPoint(averagingIndices[j], currentFeature)
@@ -648,10 +691,10 @@ void findBestSplitValueCategorical(
           splittingCategoryCount[*it],
                                 splitTotalCount - splittingCategoryCount[*it]
         ) < splitNodeSize ||
-          std::min(
-            averagingCategoryCount[*it],
-                                  averageTotalCount - averagingCategoryCount[*it]
-          ) < averageNodeSize
+        std::min(
+          averagingCategoryCount[*it],
+                                averageTotalCount - averagingCategoryCount[*it]
+        ) < averageNodeSize
     ) {
       continue;
     }
@@ -956,6 +999,8 @@ void findBestSplitValueNonCategorical(
   std::vector<dataPair> splittingData;
   std::vector<dataPair> averagingData;
   double splitTotalSum = 0;
+  double avgTotalSum = 0;
+
   for (size_t j=0; j<(*splittingSampleIndex).size(); j++){
     // Retrieve the current feature value
     double tmpFeatureValue = (*trainingData).
@@ -973,12 +1018,15 @@ void findBestSplitValueNonCategorical(
     );
   }
 
+
+
   for (size_t j=0; j<(*averagingSampleIndex).size(); j++){
     // Retrieve the current feature value
     double tmpFeatureValue = (*trainingData).
     getPoint((*averagingSampleIndex)[j], currentFeature);
     double tmpOutcomeValue = (*trainingData).
     getOutcomePoint((*averagingSampleIndex)[j]);
+    avgTotalSum += tmpOutcomeValue;
 
     // Adding data to the internal data vector (Note: R index)
     averagingData.push_back(
@@ -1031,11 +1079,12 @@ void findBestSplitValueNonCategorical(
   size_t averageTotalCount = averagingData.size();
 
   double splitLeftPartitionRunningSum = 0;
+  double avgLeftPartitionRunningSum = 0;
 
   std::vector<dataPair>::iterator splittingDataIter = splittingData.begin();
   std::vector<dataPair>::iterator averagingDataIter = averagingData.begin();
 
-  // Initialize the split value to be minimum of first value in two datsets
+  // Initialize the split value to be minimum of first value in two datasets
   double featureValue = std::min(
     std::get<0>(*splittingDataIter),
     std::get<0>(*averagingDataIter)
@@ -1049,7 +1098,7 @@ void findBestSplitValueNonCategorical(
         averagingDataIter < averagingData.end()
   ){
 
-    // Exhaust all current feature value in both dataset as partitioning
+    // Exhaust all current feature value in both datasets as partitioning
     while (
         splittingDataIter < splittingData.end() &&
           std::get<0>(*splittingDataIter) == featureValue
@@ -1063,8 +1112,9 @@ void findBestSplitValueNonCategorical(
         averagingDataIter < averagingData.end() &&
           std::get<0>(*averagingDataIter) == featureValue
     ) {
-      averagingDataIter++;
       averageLeftPartitionCount++;
+      avgLeftPartitionRunningSum += std::get<1>(*averagingDataIter);
+      averagingDataIter++;
     }
 
     // Test if the all the values for the feature are the same, then proceed
@@ -1104,7 +1154,7 @@ void findBestSplitValueNonCategorical(
         std::min(
           splitLeftPartitionCount,
           splitTotalCount - splitLeftPartitionCount
-        ) < splitNodeSize||
+        ) < splitNodeSize ||
           std::min(
             averageLeftPartitionCount,
             averageTotalCount - averageLeftPartitionCount
@@ -1115,28 +1165,39 @@ void findBestSplitValueNonCategorical(
       continue;
     }
 
-    // Calculate the variance of the splitting
-    double currentSplitLoss = calcMuBarVar(
-      splitLeftPartitionRunningSum,
-      splitLeftPartitionCount,
-      splitTotalSum,
-      splitTotalCount);
-
     // If we are using monotonic constraints, we need to work out whether
     // the monotone constraints will reject a split
-    if (monotone_splits && (monotone_details.monotonic_constraints[currentFeature] != 0)) {
+    if (monotone_splits) {
       bool keepMonotoneSplit = acceptMonotoneSplit(monotone_details,
                                                    currentFeature,
                                                    splitLeftPartitionRunningSum / splitLeftPartitionCount,
                                                    (splitTotalSum - splitLeftPartitionRunningSum)
                                                      / (splitTotalCount - splitLeftPartitionCount));
 
-      if (!keepMonotoneSplit) {
+      bool avgKeepMonotoneSplit = true;
+      // If monotoneAvg, we also need to check the monotonicity of the avg set
+      if (monotone_details.monotoneAvg) {
+        avgKeepMonotoneSplit = acceptMonotoneSplit(monotone_details,
+                                                   currentFeature,
+                                                   avgLeftPartitionRunningSum / averageLeftPartitionCount,
+                                                   (avgTotalSum - avgLeftPartitionRunningSum)
+                                                     / (averageTotalCount - averageLeftPartitionCount));
+
+      }
+
+      if (!(keepMonotoneSplit && avgKeepMonotoneSplit)) {
         // Update the oldFeature value before proceeding
         featureValue = newFeatureValue;
         continue;
       }
     }
+
+    // Calculate the variance of the splitting
+    double currentSplitLoss = calcMuBarVar(
+      splitLeftPartitionRunningSum,
+      splitLeftPartitionCount,
+      splitTotalSum,
+      splitTotalCount);
 
 
     double currentSplitValue;
@@ -1183,6 +1244,7 @@ void findBestSplitImpute(
     double* bestSplitValueAll,
     size_t* bestSplitFeatureAll,
     size_t* bestSplitCountAll,
+    int* bestSplitNaDirectionAll,
     DataFrame* trainingData,
     size_t splitNodeSize,
     size_t averageNodeSize,
@@ -1205,10 +1267,14 @@ void findBestSplitImpute(
 
 
   double splitTotalSum = 0;
+  double avgTotalSum = 0;
   double naTotalSum = 0;
+  double naAvgTotalSum = 0;
+  size_t naAvgTotalCount = 0;
+  size_t naSplTotalCount = 0;
 
 
-  for (size_t j=0; j<(*splittingSampleIndex).size(); j++){
+  for (size_t j=0; j<(*splittingSampleIndex).size(); j++) {
     // Retrieve the current feature value
     double tmpFeatureValue = (*trainingData).
     getPoint((*splittingSampleIndex)[j], currentFeature);
@@ -1218,11 +1284,12 @@ void findBestSplitImpute(
     // If feature data is missing, push back to missingData vector
     if (std::isnan(tmpFeatureValue)) {
       naTotalSum += tmpOutcomeValue;
+      naSplTotalCount++;
 
       missingSplit.push_back(
         std::make_tuple(
           (*splittingSampleIndex)[j],
-                                 tmpOutcomeValue
+          tmpOutcomeValue
         )
       );
     } else {
@@ -1246,14 +1313,19 @@ void findBestSplitImpute(
     getOutcomePoint((*averagingSampleIndex)[j]);
 
     if (std::isnan(tmpFeatureValue)) {
+      naAvgTotalSum += tmpOutcomeValue;
+      naAvgTotalCount++;
+
       missingAvg.push_back(
         std::make_tuple(
           (*averagingSampleIndex)[j],
-                                 tmpOutcomeValue
+          tmpOutcomeValue
         )
       );
     } else {
       // Adding data to the internal data vector
+      avgTotalSum += tmpOutcomeValue;
+
       averagingData.push_back(
         std::make_tuple(
           tmpFeatureValue,
@@ -1264,7 +1336,7 @@ void findBestSplitImpute(
   }
 
   // return if we have no data
-  if( (splittingData.size() < 1) || (averagingData.size() < 1) )
+  if ( (splittingData.size() < 1) || (averagingData.size() < 1) )
   {
     return;
   }
@@ -1288,7 +1360,6 @@ void findBestSplitImpute(
 
     std::swap(newSplittingData, splittingData);
     std::swap(newAveragingData, averagingData);
-
   }
 
   // Sort both splitting and averaging dataset
@@ -1299,6 +1370,7 @@ void findBestSplitImpute(
       return std::get<0>(lhs) < std::get<0>(rhs);
     }
   );
+
   sort(
     averagingData.begin(),
     averagingData.end(),
@@ -1313,6 +1385,7 @@ void findBestSplitImpute(
   size_t averageTotalCount = averagingData.size();
 
   double splitLeftPartitionRunningSum = 0;
+  double avgLeftPartitionRunningSum = 0;
 
   std::vector<dataPair>::iterator splittingDataIter = splittingData.begin();
   std::vector<dataPair>::iterator averagingDataIter = averagingData.begin();
@@ -1329,7 +1402,7 @@ void findBestSplitImpute(
   while (
       splittingDataIter < splittingData.end() ||
         averagingDataIter < averagingData.end()
-  ){
+  ) {
 
     // Exhaust all current feature value in both dataset as partitioning
     while (
@@ -1345,16 +1418,16 @@ void findBestSplitImpute(
         averagingDataIter < averagingData.end() &&
           std::get<0>(*averagingDataIter) == featureValue
     ) {
-      averagingDataIter++;
       averageLeftPartitionCount++;
+      avgLeftPartitionRunningSum += std::get<1>(*averagingDataIter);
+      averagingDataIter++;
     }
 
     // Test if the all the values for the feature are the same, then proceed
     if (oneValueDistinctFlag) {
       oneValueDistinctFlag = false;
       if (
-          splittingDataIter == splittingData.end() &&
-            averagingDataIter == averagingData.end()
+          splittingDataIter == splittingData.end()
       ) {
         break;
       }
@@ -1386,7 +1459,7 @@ void findBestSplitImpute(
         std::min(
           splitLeftPartitionCount,
           splitTotalCount - splitLeftPartitionCount
-        ) < splitNodeSize||
+        ) < splitNodeSize ||
           std::min(
             averageLeftPartitionCount,
             averageTotalCount - averageLeftPartitionCount
@@ -1396,29 +1469,6 @@ void findBestSplitImpute(
       featureValue = newFeatureValue;
       continue;
     }
-
-    // Calculate sample mean in both splitting partitions
-    double leftPartitionMean =
-      splitLeftPartitionRunningSum / splitLeftPartitionCount;
-    double rightPartitionMean =
-      (splitTotalSum - splitLeftPartitionRunningSum)
-      / (splitTotalCount - splitLeftPartitionCount);
-
-    // For now we enforce monotonicity before accounting for the misisng observations
-    // we might want to change this later
-    if (monotone_splits && (monotone_details.monotonic_constraints[currentFeature] != 0)) {
-      bool keepMonotoneSplit = acceptMonotoneSplit(monotone_details,
-                                                   currentFeature,
-                                                   leftPartitionMean,
-                                                   rightPartitionMean);
-
-      if (!keepMonotoneSplit) {
-        // Update the oldFeature value before proceeding
-        featureValue = newFeatureValue;
-        continue;
-      }
-    }
-
 
     double currentSplitValue;
     if (splitMiddle) {
@@ -1438,44 +1488,99 @@ void findBestSplitImpute(
       }
     }
 
-    // If split is satisfactory, take into account outcome values of NaN data
-    // for making the split loss calculation
+    // For monotonicity with missing data, we need to to check both left and right
+    // handling of NA's respects monotonicity
+    bool avgKeepMonotoneSplitLeft = true;
+    bool avgKeepMonotoneSplitRight = true;
+    bool keepMonotoneSplitLeft = true;
+    bool keepMonotoneSplitRight = true;
 
-    double LeftPartitionNaSum = 0.0;
-    size_t leftPartitionNaCount = 0;
-    //double middleY = (leftPartitionMean + rightPartitionMean) / 2.0
+    if (monotone_splits) {
+      // First check left
+      keepMonotoneSplitLeft =
+        acceptMonotoneSplit(monotone_details,
+                            currentFeature,
+                            (splitLeftPartitionRunningSum + naTotalSum) /
+                              (splitLeftPartitionCount + naSplTotalCount),
+                              (splitTotalSum - splitLeftPartitionRunningSum + naTotalSum)
+                              / (splitTotalCount - splitLeftPartitionCount + naSplTotalCount));
 
-    for (const auto& pair : missingSplit) {
-      double currOutcome = std::get<0>(pair);
+      keepMonotoneSplitRight =
+        acceptMonotoneSplit(monotone_details,
+                            currentFeature,
+                            (splitLeftPartitionRunningSum) /
+                              (splitLeftPartitionCount),
+                              (splitTotalSum - splitLeftPartitionRunningSum + naTotalSum)
+                              / (splitTotalCount - splitLeftPartitionCount + naSplTotalCount));
 
-      // If closer to left partitionmean, add to left sum, leftcount ++
-      // This is okay to do after we check monotonicity, this shouldn't change
-      // the ordering of the partition means as we allocate the NA examples greedily
-      if (abs(currOutcome - leftPartitionMean) < abs(currOutcome - rightPartitionMean)) {
-        LeftPartitionNaSum += currOutcome;
-        leftPartitionNaCount++;
+
+      // If monotoneAvg, we also need to check the monotonicity of the avg set
+      if (monotone_details.monotoneAvg) {
+        avgKeepMonotoneSplitLeft =
+          acceptMonotoneSplit(monotone_details,
+                              currentFeature,
+                              (avgLeftPartitionRunningSum + naAvgTotalSum) /
+                                (averageLeftPartitionCount + naAvgTotalCount),
+                              (avgTotalSum - avgLeftPartitionRunningSum + naAvgTotalSum)
+                                / (averageTotalCount - averageLeftPartitionCount + naAvgTotalCount));
+        avgKeepMonotoneSplitRight =
+          acceptMonotoneSplit(monotone_details,
+                              currentFeature,
+                              (avgLeftPartitionRunningSum) /
+                                (averageLeftPartitionCount),
+                              (avgTotalSum - avgLeftPartitionRunningSum + naAvgTotalSum)
+                                / (averageTotalCount - averageLeftPartitionCount + naAvgTotalCount));
       }
     }
 
 
     // Calculate variance of the splitting using updated partition means and counts
-    double currentSplitLoss = calcMuBarVar(
-      splitLeftPartitionRunningSum,
-      splitLeftPartitionCount,
-      splitTotalSum,
-      splitTotalCount);
 
-    updateBestSplit(
-      bestSplitLossAll,
-      bestSplitValueAll,
-      bestSplitFeatureAll,
-      bestSplitCountAll,
-      currentSplitLoss,
-      currentSplitValue,
-      currentFeature,
-      bestSplitTableIndex,
-      random_number_generator
-    );
+    // Calculate MuBarVar if we send all NA's to the left
+    if (keepMonotoneSplitLeft && avgKeepMonotoneSplitLeft) {
+      double currentSplitLossLeft = calcMuBarVar(
+        (splitLeftPartitionRunningSum + naTotalSum),
+        (splitLeftPartitionCount + naSplTotalCount),
+        (splitTotalSum + naTotalSum),
+        (splitTotalCount + naSplTotalCount));
+
+      updateBestSplitImpute(
+        bestSplitLossAll,
+        bestSplitValueAll,
+        bestSplitFeatureAll,
+        bestSplitCountAll,
+        bestSplitNaDirectionAll,
+        currentSplitLossLeft,
+        currentSplitValue,
+        currentFeature,
+        bestSplitTableIndex,
+        -1,
+        random_number_generator
+      );
+    }
+
+    // Calculate MuBarVar if we send all NA's to the right
+    if (keepMonotoneSplitRight && avgKeepMonotoneSplitRight) {
+      double currentSplitLossRight = calcMuBarVar(
+        splitLeftPartitionRunningSum,
+        splitLeftPartitionCount,
+        (splitTotalSum + naTotalSum),
+        (splitTotalCount + naSplTotalCount));
+
+      updateBestSplitImpute(
+        bestSplitLossAll,
+        bestSplitValueAll,
+        bestSplitFeatureAll,
+        bestSplitCountAll,
+        bestSplitNaDirectionAll,
+        currentSplitLossRight,
+        currentSplitValue,
+        currentFeature,
+        bestSplitTableIndex,
+        1,
+        random_number_generator
+      );
+    }
 
     // Update the old feature value
     featureValue = newFeatureValue;
@@ -1491,6 +1596,7 @@ void findBestSplitImputeCategorical(
     double* bestSplitValueAll,
     size_t* bestSplitFeatureAll,
     size_t* bestSplitCountAll,
+    int* bestSplitNaDirectionAll,
     DataFrame* trainingData,
     size_t splitNodeSize,
     size_t averageNodeSize,
@@ -1544,6 +1650,7 @@ void findBestSplitImputeCategorical(
     std::swap(newAveragingIndices, averagingIndices);
   }
 
+  // Keep track of all categories and counts in both splitting and Avg datasets
   for (size_t j=0; j<splittingIndices.size(); j++) {
     all_categories.insert(
       (*trainingData).getPoint(splittingIndices[j], currentFeature)
@@ -1558,6 +1665,7 @@ void findBestSplitImputeCategorical(
     );
     averageTotalCount++;
   }
+
 
   // Create map to track the count and sum of y squares
   std::map<double, size_t> splittingCategoryCount;
@@ -1625,47 +1733,52 @@ void findBestSplitImputeCategorical(
       continue;
     }
 
-    double leftPartitionMean = splittingCategoryYSum[*it] /
-      splittingCategoryCount[*it];
-    double rightPartitionMean = (splitTotalSum -
-                                 splittingCategoryYSum[*it]) /
-                                   (splitTotalCount - splittingCategoryCount[*it]);
-
-    double LeftPartitionNaSum = 0.0;
-    size_t leftPartitionNaCount = 0;
-
-    for (const auto& pair : missingSplit) {
-      double currOutcome = std::get<1>(pair);
-
-      // If closer to left partitionmean, add to left sum, leftcount ++
-      if (abs(currOutcome - leftPartitionMean) < abs(currOutcome - rightPartitionMean)) {
-        LeftPartitionNaSum += currOutcome;
-        leftPartitionNaCount++;
-      }
-    }
-
     // Now filter NA values by outcome value which are closest to mean of each side of partition
     // Update left/right mean and count by sum and number of NA's and give new splitloss
-
-    double currentSplitLoss =
+    double currentSplitLossLeft =
       calcMuBarVar(
-        splittingCategoryYSum[*it],
-                             splittingCategoryCount[*it],
-                                                   splitTotalSum,
-                                                   splitTotalCount
+        (splittingCategoryYSum[*it] + naTotalSum),
+        (splittingCategoryCount[*it] + totalNaCount),
+        (splitTotalSum + naTotalSum),
+        (splitTotalCount + totalNaCount)
       );
 
-    updateBestSplit(
+    updateBestSplitImpute(
       bestSplitLossAll,
       bestSplitValueAll,
       bestSplitFeatureAll,
       bestSplitCountAll,
-      currentSplitLoss,
+      bestSplitNaDirectionAll,
+      currentSplitLossLeft,
       *it,
       currentFeature,
       bestSplitTableIndex,
+      -1,
       random_number_generator
     );
+
+    double currentSplitLossRight =
+      calcMuBarVar(
+        splittingCategoryYSum[*it],
+        splittingCategoryCount[*it],
+        (splitTotalSum + naTotalSum),
+        (splitTotalCount + totalNaCount)
+      );
+
+    updateBestSplitImpute(
+      bestSplitLossAll,
+      bestSplitValueAll,
+      bestSplitFeatureAll,
+      bestSplitCountAll,
+      bestSplitNaDirectionAll,
+      currentSplitLossRight,
+      *it,
+      currentFeature,
+      bestSplitTableIndex,
+      1,
+      random_number_generator
+    );
+
   }
 }
 
@@ -1673,11 +1786,13 @@ void determineBestSplit(
     size_t &bestSplitFeature,
     double &bestSplitValue,
     double &bestSplitLoss,
+    int &bestSplitNaDir,
     size_t mtry,
     double* bestSplitLossAll,
     double* bestSplitValueAll,
     size_t* bestSplitFeatureAll,
     size_t* bestSplitCountAll,
+    int* bestSplitNaDirectionAll,
     std::mt19937_64& random_number_generator
 ) {
 
@@ -1712,6 +1827,7 @@ void determineBestSplit(
     // Return the best splitFeature and splitValue
     bestSplitFeature = bestSplitFeatureAll[bestFeatureIndex];
     bestSplitValue = bestSplitValueAll[bestFeatureIndex];
+    bestSplitNaDir = bestSplitNaDirectionAll[bestFeatureIndex];
     bestSplitLoss = bestSplitLoss_;
   } else {
     // If none of the features are possible, return NA
@@ -1725,14 +1841,14 @@ void determineBestSplit(
 bool acceptMonotoneSplit(
     monotonic_info &monotone_details,
     size_t currentFeature,
-    float leftPartitionMean,
-    float rightPartitionMean
+    double leftPartitionMean,
+    double rightPartitionMean
 ) {
   // If we have the uncle mean equal to infinity, then we enforce a simple
   // monotone split without worrying about the uncle bounds
   int monotone_direction = monotone_details.monotonic_constraints[currentFeature];
-  float upper_bound = monotone_details.upper_bound;
-  float lower_bound = monotone_details.lower_bound;
+  double upper_bound = monotone_details.upper_bound;
+  double lower_bound = monotone_details.lower_bound;
 
   // This is not right. I should check the split is correctly monotonic and then
   // check that neither node violates the upper and lower bounds
@@ -1751,13 +1867,20 @@ bool acceptMonotoneSplit(
     return false;
   } else if ((monotone_direction == -1) && (leftPartitionMean > upper_bound)) {
     return false;
+  } else if (monotone_direction == 0) {
+    if (std::min(leftPartitionMean, rightPartitionMean) < lower_bound ||
+        std::max(leftPartitionMean, rightPartitionMean) > upper_bound) {
+      return false;
+    } else {
+      return true;
+    }
   } else {
     return true;
   }
 }
 
-float calculateMonotonicBound(
-    float node_mean,
+double calculateMonotonicBound(
+    double node_mean,
     monotonic_info& monotone_details
 ) {
   if (node_mean < monotone_details.lower_bound) {

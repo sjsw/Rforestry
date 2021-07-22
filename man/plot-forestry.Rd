@@ -10,14 +10,18 @@
 \arguments{
 \item{x}{A forestry x.}
 
-\item{tree.id}{Specifies the tree number that should be visulaized.}
+\item{tree.id}{Specifies the tree number that should be visualized.}
 
-\item{print.meta_dta}{Should the data for the plot be printed?}
+\item{print.meta_dta}{A flag indicating whether the data for the plot should be printed.}
 
 \item{beta.char.len}{The length of the beta values in leaf node
-representation.}
+representation. This is only required when plotting a forestry object with linear
+aggregation functions (linear = TRUE).}
 
 \item{...}{additional arguments that are not used.}
+}
+\value{
+A plot of the specified tree in the forest.
 }
 \description{
 plots a tree in the forest.
@@ -25,7 +29,8 @@ plots a tree in the forest.
 \examples{
 set.seed(292315)
 rf <- forestry(x = iris[,-1],
-               y = iris[, 1])
+               y = iris[, 1],
+               nthread = 2)
 
 plot(x = rf)
 plot(x = rf, tree.id = 2)
@@ -40,6 +45,7 @@ ridge_rf <- forestry(
   ntree = 1000,
   minSplitGain = .004,
   linear = TRUE,
+  nthread = 2,
   overfitPenalty = 1.65,
   linFeats = 1:2)
 

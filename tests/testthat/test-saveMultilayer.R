@@ -11,6 +11,7 @@ test_that("Tests that saving multilayerForestry and loading it works", {
   forest <- multilayerForestry(x,
                                y,
                                ntree = 3,
+                               nthread = 2,
                                saveable = FALSE)
 
   # Neither should be filled in yet
@@ -23,6 +24,7 @@ test_that("Tests that saving multilayerForestry and loading it works", {
     sample.fraction = 1,
     splitratio = .03,
     ntree = 3,
+    nthread = 2,
     saveable = TRUE
   )
 
@@ -34,17 +36,21 @@ test_that("Tests that saving multilayerForestry and loading it works", {
                            y = iris[,1],
                            ntree = 2,
                            nrounds = 2,
+                           nthread = 2,
                            maxDepth = 3)
 
   # Get the predictions before saving
-  preds_before <- predict(rf, feature.new = iris[,-1])
-  saveForestry(rf, filename = "re.Rda")
+
+  wd <- tempdir()
+
+  preds_before <- predict(rf, newdata = iris[,-1])
+  saveForestry(rf, filename = file.path(wd, "forest.Rda"))
   rm(rf)
-  rf <- loadForestry(file = "re.Rda")
+  rf <- loadForestry(file.path(wd, "forest.Rda"))
 
   # Get the predictions after loading
-  preds_after <- predict(rf, feature.new = iris[,-1])
-  file.remove("re.Rda")
+  preds_after <- predict(rf, newdata = iris[,-1])
+  file.remove(file.path(wd, "forest.Rda"))
 
   # THey should now be an exact match
   expect_equal(all.equal(preds_after, preds_before, tolerance = 1e-6), TRUE)

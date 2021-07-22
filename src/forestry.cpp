@@ -12,10 +12,10 @@
 
 forestry::forestry():
   _trainingData(nullptr), _ntree(0), _replace(0), _sampSize(0),
-  _splitRatio(0), _mtry(0), _minNodeSizeSpt(0), _minNodeSizeAvg(0),
+  _splitRatio(0),_OOBhonest(0),_mtry(0), _minNodeSizeSpt(0), _minNodeSizeAvg(0),
   _minNodeSizeToSplitSpt(0), _minNodeSizeToSplitAvg(0), _minSplitGain(0),
-  _maxDepth(0), _interactionDepth(0), _forest(nullptr), _seed(0), _verbose(0), _nthread(0),
-  _OOBError(0), _splitMiddle(0), _doubleTree(0){};
+  _maxDepth(0), _interactionDepth(0), _forest(nullptr), _seed(0), _verbose(0),
+  _nthread(0), _OOBError(0), _splitMiddle(0), _doubleTree(0){};
 
 forestry::~forestry(){
 //  for (std::vector<forestryTree*>::iterator it = (*_forest).begin();
@@ -32,6 +32,8 @@ forestry::forestry(
   bool replace,
   size_t sampSize,
   double splitRatio,
+  bool OOBhonest,
+  bool doubleBootstrap,
   size_t mtry,
   size_t minNodeSizeSpt,
   size_t minNodeSizeAvg,
@@ -55,6 +57,8 @@ forestry::forestry(
   this->_replace = replace;
   this->_sampSize = sampSize;
   this->_splitRatio = splitRatio;
+  this->_OOBhonest = OOBhonest;
+  this->_doubleBootstrap = doubleBootstrap;
   this->_mtry = mtry;
   this->_minNodeSizeAvg = minNodeSizeAvg;
   this->_minNodeSizeSpt = minNodeSizeSpt;
@@ -111,31 +115,6 @@ forestry::forestry(
 
   // Create initial trees
   addTrees(ntree);
-  // forestryTree *currentTree;
-  // Rcpp::Rcout << "Tree seeds:" << std::endl;
-  // R_FlushConsole();
-  // R_ProcessEvents();
-  // R_CheckUserInterrupt();
-  //
-  // Rcpp::Rcout << "c(";
-  // R_FlushConsole();
-  // R_ProcessEvents();
-  // R_CheckUserInterrupt();
-  //
-  // std::vector<unsigned int> seeds;
-  // for (auto p = 0; p < (*this->getForest()).size(); p++) {
-  //   currentTree = (*this->getForest())[p].get();
-  //   seeds.push_back(currentTree->getSeed());
-  //   //currentTree->printTree();
-  // }
-  // std::sort(seeds.begin(), seeds.end());
-  // print_vector(seeds);
-  //
-  // Rcpp::Rcout << std::endl;
-  // RcppThread::Rcout << "SORTING NOW";
-  // R_FlushConsole();
-  // R_ProcessEvents();
-  // R_CheckUserInterrupt();
 
   // Try sorting the forest by seed, this way we should do predict in the same order
   std::vector< std::unique_ptr< forestryTree > >* curr_forest;
@@ -144,12 +123,6 @@ forestry::forestry(
                                                          const std::unique_ptr< forestryTree >& b) {
     return a.get()->getSeed() > b.get()->getSeed();
   });
-
-  // std::unique_ptr< std::vector< std::unique_ptr< forestryTree > > > sorted_forest (
-  //     new std::vector< std::unique_ptr< forestryTree > >(*curr_forest)
-  // );
-  //
-  // this->_forest = std::move(sorted_forest);
 }
 
 void forestry::addTrees(size_t ntree) {
@@ -165,29 +138,7 @@ void forestry::addTrees(size_t ntree) {
   const unsigned int see = this->getSeed();
 
   size_t splitSampleSize = (size_t) (getSplitRatio() * getSampleSize());
-  float percent_complete = 0.0;
 
-  // Rcpp::Rcout << "Training Progress: " << std::endl;
-  // R_FlushConsole();
-  // R_ProcessEvents();
-  //
-  // Rcpp::Rcout << "|";
-  // for (size_t y = 0; y < 98;y++) {
-  //   Rcpp::Rcout << " ";
-  //   R_FlushConsole();
-  //   R_ProcessEvents();
-  // }
-  // Rcpp::Rcout << "|" << std::endl;
-
-  // std::vector<unsigned int> seeds;
-  // for (unsigned int k = newStartingTreeNumber; k < newEndingTreeNumber; k++) {
-  //   seeds.push_back((k+1)*see);
-  //   Rcpp::Rcout << (k+1)*see << ", ";
-  //   R_FlushConsole();
-  //   R_ProcessEvents();
-  //   R_CheckUserInterrupt();
-  // }
-  //print_vector(seeds);
 
   #if DOPARELLEL
   if (isVerbose()) {
@@ -216,28 +167,21 @@ void forestry::addTrees(size_t ntree) {
   for (unsigned int i=newStartingTreeNumber; i<newEndingTreeNumber; i++) {
   #endif
 
-          const unsigned int myseed = (i+1)*see;   // This line is bad, we are multiplying i, which previously
-          // if (myseed > 90 || myseed < 1) {
-          //   myseed = 1000;
-          // }
-          std::mt19937_64 random_number_generator;           // was an int with myseed which is an unsigned int
-          random_number_generator.seed(myseed);              // Testing a couple of things, this is deterministic with
-                                                            // this->getSeed(), but not with i, or i multuplied.
-                                                            // i Must be changing run to run somehow
-          // std::uniform_real_distribution<double> unif;
+          const unsigned int myseed = (i+1)*see;
+
+          std::mt19937_64 random_number_generator;
+          random_number_generator.seed(myseed);
+
 
           // Generate a sample index for each tree
           std::vector<size_t> sampleIndex;
 
           if (isReplacement()) {
-            // std::uniform_int_distribution<size_t> unif_dist(
-            //   0, (size_t) (*getTrainingData()).getNumRows() - 1
-            // );
 
             // Now we generate a weighted distribution using observationWeights
             std::vector<double>* sampleWeights = (this->getTrainingData()->getobservationWeights());
             std::discrete_distribution<size_t> sample_dist(
-              sampleWeights->begin(), sampleWeights->end()
+                sampleWeights->begin(), sampleWeights->end()
             );
 
             // Generate index with replacement
@@ -249,19 +193,20 @@ void forestry::addTrees(size_t ntree) {
             // In this case, when we have no replacement, we disregard
             // observationWeights and use a uniform distribution
             std::uniform_int_distribution<size_t> unif_dist(
-              0, (size_t) (*getTrainingData()).getNumRows() - 1
+                0, (size_t) (*getTrainingData()).getNumRows() - 1
             );
+
             // Generate index without replacement
             while (sampleIndex.size() < getSampleSize()) {
               size_t randomIndex = unif_dist(random_number_generator);
 
               if (
-                sampleIndex.size() == 0 ||
-                std::find(
-                  sampleIndex.begin(),
-                  sampleIndex.end(),
-                  randomIndex
-                ) == sampleIndex.end()
+                  sampleIndex.size() == 0 ||
+                    std::find(
+                      sampleIndex.begin(),
+                      sampleIndex.end(),
+                      randomIndex
+                    ) == sampleIndex.end()
               ) {
                 sampleIndex.push_back(randomIndex);
               }
@@ -274,7 +219,86 @@ void forestry::addTrees(size_t ntree) {
           std::unique_ptr<std::vector<size_t> > splitSampleIndex2;
           std::unique_ptr<std::vector<size_t> > averageSampleIndex2;
 
-          if (getSplitRatio() == 1 || getSplitRatio() == 0) {
+          // If OOBhonest is true, we generate the averaging set based
+          // on the OOB set.
+          if (getOOBhonest()) {
+
+            std::vector<size_t> splitSampleIndex_;
+            std::vector<size_t> averageSampleIndex_;
+
+            std::sort(
+              sampleIndex.begin(),
+              sampleIndex.end()
+            );
+
+            std::vector<size_t> allIndex;
+            for (size_t i = 0; i < getSampleSize(); i++) {
+              allIndex.push_back(i);
+            }
+
+            std::vector<size_t> OOBIndex(getSampleSize());
+
+            // First we get the set of all possible
+            // OOB index is the set difference between sampleIndex and all_idx
+            std::vector<size_t>::iterator it = std::set_difference (
+              allIndex.begin(),
+              allIndex.end(),
+              sampleIndex.begin(),
+              sampleIndex.end(),
+              OOBIndex.begin()
+            );
+
+            // resize OOB index
+            OOBIndex.resize((unsigned long) (it - OOBIndex.begin()));
+            std::vector< size_t > AvgIndices;
+
+            // Check the double bootstrap, if true, we take another sample
+            // from the OOB indices, otherwise we just take the OOB index
+            // set with standard (uniform) weightings
+            if (getDoubleBootstrap()) {
+              // Now in new version, of OOB honesty
+              // we want to sample with replacement from
+              // the OOB index vector, so that our averaging vector
+              // is also bagged.
+              std::uniform_int_distribution<size_t> uniform_dist(
+                  0, (size_t) (OOBIndex.size() - 1)
+              );
+
+              // Sample with replacement
+              while (AvgIndices.size() < OOBIndex.size()) {
+                size_t randomIndex = uniform_dist(random_number_generator);
+                AvgIndices.push_back(
+                  OOBIndex[randomIndex]
+                );
+              }
+
+            } else {
+              AvgIndices = OOBIndex;
+            }
+
+
+            // Now set the splitting indices and averaging indices
+            splitSampleIndex_ = sampleIndex;
+            averageSampleIndex_ = AvgIndices;
+
+            // Give split and avg sample indices the right indices
+            splitSampleIndex.reset(
+              new std::vector<size_t>(splitSampleIndex_)
+            );
+            averageSampleIndex.reset(
+              new std::vector<size_t>(averageSampleIndex_)
+            );
+
+            // If we are doing doubleTree, swap the indices and make two trees
+            if (_doubleTree) {
+              splitSampleIndex2.reset(
+                new std::vector<size_t>(splitSampleIndex_)
+              );
+              averageSampleIndex2.reset(
+                new std::vector<size_t>(averageSampleIndex_)
+              );
+            }
+          } else if (getSplitRatio() == 1 || getSplitRatio() == 0) {
 
             // Treat it as normal RF
             splitSampleIndex.reset(new std::vector<size_t>(sampleIndex));
@@ -286,9 +310,9 @@ void forestry::addTrees(size_t ntree) {
             std::vector<size_t> splitSampleIndex_;
             std::vector<size_t> averageSampleIndex_;
             for (
-              std::vector<size_t>::iterator it = sampleIndex.begin();
-              it != sampleIndex.end();
-              ++it
+                std::vector<size_t>::iterator it = sampleIndex.begin();
+                it != sampleIndex.end();
+                ++it
             ) {
               if (splitSampleIndex_.size() < splitSampleSize) {
                 splitSampleIndex_.push_back(*it);
@@ -304,6 +328,7 @@ void forestry::addTrees(size_t ntree) {
               new std::vector<size_t>(averageSampleIndex_)
             );
 
+            // If we are doing doubleTree, swap the indices and make two trees
             if (_doubleTree) {
               splitSampleIndex2.reset(
                 new std::vector<size_t>(splitSampleIndex_)
@@ -315,10 +340,7 @@ void forestry::addTrees(size_t ntree) {
           }
 
           try{
-            // Rcpp::Rcout << "Tree seed is " << getSeed() << std::endl;
-            // R_FlushConsole();
-            // R_ProcessEvents();
-            // R_CheckUserInterrupt();
+
             forestryTree *oneTree(
               new forestryTree(
                 getTrainingData(),
@@ -338,7 +360,7 @@ void forestry::addTrees(size_t ntree) {
                 gethasNas(),
                 getlinear(),
                 getOverfitPenalty(),
-                myseed // getSeed()
+                myseed
               )
             );
 
@@ -376,13 +398,6 @@ void forestry::addTrees(size_t ntree) {
               R_FlushConsole();
               R_ProcessEvents();
             }
-            // RcppThread::Rcout << (i+1)*see << ",";
-            // R_FlushConsole();
-            // R_ProcessEvents();
-            //oneTree->printTree();
-
-
-            // R_CheckUserInterrupt();
 
             (*getForest()).emplace_back(oneTree);
             _ntree = _ntree + 1;
@@ -393,19 +408,6 @@ void forestry::addTrees(size_t ntree) {
               // delete anotherTree;
             }
 
-
-
-            // size_t new_dots = (size_t) ((float) _ntree / ntree - percent_complete);
-            // percent_complete = (float) _ntree / ntree;
-            // for (size_t q = 0; q < 2; q++) {
-            //   Rcpp::Rcout << "*";
-            //   R_FlushConsole();
-            //   R_ProcessEvents();
-            //   //RcppThread::checkUserInterrupt();
-            // }
-
-            // R_FlushConsole();
-            // R_ProcessEvents();
           } catch (std::runtime_error &err) {
             // Rcpp::Rcerr << err.what() << std::endl;
           }
@@ -437,9 +439,13 @@ void forestry::addTrees(size_t ntree) {
 std::unique_ptr< std::vector<double> > forestry::predict(
   std::vector< std::vector<double> >* xNew,
   arma::Mat<double>* weightMatrix,
+  arma::Mat<double>* coefficients,
   arma::Mat<int>* terminalNodes,
   unsigned int seed,
-  size_t nthread
+  size_t nthread,
+  bool exact,
+  bool use_weights,
+  std::vector<size_t>* tree_weights
 ){
   std::vector<double> prediction;
   size_t numObservations = (*xNew)[0].size();
@@ -447,13 +453,29 @@ std::unique_ptr< std::vector<double> > forestry::predict(
     prediction.push_back(0);
   }
 
-  #if DOPARELLEL
-  size_t nthreadToUse;
-  if (nthread == 1) {
-    nthreadToUse = 1;
-  } else {
-    nthreadToUse = getNthread();
+  // If we want to return the ridge coefficients, initialize a matrix
+  if (coefficients) {
+    // Create coefficient vector of vectors of zeros
+    std::vector< std::vector<float> > coef;
+    size_t numObservations = (*xNew)[0].size();
+    size_t numCol = (*coefficients).n_cols;
+    for (size_t i=0; i<numObservations; i++) {
+      std::vector<float> row;
+      for (size_t j = 0; j<numCol; j++) {
+        row.push_back(0);
+      }
+      coef.push_back(row);
+    }
   }
+
+  // Only needed if exact = TRUE, vector for storing each tree's predictions
+  std::vector< std::vector<double> > tree_preds;
+  std::vector< std::vector<int> > tree_nodes;
+  std::vector<size_t> tree_seeds;
+  std::vector<size_t> tree_total_nodes;
+
+  #if DOPARELLEL
+  size_t nthreadToUse = nthread;
 
   if (nthreadToUse == 0) {
     // Use all threads
@@ -484,19 +506,42 @@ std::unique_ptr< std::vector<double> > forestry::predict(
           try {
             std::vector<double> currentTreePrediction(numObservations);
             std::vector<int> currentTreeTerminalNodes(numObservations);
+            std::vector< std::vector<double> > currentTreeCoefficients(numObservations);
 
             //If terminal nodes, pass option to tree predict
             forestryTree *currentTree = (*getForest())[i].get();
-            (*currentTree).predict(
-              currentTreePrediction,
-              &currentTreeTerminalNodes,
-              xNew,
-              getTrainingData(),
-              weightMatrix,
-              getlinear(),
-              seed + i
-            );
 
+            if (coefficients) {
+              for (size_t l=0; l<numObservations; l++) {
+                currentTreeCoefficients[l] = std::vector<double>(coefficients->n_cols);
+              }
+
+              (*currentTree).predict(
+                  currentTreePrediction,
+                  &currentTreeTerminalNodes,
+                  currentTreeCoefficients,
+                  xNew,
+                  getTrainingData(),
+                  weightMatrix,
+                  getlinear(),
+                  seed + i,
+                  getMinNodeSizeToSplitAvg()
+              );
+
+            } else {
+              (*currentTree).predict(
+                  currentTreePrediction,
+                  &currentTreeTerminalNodes,
+                  currentTreeCoefficients,
+                  xNew,
+                  getTrainingData(),
+                  weightMatrix,
+                  getlinear(),
+                  seed + i,
+                  getMinNodeSizeToSplitAvg()
+              );
+
+            }
 
             // HERE IF NEED TERMINAL NODES, pass option to tree predict, then
             // lock thread (shouldn't really need to), use i as offset and flip
@@ -506,15 +551,37 @@ std::unique_ptr< std::vector<double> > forestry::predict(
             std::lock_guard<std::mutex> lock(threadLock);
             # endif
 
-            for (size_t j = 0; j < numObservations; j++) {
-              prediction[j] += currentTreePrediction[j];
-            }
+            // If we need to use the exact seeding order we save the tree
+            // predictions and the tree seeds
 
-            if (terminalNodes) {
-              for (size_t k = 0; k < numObservations; k++) {
-                (*terminalNodes)(k, i) = currentTreeTerminalNodes[k];
+            // For now store tree seeds even when not running exact,
+            // hopefully this solves a valgrind error relating to the sorting
+            // based on tree seeds when tree seeds might be uninitialized
+            tree_seeds.push_back(currentTree->getSeed());
+
+            if (exact) {
+              tree_preds.push_back(currentTreePrediction);
+              tree_nodes.push_back(currentTreeTerminalNodes);
+              tree_total_nodes.push_back(currentTree->getNodeCount());
+            } else {
+              for (size_t j = 0; j < numObservations; j++) {
+                prediction[j] += currentTreePrediction[j];
               }
-              (*terminalNodes)(numObservations, i) = (*currentTree).getNodeCount();
+
+              if (coefficients) {
+                for (size_t k = 0; k < numObservations; k++) {
+                  for (size_t l = 0; l < coefficients->n_cols; l++) {
+                    (*coefficients)(k,l) += currentTreeCoefficients[k][l];
+                  }
+                }
+              }
+
+              if (terminalNodes) {
+                for (size_t k = 0; k < numObservations; k++) {
+                  (*terminalNodes)(k, i) = currentTreeTerminalNodes[k];
+                }
+                (*terminalNodes)(numObservations, i) = (*currentTree).getNodeCount();
+              }
             }
 
           } catch (std::runtime_error &err) {
@@ -539,30 +606,183 @@ std::unique_ptr< std::vector<double> > forestry::predict(
   );
   #endif
 
+  // If exact, we need to aggregate the predictions by tree seed order.
+  double total_weights = 0;
+
+  if (exact) {
+    std::vector<size_t> indices(tree_seeds.size());
+    std::iota(indices.begin(), indices.end(), 0);
+    //Order the indices by the seeds of the corresponding trees
+    std::sort(indices.begin(), indices.end(),
+              [&](size_t a, size_t b) -> bool {
+                return tree_seeds[a] > tree_seeds[b];
+              });
+
+    size_t weight_index = 0;
+    // Now aggregate using the new index ordering
+    for (std::vector<size_t>::iterator iter = indices.begin();
+        iter != indices.end();
+        ++iter)
+    {
+        size_t cur_index  = *iter;
+
+        double cur_weight = use_weights ? (double) (*tree_weights)[weight_index] : (double) 1.0;
+        total_weights += cur_weight;
+        weight_index++;
+        // Aggregate all predictions for current tree
+        for (size_t j = 0; j < numObservations; j++) {
+          prediction[j] += cur_weight * tree_preds[cur_index][j];
+        }
+
+        if (terminalNodes) {
+          for (size_t k = 0; k < numObservations; k++) {
+            (*terminalNodes)(k, cur_index) = tree_nodes[cur_index][k];
+          }
+          (*terminalNodes)(numObservations, cur_index) = tree_total_nodes[cur_index];
+        }
+    }
+  }
+
+  if (!use_weights) {
+    total_weights = (double) getNtree();
+  }
+
   for (size_t j=0; j<numObservations; j++){
-    prediction[j] /= getNtree();
+    prediction[j] /= total_weights;
   }
 
   std::unique_ptr< std::vector<double> > prediction_ (
     new std::vector<double>(prediction)
   );
 
-
   // If we also update the weight matrix, we now have to divide every entry
   // by the number of trees:
 
   if (weightMatrix) {
-    size_t nrow = (*xNew)[0].size(); // number of features to be predicted
-    size_t ncol = getNtrain(); // number of train data
-    for ( size_t i = 0; i < nrow; i++){
-      for (size_t j = 0; j < ncol; j++){
+    size_t nrow = (*xNew)[0].size();      // number of features to be predicted
+    size_t ncol = getNtrain();            // number of train data
+    for ( size_t i = 0; i < nrow; i++) {
+      for (size_t j = 0; j < ncol; j++) {
         (*weightMatrix)(i,j) = (*weightMatrix)(i,j) / _ntree;
+      }
+    }
+  }
+
+  if (coefficients) {
+    for (size_t k = 0; k < numObservations; k++) {
+      for (size_t l = 0; l < coefficients->n_cols; l++) {
+        (*coefficients)(k,l) /= total_weights;
       }
     }
   }
 
   return prediction_;
 }
+
+
+std::vector<double> forestry::predictOOB(
+    std::vector< std::vector<double> >* xNew,
+    arma::Mat<double>* weightMatrix,
+    bool doubleOOB
+) {
+
+  size_t numObservations = getTrainingData()->getNumRows();
+  std::vector<double> outputOOBPrediction(numObservations);
+  std::vector<size_t> outputOOBCount(numObservations);
+
+  for (size_t i=0; i<numObservations; i++) {
+    outputOOBPrediction[i] = 0;
+    outputOOBCount[i] = 0;
+  }
+
+    #if DOPARELLEL
+      size_t nthreadToUse = getNthread();
+      if (nthreadToUse == 0) {
+        // Use all threads
+        nthreadToUse = std::thread::hardware_concurrency();
+      }
+      if (isVerbose()) {
+        RcppThread::Rcout << "Calculating OOB parallel using " << nthreadToUse << " threads"
+                          << std::endl;
+      }
+      std::vector<std::thread> allThreads(nthreadToUse);
+      std::mutex threadLock;
+
+      // For each thread, assign a sequence of tree numbers that the thread
+      // is responsible for handling
+      for (size_t t = 0; t < nthreadToUse; t++) {
+        auto dummyThread = std::bind(
+          [&](const int iStart, const int iEnd, const int t_) {
+            // loop over all items
+            for (int i=iStart; i < iEnd; i++) {
+    #else
+              // For non-parallel version, just simply iterate all trees serially
+              for(int i=0; i<((int) getNtree()); i++ ) {
+    #endif
+                try {
+                  std::vector<double> outputOOBPrediction_iteration(numObservations);
+                  std::vector<size_t> outputOOBCount_iteration(numObservations);
+                  for (size_t j=0; j<numObservations; j++) {
+                    outputOOBPrediction_iteration[j] = 0;
+                    outputOOBCount_iteration[j] = 0;
+                  }
+                  forestryTree *currentTree = (*getForest())[i].get();
+                  (*currentTree).getOOBPrediction(
+                      outputOOBPrediction_iteration,
+                      outputOOBCount_iteration,
+                      getTrainingData(),
+                      getOOBhonest(),
+                      doubleOOB,
+                      getMinNodeSizeToSplitAvg(),
+                      xNew,
+                      weightMatrix
+                  );
+    #if DOPARELLEL
+                  std::lock_guard<std::mutex> lock(threadLock);
+    #endif
+                  for (size_t j=0; j < numObservations; j++) {
+                    outputOOBPrediction[j] += outputOOBPrediction_iteration[j];
+                    outputOOBCount[j] += outputOOBCount_iteration[j];
+                  }
+                } catch (std::runtime_error &err) {
+                  // Rcpp::Rcerr << err.what() << std::endl;
+                }
+              }
+    #if DOPARELLEL
+            },
+            t * getNtree() / nthreadToUse,
+            (t + 1) == nthreadToUse ?
+            getNtree() :
+              (t + 1) * getNtree() / nthreadToUse,
+              t
+        );
+        allThreads[t] = std::thread(dummyThread);
+          }
+          std::for_each(
+            allThreads.begin(),
+            allThreads.end(),
+            [](std::thread& x) { x.join(); }
+          );
+    #endif
+
+  double OOB_MSE = 0;
+  for (size_t j=0; j<numObservations; j++){
+    double trueValue = getTrainingData()->getOutcomePoint(j);
+    if (outputOOBCount[j] != 0) {
+      OOB_MSE +=
+        pow(trueValue - outputOOBPrediction[j] / outputOOBCount[j], 2);
+      outputOOBPrediction[j] = outputOOBPrediction[j] / outputOOBCount[j];
+      //Also divide the weightMatrix
+      for (size_t i = 0; i < numObservations; i++) {
+        (*weightMatrix)(j,i) = (*weightMatrix)(j,i) / outputOOBCount[j];
+      }
+    } else {
+      outputOOBPrediction[j] = std::numeric_limits<double>::quiet_NaN();
+    }
+  }
+  return outputOOBPrediction;
+}
+
 
 void forestry::calculateVariableImportance() {
   // For all variables, shuffle + get OOB Error, record in
@@ -624,7 +844,8 @@ void forestry::calculateVariableImportance() {
               outputOOBCount_iteration,
               getTrainingData(),
               featNum,
-              random_number_generator
+              random_number_generator,
+              getMinNodeSizeToSplitAvg()
           );
           #if DOPARELLEL
           std::lock_guard<std::mutex> lock(threadLock);
@@ -663,7 +884,7 @@ void forestry::calculateVariableImportance() {
             pow(trueValue - outputOOBPrediction[j] / outputOOBCount[j], 2);
         }
       }
-      variableImportances.push_back(current_MSE);
+      variableImportances.push_back(current_MSE/( (double) outputOOBPrediction.size() ));
   }
 
   std::unique_ptr<std::vector<double> > variableImportances_(
@@ -674,7 +895,9 @@ void forestry::calculateVariableImportance() {
   this-> _variableImportance = std::move(variableImportances_);
 }
 
-void forestry::calculateOOBError() {
+void forestry::calculateOOBError(
+    bool doubleOOB
+) {
 
   size_t numObservations = getTrainingData()->getNumRows();
 
@@ -723,7 +946,12 @@ void forestry::calculateOOBError() {
             (*currentTree).getOOBPrediction(
               outputOOBPrediction_iteration,
               outputOOBCount_iteration,
-              getTrainingData()
+              getTrainingData(),
+              getOOBhonest(),
+              doubleOOB,
+              getMinNodeSizeToSplitAvg(),
+              nullptr,
+              NULL
             );
 
             #if DOPARELLEL
@@ -769,7 +997,8 @@ void forestry::calculateOOBError() {
     }
   }
 
-  this->_OOBError = OOB_MSE;
+  // Return the MSE and the prediction vector
+  this->_OOBError = OOB_MSE /( (double) outputOOBPrediction.size() );
   this->_OOBpreds = outputOOBPrediction;
 };
 
@@ -813,6 +1042,7 @@ void forestry::fillinTreeInfo(
 
 void forestry::reconstructTrees(
     std::unique_ptr< std::vector<size_t> > & categoricalFeatureColsRcpp,
+    std::unique_ptr< std::vector<unsigned int> > & tree_seeds,
     std::unique_ptr< std::vector< std::vector<int> >  > & var_ids,
     std::unique_ptr< std::vector< std::vector<double> >  > & split_vals,
     std::unique_ptr< std::vector< std::vector<int> >  > & naLeftCounts,
@@ -840,6 +1070,7 @@ void forestry::reconstructTrees(
                 gethasNas(),
                 getlinear(),
                 getOverfitPenalty(),
+                (*tree_seeds)[i],
                 (*categoricalFeatureColsRcpp),
                 (*var_ids)[i],
                 (*split_vals)[i],
@@ -913,7 +1144,7 @@ std::vector<std::vector<double>>* forestry::neighborhoodImpute(
           // is inefficient because we have to iterate over the
           // vector about 1.5 times.
           double runningMax = -std::numeric_limits<double>::infinity();
-          size_t maxPosition;
+          size_t maxPosition=0;
           for(size_t l = 0; l < categoryContribution.size(); l++) {
             if(categoryContribution[l] > runningMax) {
               runningMax = categoryContribution[l];

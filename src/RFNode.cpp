@@ -46,23 +46,27 @@ void RFNode::setSplitNode(
   double splitValue,
   std::unique_ptr< RFNode > leftChild,
   std::unique_ptr< RFNode > rightChild,
+  std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
   size_t naLeftCount,
   size_t naRightCount
 ) {
   // Split node constructor
-  _averageCount = 0;
+  _averageCount = (*averagingSampleIndex).size();
   _splitCount = 0;
   _splitFeature = splitFeature;
   _splitValue = splitValue;
+  this->_averagingSampleIndex = std::move(averagingSampleIndex);
   // Give the ownership of the child pointer to the RFNode object
   _leftChild = std::move(leftChild);
   _rightChild = std::move(rightChild);
   _naLeftCount = naLeftCount;
   _naRightCount = naRightCount;
+  _nodeId = -1;
 }
 
 void RFNode::ridgePredict(
   std::vector<double> &outputPrediction,
+  std::vector< std::vector<double> > &outputCoefficients,
   std::vector<size_t>* updateIndex,
   std::vector< std::vector<double> >* xNew,
   DataFrame* trainingData,
@@ -80,7 +84,7 @@ void RFNode::ridgePredict(
                      dimension + 1);
 
   arma::Mat<double> identity(dimension + 1,
-                            dimension + 1);
+                             dimension + 1);
   identity.eye();
 
   //Don't penalize intercept
@@ -109,7 +113,7 @@ void RFNode::ridgePredict(
 
   //Map xNew into Eigen matrix
   arma::Mat<double> xn(updateIndex->size(),
-                      dimension + 1);
+                       dimension + 1);
 
   size_t index = 0;
   for (std::vector<size_t>::iterator it = updateIndex->begin();
@@ -132,18 +136,31 @@ void RFNode::ridgePredict(
   for (size_t i = 0; i < updateIndex->size(); i++) {
     outputPrediction[(*updateIndex)[i]] = predictions(i, 0);
   }
+
+  // Want coefficients vector
+  std::vector<double> c_vector =
+    arma::conv_to< std::vector<double> >::from(coefficients.col(0));
+
+  // If we want to update coefficients, update the vector as well
+  if (!(outputCoefficients.empty())) {
+    for (size_t k = 0; k < updateIndex->size(); k++) {
+      outputCoefficients[(*updateIndex)[k]] = c_vector;
+    }
+  }
 }
 
 void RFNode::predict(
   std::vector<double> &outputPrediction,
   std::vector<int>* terminalNodes,
+  std::vector< std::vector<double> > &outputCoefficients,
   std::vector<size_t>* updateIndex,
   std::vector< std::vector<double> >* xNew,
   DataFrame* trainingData,
   arma::Mat<double>* weightMatrix,
   bool linear,
   double lambda,
-  unsigned int seed
+  unsigned int seed,
+  size_t nodesizeStrictAvg
 ) {
 
   // If the node is a leaf, aggregate all its averaging data samples
@@ -151,25 +168,33 @@ void RFNode::predict(
 
       if (linear) {
 
-      //Use ridgePredict (fit linear model on leaf avging obs + evaluate it)
-      ridgePredict(outputPrediction,
-                   updateIndex,
-                   xNew,
-                   trainingData,
-                   lambda);
+        //Use ridgePredict (fit linear model on leaf avging obs + evaluate it)
+        ridgePredict(outputPrediction,
+                     outputCoefficients,
+                     updateIndex,
+                     xNew,
+                     trainingData,
+                     lambda);
       } else {
 
-      // Calculate the mean of current node
-      double predictedMean = (*trainingData).partitionMean(getAveragingIndex());
 
-      // Give all updateIndex the mean of the node as prediction values
-      for (
-        std::vector<size_t>::iterator it = (*updateIndex).begin();
-        it != (*updateIndex).end();
-        ++it
-      ) {
-        outputPrediction[*it] = predictedMean;
-      }
+        double predictedMean;
+        // Calculate the mean of current node
+        if (getAveragingIndex()->size() == 0) {
+          predictedMean = std::numeric_limits<double>::quiet_NaN();
+        } else {
+          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+        }
+
+
+        // Give all updateIndex the mean of the node as prediction values
+        for (
+          std::vector<size_t>::iterator it = (*updateIndex).begin();
+          it != (*updateIndex).end();
+          ++it
+        ) {
+          outputPrediction[*it] = predictedMean;
+        }
     }
 
     if (weightMatrix){
@@ -186,7 +211,7 @@ void RFNode::predict(
         for (size_t i = 0; i<idx_in_leaf.size(); i++) {
           (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
           (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
-          (double) 1.0 / idx_in_leaf.size();
+          (double) 1.0 / ((double) idx_in_leaf.size());
         }
       }
     }
@@ -314,30 +339,147 @@ void RFNode::predict(
 
     // Recursively get predictions from its children
     if ((*leftPartitionIndex).size() > 0) {
-      (*getLeftChild()).predict(
-        outputPrediction,
-        terminalNodes,
-        leftPartitionIndex,
-        xNew,
-        trainingData,
-        weightMatrix,
-        linear,
-        lambda,
-        seed
-      );
+
+      // Here we want to now make sure the left node has averaging indices,
+      // otherwise we give it predictions from the parent
+      if (getLeftChild()->getAverageCount() < std::max(nodesizeStrictAvg, (size_t) 1)) {
+
+        double predictedMean;
+        // Calculate the mean of current node
+        if (getAverageCount() == 0) {
+          predictedMean = std::numeric_limits<double>::quiet_NaN();;
+        } else{
+          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+        }
+
+        // Give all updateIndex the mean of the node as prediction values
+        for (
+            std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
+            it != (*leftPartitionIndex).end();
+            ++it
+        ) {
+          outputPrediction[*it] = predictedMean;
+        }
+
+        if (weightMatrix){
+          // If weightMatrix is not a NULL pointer, then we want to update it,
+          // because we have choosen aggregation = "weightmatrix".
+          std::vector<size_t> idx_in_leaf =
+            (*trainingData).get_all_row_idx(getAveragingIndex());
+          // The following will lock the access to weightMatrix
+          std::lock_guard<std::mutex> lock(mutex_weightMatrix);
+          for (
+              std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
+              it != (*leftPartitionIndex).end();
+              ++it ) {
+            for (size_t i = 0; i<idx_in_leaf.size(); i++) {
+              (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
+                (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
+                (double) 1.0 / ((double) idx_in_leaf.size());
+            }
+          }
+        }
+
+        if (terminalNodes) {
+          // If terminalNodes not a NULLPTR, set the terminal node for all X in this
+          // leaf to be the leaf node_id
+          size_t node_id = getNodeId();
+          for (
+              std::vector<size_t>::iterator it = (*leftPartitionIndex).begin();
+              it != (*leftPartitionIndex).end();
+              ++it
+          ) {
+            (*terminalNodes)[*it] = node_id;
+          }
+        }
+
+      } else {
+        (*getLeftChild()).predict(
+            outputPrediction,
+            terminalNodes,
+            outputCoefficients,
+            leftPartitionIndex,
+            xNew,
+            trainingData,
+            weightMatrix,
+            linear,
+            lambda,
+            seed,
+            nodesizeStrictAvg
+        );
+      }
+
     }
     if ((*rightPartitionIndex).size() > 0) {
-      (*getRightChild()).predict(
-        outputPrediction,
-        terminalNodes,
-        rightPartitionIndex,
-        xNew,
-        trainingData,
-        weightMatrix,
-        linear,
-        lambda,
-        seed
-      );
+
+      // Here we want to now make sure the right node has averaging indices,
+      // otherwise we give it predictions from the parent
+      if (getRightChild()->getAverageCount() < std::max(nodesizeStrictAvg,(size_t) 1)) {
+
+
+        double predictedMean;
+        // Calculate the mean of current node
+        if (getAverageCount() == 0) {
+          predictedMean = std::numeric_limits<double>::quiet_NaN();;
+        } else{
+          predictedMean = (*trainingData).partitionMean(getAveragingIndex());
+        }
+
+        //Give all rightPartitionIndex the mean of the node as prediction values
+        for (
+            std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
+            it != (*rightPartitionIndex).end();
+            ++it
+        ) {
+          outputPrediction[*it] = predictedMean;
+        }
+
+        if (weightMatrix){
+          // If weightMatrix is not a NULL pointer, then we want to update it,
+          // because we have choosen aggregation = "weightmatrix".
+          std::vector<size_t> idx_in_leaf =
+            (*trainingData).get_all_row_idx(getAveragingIndex());
+          // The following will lock the access to weightMatrix
+          std::lock_guard<std::mutex> lock(mutex_weightMatrix);
+          for (
+              std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
+              it != (*rightPartitionIndex).end();
+              ++it ) {
+            for (size_t i = 0; i<idx_in_leaf.size(); i++) {
+              (*weightMatrix)(*it, idx_in_leaf[i] - 1) =
+                (*weightMatrix)(*it, idx_in_leaf[i] - 1) +
+                (double) 1.0 / ((double) idx_in_leaf.size());
+            }
+          }
+        }
+
+        if (terminalNodes) {
+          // If terminalNodes not a NULLPTR, set the terminal node for all X in this
+          // leaf to be the leaf node_id
+          size_t node_id = getNodeId();
+          for (
+              std::vector<size_t>::iterator it = (*rightPartitionIndex).begin();
+              it != (*rightPartitionIndex).end();
+              ++it
+          ) {
+            (*terminalNodes)[*it] = node_id;
+          }
+        }
+      } else {
+        (*getRightChild()).predict(
+          outputPrediction,
+          terminalNodes,
+          outputCoefficients,
+          rightPartitionIndex,
+          xNew,
+          trainingData,
+          weightMatrix,
+          linear,
+          lambda,
+          seed,
+          nodesizeStrictAvg
+        );
+      }
     }
 
     delete(leftPartitionIndex);
@@ -348,16 +490,17 @@ void RFNode::predict(
 }
 
 bool RFNode::is_leaf() {
-  int ave_ct = getAverageCount();
+  // int ave_ct = getAverageCount();
   int spl_ct = getSplitCount();
-  if (
-      (ave_ct == 0 && spl_ct != 0) ||(ave_ct != 0 && spl_ct == 0)
-  ) {
-    throw std::runtime_error(
-        "Average count or Split count is 0, while the other is not!"
-        );
-  }
-  return !(ave_ct == 0 && spl_ct == 0);
+  // if (
+  //     (ave_ct == 0 && spl_ct != 0) ||(ave_ct != 0 && spl_ct == 0)
+  // ) {
+  //   throw std::runtime_error(
+  //       "Average count or Split count is 0, while the other is not!"
+  //       );
+  // }
+  //return !(ave_ct == 0 && spl_ct == 0);
+  return !(spl_ct == 0);
 }
 
 size_t RFNode::getAverageCountAlways() {
@@ -393,7 +536,10 @@ void RFNode::printSubtree(int indentSpace) {
               << getSplitFeature()
               << ", split value = "
               << getSplitValue()
+              << ", # of average samples = "
+              << getAverageCount()
               << std::endl;
+
     R_FlushConsole();
     R_ProcessEvents();
     // Recursively calling its children

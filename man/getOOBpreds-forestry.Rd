@@ -5,10 +5,21 @@
 \alias{getOOBpreds}
 \title{getOOBpreds-forestry}
 \usage{
-getOOBpreds(object, noWarning)
+getOOBpreds(object, newdata = NULL, doubleOOB = FALSE, noWarning = FALSE)
 }
 \arguments{
 \item{object}{A trained model object of class "forestry".}
+
+\item{newdata}{A possible new data frame on which to run out of bag
+predictions. If this is not NULL, we assume that the indices of
+newdata are the same as the indices of the training set, and will use
+these to find which trees the observation is considered in/out of bag for.}
+
+\item{doubleOOB}{A flag specifying whether or not we should use the double OOB
+set for the OOB predictions. This is the set of observations for each tree which
+were in neither the averaging set nor the splitting set. Note that the forest
+must have been trained with doubleBootstrap = TRUE for this to be used. Default
+is FALSE.}
 
 \item{noWarning}{Flag to not display warnings.}
 }

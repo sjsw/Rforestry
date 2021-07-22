@@ -9,6 +9,9 @@ honestRF(...)
 \arguments{
 \item{...}{parameters which are passed directly to `forestry`}
 }
+\value{
+A `forestry` object
+}
 \description{
 This function is deprecated and only exists for backwards
   backwards compatibility. The function you want to use is `forestry`.

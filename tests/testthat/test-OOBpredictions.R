@@ -1,4 +1,4 @@
-test_that("Tests if OOB predictions are working correctly", {
+test_that("Tests if OOB predictions are working correctly (normal setting)", {
   x <- iris[, -1]
   y <- iris[, 1]
   context('OOB Predictions')
@@ -21,14 +21,25 @@ test_that("Tests if OOB predictions are working correctly", {
   )
 
   # Test OOB predictions
-  expect_equal(sum((getOOBpreds(forest) -  iris[,1])^2), getOOB(forest), tolerance = 1e-5)
+  expect_equal(mean((getOOBpreds(forest, noWarning = TRUE) -  iris[,1])^2), getOOB(forest), tolerance = 1e-5)
+
+  skip_if_not_mac()
+
+  expect_equal(all.equal(getOOBpreds(forest, noWarning = TRUE)[1:10], c(5.092647817, 4.664031165,
+                                                                        4.650426049, 4.870883947,
+                                                                        5.084049999, 5.344246144,
+                                                                        5.069991851, 5.060238528,
+                                                                        4.766551234, 4.790776227)), TRUE)
+})
 
 
-  expect_equal(all.equal(getOOBpreds(forest)[1:10], c(5.092647817, 4.664031165,
-                                                      4.650426049, 4.870883947,
-                                                      5.084049999, 5.344246144,
-                                                      5.069991851, 5.060238528,
-                                                      4.766551234, 4.790776227)), TRUE)
+test_that("Tests if OOB predictions are working correctly (extreme setting)", {
+  x <- iris[, -1]
+  y <- iris[, 1]
+  context('OOB Predictions extreme')
+  # Set seed for reproductivity
+  set.seed(24750371)
+
   # Test a very extreme setting
   forest <- forestry(
     x,
@@ -45,7 +56,7 @@ test_that("Tests if OOB predictions are working correctly", {
   )
 
   expect_warning(
-    testOOBpreds <- getOOBpreds(forest, FALSE),
+    testOOBpreds <- getOOBpreds(forest, noWarning = FALSE),
     "Samples are drawn without replacement and sample size is too big!"
   )
 

@@ -27,12 +27,14 @@ public:
     double splitValue,
     std::unique_ptr< RFNode > leftChild,
     std::unique_ptr< RFNode > rightChild,
+    std::unique_ptr< std::vector<size_t> > averagingSampleIndex,
     size_t naLeftCount,
     size_t naRightCount
   );
 
   void ridgePredict(
       std::vector<double> &outputPrediction,
+      std::vector< std::vector<double> > &outputCoefficients,
       std::vector<size_t>* updateIndex,
       std::vector< std::vector<double> >* xNew,
       DataFrame* trainingData,
@@ -42,13 +44,15 @@ public:
   void predict(
     std::vector<double> &outputPrediction,
     std::vector<int>* terminalNodes,
+    std::vector< std::vector<double> > &outputCoefficients,
     std::vector<size_t>* updateIndex,
     std::vector< std::vector<double> >* xNew,
     DataFrame* trainingData,
     arma::Mat<double>* weightMatrix,
     bool linear,
     double lambda,
-    unsigned int seed
+    unsigned int seed,
+    size_t nodesizeStrictAvg
   );
 
   void write_node_info(

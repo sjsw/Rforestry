@@ -40,7 +40,9 @@ SEXP rcpp_cppDataFrameInterface(
     Rcpp::NumericVector deepFeatureWeights,
     Rcpp::NumericVector deepFeatureWeightsVariables,
     Rcpp::NumericVector observationWeights,
-    Rcpp::NumericVector monotonicConstraints
+    Rcpp::NumericVector monotonicConstraints,
+    Rcpp::NumericVector groupMemberships,
+    bool monotoneAvg
 ){
 
   try {
@@ -106,6 +108,12 @@ SEXP rcpp_cppDataFrameInterface(
         )
     );
 
+    std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+        new std::vector<size_t>(
+            Rcpp::as< std::vector<size_t> >(groupMemberships)
+        )
+    );
+
 
     DataFrame* trainingData = new DataFrame(
         std::move(featureDataRcpp),
@@ -119,7 +127,9 @@ SEXP rcpp_cppDataFrameInterface(
         std::move(deepFeatureWeightsRcpp),
         std::move(deepFeatureWeightsVariablesRcpp),
         std::move(observationWeightsRcpp),
-        std::move(monotonicConstraintsRcpp)
+        std::move(monotonicConstraintsRcpp),
+        std::move(groupMembershipsRcpp),
+        (bool) monotoneAvg
     );
 
     Rcpp::XPtr<DataFrame> ptr(trainingData, true) ;
@@ -147,6 +157,8 @@ SEXP rcpp_cppBuildInterface(
   int sampsize,
   int mtry,
   double splitratio,
+  bool OOBhonest,
+  bool doubleBootstrap,
   int nodesizeSpl,
   int nodesizeAvg,
   int nodesizeStrictSpl,
@@ -165,6 +177,8 @@ SEXP rcpp_cppBuildInterface(
   Rcpp::NumericVector deepFeatureWeightsVariables,
   Rcpp::NumericVector observationWeights,
   Rcpp::NumericVector monotonicConstraints,
+  Rcpp::NumericVector groupMemberships,
+  bool monotoneAvg,
   bool hasNas,
   bool linear,
   double overfitPenalty,
@@ -184,6 +198,8 @@ SEXP rcpp_cppBuildInterface(
         replace,
         (size_t) sampsize,
         splitratio,
+        OOBhonest,
+        doubleBootstrap,
         (size_t) mtry,
         (size_t) nodesizeSpl,
         (size_t) nodesizeAvg,
@@ -283,6 +299,12 @@ SEXP rcpp_cppBuildInterface(
           )
       );
 
+      std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+          new std::vector<size_t>(
+              Rcpp::as< std::vector<size_t> >(groupMemberships)
+          )
+      );
+
       DataFrame* trainingData = new DataFrame(
           std::move(featureDataRcpp),
           std::move(outcomeDataRcpp),
@@ -295,7 +317,9 @@ SEXP rcpp_cppBuildInterface(
           std::move(deepFeatureWeightsRcpp),
           std::move(deepFeatureWeightsVariablesRcpp),
           std::move(observationWeightsRcpp),
-          std::move(monotoneConstraintsRcpp)
+          std::move(monotoneConstraintsRcpp),
+          std::move(groupMembershipsRcpp),
+          (bool) monotoneAvg
       );
 
       forestry* testFullForest = new forestry(
@@ -304,6 +328,8 @@ SEXP rcpp_cppBuildInterface(
         replace,
         (size_t) sampsize,
         splitratio,
+        OOBhonest,
+        doubleBootstrap,
         (size_t) mtry,
         (size_t) nodesizeSpl,
         (size_t) nodesizeAvg,
@@ -356,6 +382,8 @@ SEXP rcpp_cppMultilayerBuildInterface(
     int sampsize,
     int mtry,
     double splitratio,
+    bool OOBhonest,
+    bool doubleBootstrap,
     int nodesizeSpl,
     int nodesizeAvg,
     int nodesizeStrictSpl,
@@ -393,6 +421,8 @@ SEXP rcpp_cppMultilayerBuildInterface(
         replace,
         (size_t) sampsize,
         splitratio,
+        OOBhonest,
+        doubleBootstrap,
         (size_t) mtry,
         (size_t) nodesizeSpl,
         (size_t) nodesizeAvg,
@@ -435,7 +465,11 @@ Rcpp::List rcpp_cppPredictInterface(
   SEXP forest,
   Rcpp::List x,
   std::string aggregation,
-  int seed
+  int seed,
+  int nthread,
+  bool exact,
+  bool use_weights,
+  Rcpp::NumericVector tree_weights
 ){
   try {
 
@@ -449,7 +483,63 @@ Rcpp::List rcpp_cppPredictInterface(
     // then we inialize the empty weight matrix
     arma::Mat<double> weightMatrix;
     arma::Mat<int> terminalNodes;
-    if(aggregation == "weightMatrix") {
+    arma::Mat<double> coefficients;
+
+    // Have to keep track of tree_weights
+    std::vector<size_t>* testForestTreeWeights;
+    std::vector<size_t> weights;
+
+    // If we have weights we want to initialize them.
+    weights = Rcpp::as< std::vector<size_t> >(tree_weights);
+    testForestTreeWeights =
+      new std::vector<size_t> (weights);
+
+
+    size_t threads_to_use;
+    if (nthread == 0) {
+      threads_to_use = testFullForest->getNthread();
+    } else {
+      threads_to_use = (size_t) nthread;
+    }
+
+    if (aggregation == "coefs") {
+      size_t nrow = featureData[0].size();
+      // Now we need the number of linear features + 1 for the intercept
+      size_t ncol = (*testFullForest).getTrainingData()->getLinObsData(0).size() + 1;
+      //Set coefficients to be zero
+      coefficients.resize(nrow, ncol);
+      coefficients.zeros(nrow, ncol);
+
+      testForestPrediction = (*testFullForest).predict(&featureData,
+                                                       NULL,
+                                                       &coefficients,
+                                                       NULL,
+                                                       seed,
+                                                       threads_to_use,
+                                                       false,
+                                                       false,
+                                                       NULL);
+
+    } else if (aggregation == "weightMatrix") {
+      size_t nrow = featureData[0].size(); // number of features to be predicted
+      size_t ncol = (*testFullForest).getNtrain(); // number of train data
+      weightMatrix.resize(nrow, ncol); // initialize the space for the matrix
+      weightMatrix.zeros(nrow, ncol);  // set it all to 0
+
+      // In this version, we pass NULL for terminalNodes, and the created weight
+      // matrix for weightMatrix. This speeds stuff up considerably if we want
+      // to run just weightMatrix without terminal nodes (especially on large datasets)
+      testForestPrediction = (*testFullForest).predict(&featureData,
+                                                       &weightMatrix,
+                                                       NULL,
+                                                       NULL,
+                                                       seed,
+                                                       threads_to_use,
+                                                       exact,
+                                                       false,
+                                                       NULL);
+    } else if (aggregation == "terminalNodes") {
+      // In this case, we return both the terminal nodes, and the weightMatrix
       size_t nrow = featureData[0].size(); // number of features to be predicted
       size_t ncol = (*testFullForest).getNtrain(); // number of train data
       weightMatrix.resize(nrow, ncol); // initialize the space for the matrix
@@ -460,7 +550,8 @@ Rcpp::List rcpp_cppPredictInterface(
       // then parse the sparse form in R
       ncol = (*testFullForest).getNtree();  // Total nodes across the forest
       nrow = featureData[1].size()+1;   // Total feature.new observations
-                                        // Bottom row is the total node count/tree
+      // Bottom row is the total node count/tree
+
 
       terminalNodes.resize(nrow, ncol);
       terminalNodes.zeros(nrow, ncol);
@@ -468,15 +559,23 @@ Rcpp::List rcpp_cppPredictInterface(
       // be updated, but otherwise it will be updated:
       testForestPrediction = (*testFullForest).predict(&featureData,
                                                        &weightMatrix,
+                                                       NULL,
                                                        &terminalNodes,
                                                        seed,
-                                                       testFullForest->getNthread());
+                                                       threads_to_use,
+                                                       exact,
+                                                       false,
+                                                       NULL);
     } else {
       testForestPrediction = (*testFullForest).predict(&featureData,
                                                        NULL,
                                                        NULL,
+                                                       NULL,
                                                        seed,
-                                                       testFullForest->getNthread());
+                                                       threads_to_use,
+                                                       exact,
+                                                       use_weights,
+                                                       use_weights ? testForestTreeWeights : NULL);
     }
 
     std::vector<double>* testForestPrediction_ =
@@ -484,9 +583,13 @@ Rcpp::List rcpp_cppPredictInterface(
 
     Rcpp::NumericVector predictions = Rcpp::wrap(*testForestPrediction_);
 
+    delete testForestPrediction_;
+    delete testForestTreeWeights;
+
     return Rcpp::List::create(Rcpp::Named("predictions") = predictions,
                               Rcpp::Named("weightMatrix") = weightMatrix,
-                              Rcpp::Named("terminalNodes") = terminalNodes);
+                              Rcpp::Named("terminalNodes") = terminalNodes,
+                              Rcpp::Named("coef") = coefficients);
 
     // return output;
 
@@ -503,7 +606,9 @@ Rcpp::List rcpp_cppMultilayerPredictInterface(
     SEXP multilayerForest,
     Rcpp::List x,
     std::string aggregation,
-    int seed
+    int seed,
+    int nthread,
+    bool exact
 ){
   try {
 
@@ -513,6 +618,13 @@ Rcpp::List rcpp_cppMultilayerPredictInterface(
       Rcpp::as< std::vector< std::vector<double> > >(x);
 
     std::unique_ptr< std::vector<double> > testMultiForestPrediction;
+
+    size_t threads_to_use;
+    if (nthread == 0) {
+      threads_to_use = testMultiForest->getNthread();
+    } else {
+      threads_to_use = (size_t) nthread;
+    }
     // We always initialize the weightMatrix. If the aggregation is weightMatrix
     // then we inialize the empty weight matrix
     arma::Mat<double> weightMatrix;
@@ -524,9 +636,17 @@ Rcpp::List rcpp_cppMultilayerPredictInterface(
 
       // The idea is that, if the weightMatrix is point to NULL it won't be
       // be updated, but otherwise it will be updated:
-      testMultiForestPrediction = (*testMultiForest).predict(&featureData, &weightMatrix, seed);
+      testMultiForestPrediction = (*testMultiForest).predict(&featureData,
+                                                             &weightMatrix,
+                                                             seed,
+                                                             threads_to_use,
+                                                             exact);
     } else {
-      testMultiForestPrediction = (*testMultiForest).predict(&featureData, NULL, seed);
+      testMultiForestPrediction = (*testMultiForest).predict(&featureData,
+                                                             NULL,
+                                                             seed,
+                                                             threads_to_use,
+                                                             exact);
     }
 
     std::vector<double>* testMultiForestPrediction_ =
@@ -566,21 +686,55 @@ double rcpp_OBBPredictInterface(
 }
 
 // [[Rcpp::export]]
-Rcpp::NumericVector rcpp_OBBPredictionsInterface(
-    SEXP forest
+Rcpp::List rcpp_OBBPredictionsInterface(
+    SEXP forest,
+    Rcpp::List x,
+    bool existing_df,
+    bool doubleOOB
 ){
+  // Then we predict with the feature.new data
+  if (existing_df) {
+    std::vector< std::vector<double> > featureData =
+      Rcpp::as< std::vector< std::vector<double> > >(x);
 
-  try {
-    Rcpp::XPtr< forestry > testFullForest(forest) ;
-    std::vector<double> OOBpreds = (*testFullForest).getOOBpreds();
-    Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
-    return wrapped_preds;
-  } catch(std::runtime_error const& err) {
-    forward_exception_to_r(err);
-  } catch(...) {
-    ::Rf_error("c++ exception (unknown reason)");
+    try {
+      Rcpp::XPtr< forestry > testFullForest(forest) ;
+
+      arma::Mat<double> weightMatrix;
+
+      size_t nrow = featureData[0].size(); // number of features to be predicted
+      size_t ncol = (*testFullForest).getNtrain(); // number of train data
+      weightMatrix.resize(nrow, ncol); // initialize the space for the matrix
+      weightMatrix.zeros(nrow, ncol);// set it all to 0
+
+      std::vector<double> OOBpreds = (*testFullForest).predictOOB(&featureData,
+                                                                  &weightMatrix,
+                                                                  doubleOOB);
+      Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
+
+      return Rcpp::List::create(Rcpp::Named("predictions") = wrapped_preds,
+                                Rcpp::Named("weightMatrix") = weightMatrix);
+    } catch(std::runtime_error const& err) {
+      forward_exception_to_r(err);
+    } catch(...) {
+      ::Rf_error("c++ exception (unknown reason)");
+    }
+
+  // Otherwise we predict with just the in sample data
+  } else {
+    try {
+      Rcpp::XPtr< forestry > testFullForest(forest) ;
+      std::vector<double> OOBpreds = (*testFullForest).getOOBpreds(doubleOOB);
+      Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
+      return Rcpp::List::create(Rcpp::Named("predictions") = wrapped_preds);
+    } catch(std::runtime_error const& err) {
+      forward_exception_to_r(err);
+    } catch(...) {
+      ::Rf_error("c++ exception (unknown reason)");
+    }
   }
-  return Rcpp::NumericVector::get_na() ;
+
+  return Rcpp::List::create(NA_REAL);
 }
 
 // [[Rcpp::export]]
@@ -652,6 +806,7 @@ Rcpp::List rcpp_CppToR_translator(
 
     // Return the lis of list. For each tree an element in the first list:
     Rcpp::List list_to_return;
+
     for(size_t i=0; i!=forest_dta->size(); i++){
       Rcpp::IntegerVector var_id = Rcpp::wrap(((*forest_dta)[i]).var_id);
 
@@ -703,7 +858,8 @@ Rcpp::List rcpp_CppToR_translator(
 			   Rcpp::Named("averagingSampleIndex") = averagingSampleIndex,
 			   Rcpp::Named("splittingSampleIndex") = splittingSampleIndex,
 			   Rcpp::Named("naLeftCounts") = naLeftCounts,
-			   Rcpp::Named("naRightCounts") = naRightCounts
+			   Rcpp::Named("naRightCounts") = naRightCounts,
+			   Rcpp::Named("seed") = (*forest_dta)[i].seed // Add the seeds to the list we return
         );
 
       // std::cout << "finished list\n";
@@ -714,6 +870,8 @@ Rcpp::List rcpp_CppToR_translator(
 
     // std::cout << "hello1\n";
     // std::cout.flush();
+
+
 
     return list_to_return;
 
@@ -842,7 +1000,8 @@ Rcpp::List rcpp_multilayer_CppToR_translator(
             Rcpp::Named("averagingSampleIndex") = averagingSampleIndex,
             Rcpp::Named("splittingSampleIndex") = splittingSampleIndex,
             Rcpp::Named("naLeftCounts") = naLeftCounts,
-            Rcpp::Named("naRightCounts") = naRightCounts
+            Rcpp::Named("naRightCounts") = naRightCounts,
+            Rcpp::Named("seed") = (*(forest_dta[j]))[i].seed
           );
 
         // std::cout << "finished list\n";
@@ -853,11 +1012,11 @@ Rcpp::List rcpp_multilayer_CppToR_translator(
         // std::cout << i << "pushed list\n";
         // std::cout.flush();
       }
-      list_to_return.push_back(list_to_return_j);
 
       // std::cout << "pushing final list\n";
       // std::cout.flush();
 
+      list_to_return.push_back(list_to_return_j);
     }
 
     // std::cout << "hello1\n";
@@ -885,6 +1044,8 @@ Rcpp::List rcpp_reconstructree(
   bool replace,
   int sampsize,
   double splitratio,
+  bool OOBhonest,
+  bool doubleBootstrap,
   int mtry,
   int nodesizeSpl,
   int nodesizeAvg,
@@ -904,6 +1065,8 @@ Rcpp::List rcpp_reconstructree(
   Rcpp::NumericVector deepFeatureWeightsVariables,
   Rcpp::NumericVector observationWeights,
   Rcpp::NumericVector monotonicConstraints,
+  Rcpp::NumericVector groupMemberships,
+  bool monotoneAvg,
   bool hasNas,
   bool linear,
   double overfitPenalty,
@@ -935,6 +1098,9 @@ Rcpp::List rcpp_reconstructree(
   std::unique_ptr< std::vector< std::vector<size_t> > > splittingSampleIndex(
       new  std::vector< std::vector<size_t> >
   );
+  std::unique_ptr< std::vector<unsigned int> > tree_seeds(
+      new std::vector<unsigned int>
+  );
 
 
 
@@ -964,7 +1130,9 @@ Rcpp::List rcpp_reconstructree(
     naRightCounts->push_back(
         Rcpp::as< std::vector<int> > ((Rcpp::as<Rcpp::List>(R_forest[i]))[7])
     );
-
+    tree_seeds->push_back(
+        Rcpp::as< unsigned int > ((Rcpp::as<Rcpp::List>(R_forest[i]))[8])
+    );
   }
 
   // Decode catCols and R_forest
@@ -983,11 +1151,6 @@ Rcpp::List rcpp_reconstructree(
     (*categoricalFeatureColsRcpp_copy).push_back(
         (*categoricalFeatureColsRcpp)[i]);
   }
-  (
-      new std::vector<size_t>(
-          Rcpp::as< std::vector<size_t> >(catCols)
-      )
-  ); // contains the col indices of categorical features.
 
   std::unique_ptr<std::vector< std::vector<double> > > featureDataRcpp (
       new std::vector< std::vector<double> >(
@@ -1041,6 +1204,11 @@ Rcpp::List rcpp_reconstructree(
           Rcpp::as< std::vector<int> >(monotonicConstraints)
       )
   );
+  std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+      new std::vector<size_t>(
+          Rcpp::as< std::vector<size_t> >(groupMemberships)
+      )
+  );
 
   DataFrame* trainingData = new DataFrame(
     std::move(featureDataRcpp),
@@ -1054,7 +1222,9 @@ Rcpp::List rcpp_reconstructree(
     std::move(deepFeatureWeightsRcpp),
     std::move(deepFeatureWeightsVariablesRcpp),
     std::move(observationWeightsRcpp),
-    std::move(monotonicConstraintsRcpp)
+    std::move(monotonicConstraintsRcpp),
+    std::move(groupMembershipsRcpp),
+    (bool) monotoneAvg
   );
 
   forestry* testFullForest = new forestry(
@@ -1063,6 +1233,8 @@ Rcpp::List rcpp_reconstructree(
     (bool) replace,
     (int) sampsize,
     (double) splitratio,
+    (bool) OOBhonest,
+    (bool) doubleBootstrap,
     (int) mtry,
     (int) nodesizeSpl,
     (int) nodesizeAvg,
@@ -1083,6 +1255,7 @@ Rcpp::List rcpp_reconstructree(
   );
 
   testFullForest->reconstructTrees(categoricalFeatureColsRcpp_copy,
+                                   tree_seeds,
                                    var_ids,
                                    split_vals,
                                    naLeftCounts,
@@ -1120,6 +1293,8 @@ Rcpp::List rcpp_reconstruct_forests(
     bool replace,
     int sampsize,
     double splitratio,
+    bool OOBhonest,
+    bool doubleBootstrap,
     int mtry,
     int nodesizeSpl,
     int nodesizeAvg,
@@ -1138,7 +1313,9 @@ Rcpp::List rcpp_reconstruct_forests(
     Rcpp::NumericVector deepFeatureWeightsVariables,
     Rcpp::NumericVector observationWeights,
     Rcpp::NumericVector monotonicConstraints,
+    Rcpp::NumericVector groupMemberships,
     Rcpp::NumericVector gammas,
+    bool monotoneAvg,
     bool linear,
     double overfitPenalty,
     bool doubleTree
@@ -1153,6 +1330,7 @@ Rcpp::List rcpp_reconstruct_forests(
   std::vector< std::unique_ptr< std::vector< std::vector<size_t> > > > leafSplidxs;
   std::vector< std::unique_ptr< std::vector< std::vector<size_t> > > > averagingSampleIndex;
   std::vector< std::unique_ptr< std::vector< std::vector<size_t> > > > splittingSampleIndex;
+  std::vector< std::unique_ptr< std::vector<unsigned int> > > tree_seeds;
 
   std::vector< forestry* > multilayerForests;
   // Now we need to iterate through the length of number forests, and for each
@@ -1170,6 +1348,7 @@ Rcpp::List rcpp_reconstruct_forests(
       std::vector< std::vector<size_t> > cur_leafSplidxs;
       std::vector< std::vector<size_t> > cur_averagingSampleIndex;
       std::vector< std::vector<size_t> > cur_splittingSampleIndex;
+      std::vector< unsigned int > cur_tree_seeds;
 
     // Now for the current forest, we iterate through and build the trees
     for(size_t i = 0; i < (size_t) Rcpp::as<Rcpp::List>(R_forests[j]).size(); i++){
@@ -1208,6 +1387,9 @@ Rcpp::List rcpp_reconstruct_forests(
         Rcpp::as< std::vector<int> > (Rcpp::as<Rcpp::List>(Rcpp::as<Rcpp::List>(R_forests[j])[i])[7])
       );
 
+      cur_tree_seeds.push_back(
+        Rcpp::as< unsigned int > (Rcpp::as<Rcpp::List>(Rcpp::as<Rcpp::List>(R_forests[j])[i])[8])
+      );
     }
     // Now the cur vectors hold the info for each tree, we have to
     // add this info to the vector of forests
@@ -1243,6 +1425,10 @@ Rcpp::List rcpp_reconstruct_forests(
         new std::vector< std::vector<size_t> >(cur_splittingSampleIndex)
     ));
 
+    tree_seeds.push_back(std::unique_ptr< std::vector<unsigned int> >(
+        new std::vector< unsigned int >(cur_tree_seeds)
+    ));
+
     // Decode catCols and R_forest
     std::unique_ptr< std::vector<size_t> > categoricalFeatureColsRcpp (
         new std::vector<size_t>(
@@ -1259,11 +1445,6 @@ Rcpp::List rcpp_reconstruct_forests(
       (*categoricalFeatureColsRcpp_copy).push_back(
           (*categoricalFeatureColsRcpp)[i]);
     }
-    (
-        new std::vector<size_t>(
-            Rcpp::as< std::vector<size_t> >(catCols)
-        )
-    ); // contains the col indices of categorical features.
 
     std::unique_ptr<std::vector< std::vector<double> > > featureDataRcpp (
         new std::vector< std::vector<double> >(
@@ -1317,6 +1498,12 @@ Rcpp::List rcpp_reconstruct_forests(
             Rcpp::as< std::vector<int> >(monotonicConstraints)
         )
     );
+    std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+        new std::vector<size_t>(
+            Rcpp::as< std::vector<size_t> >(groupMemberships)
+        )
+    );
+
 
     DataFrame* trainingData = new DataFrame(
       std::move(featureDataRcpp),
@@ -1330,7 +1517,9 @@ Rcpp::List rcpp_reconstruct_forests(
       std::move(deepFeatureWeightsRcpp),
       std::move(deepFeatureWeightsVariablesRcpp),
       std::move(observationWeightsRcpp),
-      std::move(monotonicConstraintsRcpp)
+      std::move(monotonicConstraintsRcpp),
+      std::move(groupMembershipsRcpp),
+      (bool) monotoneAvg
     );
 
     // std::cout << "Making a forest \n";
@@ -1342,6 +1531,8 @@ Rcpp::List rcpp_reconstruct_forests(
       (bool) replace,
       (int) sampsize,
       (double) splitratio,
+      (bool) OOBhonest,
+      (bool) doubleBootstrap,
       (int) mtry,
       (int) nodesizeSpl,
       (int) nodesizeAvg,
@@ -1365,6 +1556,7 @@ Rcpp::List rcpp_reconstruct_forests(
     // std::cout.flush();
     // Reconstruct the jth forest with its tree info
     testFullForest->reconstructTrees(categoricalFeatureColsRcpp_copy,
+                                     tree_seeds[j],
                                      var_ids[j],
                                      split_vals[j],
                                      naLeftCounts[j],
@@ -1385,62 +1577,73 @@ Rcpp::List rcpp_reconstruct_forests(
           Rcpp::as< std::vector<size_t> >(catCols)
       )
   ); // contains the col indices of categorical features.
+
   std::unique_ptr< std::vector<size_t> > categoricalFeatureColsRcpp_copy(
       new std::vector<size_t>
   );
+
   for(size_t i=0; i<(*categoricalFeatureColsRcpp).size(); i++){
     (*categoricalFeatureColsRcpp_copy).push_back(
         (*categoricalFeatureColsRcpp)[i]);
   }
-  (
-      new std::vector<size_t>(
-          Rcpp::as< std::vector<size_t> >(catCols)
-      )
-  ); // contains the col indices of categorical features.
+
   std::unique_ptr<std::vector< std::vector<double> > > featureDataRcpp (
       new std::vector< std::vector<double> >(
           Rcpp::as< std::vector< std::vector<double> > >(x)
       )
   );
+
   std::unique_ptr< std::vector<double> > outcomeDataRcpp (
       new std::vector<double>(
           Rcpp::as< std::vector<double> >(y)
       )
   );
+
   std::unique_ptr< std::vector<size_t> > linearFeats (
       new std::vector<size_t>(
           Rcpp::as< std::vector<size_t> >(linCols)
       )
   );
+
   std::sort(linearFeats->begin(), linearFeats->end());
   std::unique_ptr< std::vector<double> > featureWeightsRcpp (
       new std::vector<double>(
           Rcpp::as< std::vector<double> >(featureWeights)
       )
   );
+
   std::unique_ptr< std::vector<size_t> > featureWeightsVariablesRcpp (
       new std::vector<size_t>(
           Rcpp::as< std::vector<size_t> >(featureWeightsVariables)
       )
   );
+
   std::unique_ptr< std::vector<double> > deepFeatureWeightsRcpp (
       new std::vector<double>(
           Rcpp::as< std::vector<double> >(deepFeatureWeights)
       )
   );
+
   std::unique_ptr< std::vector<size_t> > deepFeatureWeightsVariablesRcpp (
       new std::vector<size_t>(
           Rcpp::as< std::vector<size_t> >(deepFeatureWeightsVariables)
       )
   );
+
   std::unique_ptr< std::vector<double> > observationWeightsRcpp (
       new std::vector<double>(
           Rcpp::as< std::vector<double> >(observationWeights)
       )
   );
+
   std::unique_ptr< std::vector<int> > monotonicConstraintsRcpp (
       new std::vector<int>(
           Rcpp::as< std::vector<int> >(monotonicConstraints)
+      )
+  );
+  std::unique_ptr< std::vector<size_t> > groupMembershipsRcpp (
+      new std::vector<size_t>(
+          Rcpp::as< std::vector<size_t> >(groupMemberships)
       )
   );
 
@@ -1456,7 +1659,9 @@ Rcpp::List rcpp_reconstruct_forests(
     std::move(deepFeatureWeightsRcpp),
     std::move(deepFeatureWeightsVariablesRcpp),
     std::move(observationWeightsRcpp),
-    std::move(monotonicConstraintsRcpp)
+    std::move(monotonicConstraintsRcpp),
+    std::move(groupMembershipsRcpp),
+    (bool) monotoneAvg
   );
 
 
@@ -1471,6 +1676,8 @@ Rcpp::List rcpp_reconstruct_forests(
     (bool) replace,
     (int) sampsize,
     (double) splitratio,
+    (bool) OOBhonest,
+    (bool) doubleBootstrap,
     (size_t) mtry,
     (size_t) nodesizeSpl,
     (size_t) nodesizeAvg,
@@ -1534,8 +1741,12 @@ std::vector< std::vector<double> > rcpp_cppImputeInterface(
   testForestPrediction = (*testFullForest).predict(&featureData,
                                                    &weightMatrix,
                                                    NULL,
+                                                   NULL,
                                                    seed,
-                                                   testFullForest->getNthread());
+                                                   testFullForest->getNthread(),
+                                                   false,
+                                                   false,
+                                                   NULL);
 
   std::vector<double>* testForestPrediction_ =
     new std::vector<double>(*testForestPrediction.get());

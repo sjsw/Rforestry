@@ -17,5 +17,7 @@ getOOB(object, noWarning)
 The OOB error of the forest.
 }
 \description{
-Calculate the out-of-bag error of a given forest.
+Calculate the out-of-bag error of a given forest. This is done
+by using the out-of-bag predictions for each observation, and calculating the
+MSE over the entire forest.
 }

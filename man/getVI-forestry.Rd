@@ -11,8 +11,12 @@ getVI(object, noWarning)
 
 \item{noWarning}{flag to not display warnings}
 }
+\value{
+The variable importance of the forest.
+}
 \description{
-Calculate increase in OOB for each shuffled feature for forest.
+Calculate the percentage increase in OOB error of the forest
+ when each feature is shuffled.
 }
 \note{
 No seed is passed to this function so it is

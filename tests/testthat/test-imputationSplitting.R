@@ -10,6 +10,7 @@ test_that("Tests if imputation splitting works", {
 
   rf <- forestry(x = x,
                  y = y,
+                 nthread = 2,
                  ntree = 500)
 
   pred <- predict(rf, x)
@@ -18,6 +19,7 @@ test_that("Tests if imputation splitting works", {
 
   rf_impute <- forestry(x = x_missing,
                         y = y,
+                        nthread = 2,
                         ntree = 500)
 
   pred_na <- predict(rf_impute, x)
@@ -45,6 +47,7 @@ test_that("Tests if imputation splitting works", {
 
   rf <- forestry(x = x,
                  y = y,
+                 nthread = 2,
                  ntree = 500)
 
   pred <- predict(rf, x)
@@ -54,6 +57,7 @@ test_that("Tests if imputation splitting works", {
 
   rf_impute <- forestry(x = x_missing,
                         y = y,
+                        nthread = 2,
                         ntree = 500)
 
   pred_na <- predict(rf_impute, x)

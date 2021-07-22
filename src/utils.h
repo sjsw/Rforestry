@@ -22,6 +22,10 @@ int add_vector(
     std::vector<int>* v
 );
 
+double square(
+    double x
+);
+
 
 struct tree_info {
   std::vector< int > var_id;
@@ -43,6 +47,10 @@ struct tree_info {
   std::vector< int > naRightCount;
   // Contains the count of NA's which fell to the right for each split value
   // (-1 indicates leaf node, 0 indicates no NA's fell that way)
+  unsigned int seed;
+  // The seed that the tree was given (this uniquely identifies each tree
+  // so that we can tell them apart. Very important for prediction when
+  // exact = TRUE as we must aggregate the trees in the right order)
 };
 
 // Contains the information to help with monotonic constraints on splitting
@@ -57,8 +65,16 @@ struct monotonic_info {
   // currently being split on. These are used to reject potential splits
   // which do not respect the bounds, and therfore enforce global monotonic
   // bounds.
-  float upper_bound;
-  float lower_bound;
+  double upper_bound;
+  double lower_bound;
+
+  // This flag indicates whether or not to enforce monotonicity on the averaging
+  // set as well as the splitting set
+  bool monotoneAvg;
+
+  monotonic_info(){
+    monotoneAvg = false;
+  };
 };
 
 #endif //FORESTRYCPP_UTILS_H

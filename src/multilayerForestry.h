@@ -26,6 +26,8 @@ public:
     bool replace,
     size_t sampSize,
     double splitRatio,
+    bool OOBhonest,
+    bool doubleBootstrap,
     size_t mtry,
     size_t minNodeSizeSpt,
     size_t minNodeSizeAvg,
@@ -48,7 +50,9 @@ public:
   std::unique_ptr< std::vector<double> > predict(
       std::vector< std::vector<double> >* xNew,
       arma::Mat<double>* weightMatrix,
-      int seed
+      int seed,
+      size_t nthread,
+      bool exact
   );
 
   void reconstructForests(
@@ -113,6 +117,10 @@ public:
     return _splitRatio;
   }
 
+  bool getOOBhonest() {
+    return _OOBhonest;
+  }
+
   bool isReplacement() {
     return _replace;
   }
@@ -171,6 +179,8 @@ private:
   bool _replace;
   size_t _sampSize;
   double _splitRatio;
+  bool _OOBhonest;
+  bool _doubleBootstrap;
   size_t _mtry;
   size_t _minNodeSizeSpt;
   size_t _minNodeSizeAvg;
