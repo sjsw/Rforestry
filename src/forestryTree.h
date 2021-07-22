@@ -183,8 +183,7 @@ public:
     bool OOBhonest,
     bool doubleOOB,
     size_t nodesizeStrictAvg,
-    std::vector< std::vector<double> >* xNew,
-    arma::Mat<double>* weightMatrix
+    std::vector< std::vector<double> >* xNew
   );
 
   void getShuffledOOBPrediction(

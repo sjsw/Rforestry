@@ -682,7 +682,6 @@ std::unique_ptr< std::vector<double> > forestry::predict(
 
 std::vector<double> forestry::predictOOB(
     std::vector< std::vector<double> >* xNew,
-    arma::Mat<double>* weightMatrix,
     bool doubleOOB
 ) {
 
@@ -734,8 +733,7 @@ std::vector<double> forestry::predictOOB(
                       getOOBhonest(),
                       doubleOOB,
                       getMinNodeSizeToSplitAvg(),
-                      xNew,
-                      weightMatrix
+                      xNew
                   );
     #if DOPARELLEL
                   std::lock_guard<std::mutex> lock(threadLock);
@@ -772,10 +770,6 @@ std::vector<double> forestry::predictOOB(
       OOB_MSE +=
         pow(trueValue - outputOOBPrediction[j] / outputOOBCount[j], 2);
       outputOOBPrediction[j] = outputOOBPrediction[j] / outputOOBCount[j];
-      //Also divide the weightMatrix
-      for (size_t i = 0; i < numObservations; i++) {
-        (*weightMatrix)(j,i) = (*weightMatrix)(j,i) / outputOOBCount[j];
-      }
     } else {
       outputOOBPrediction[j] = std::numeric_limits<double>::quiet_NaN();
     }
@@ -950,8 +944,7 @@ void forestry::calculateOOBError(
               getOOBhonest(),
               doubleOOB,
               getMinNodeSizeToSplitAvg(),
-              nullptr,
-              NULL
+              nullptr
             );
 
             #if DOPARELLEL

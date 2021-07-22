@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // rcpp_cppDataFrameInterface
 SEXP rcpp_cppDataFrameInterface(Rcpp::List x, Rcpp::NumericVector y, Rcpp::NumericVector catCols, Rcpp::NumericVector linCols, int numRows, int numColumns, Rcpp::NumericVector featureWeights, Rcpp::NumericVector featureWeightsVariables, Rcpp::NumericVector deepFeatureWeights, Rcpp::NumericVector deepFeatureWeightsVariables, Rcpp::NumericVector observationWeights, Rcpp::NumericVector monotonicConstraints, Rcpp::NumericVector groupMemberships, bool monotoneAvg);
 RcppExport SEXP _Rforestry_rcpp_cppDataFrameInterface(SEXP xSEXP, SEXP ySEXP, SEXP catColsSEXP, SEXP linColsSEXP, SEXP numRowsSEXP, SEXP numColumnsSEXP, SEXP featureWeightsSEXP, SEXP featureWeightsVariablesSEXP, SEXP deepFeatureWeightsSEXP, SEXP deepFeatureWeightsVariablesSEXP, SEXP observationWeightsSEXP, SEXP monotonicConstraintsSEXP, SEXP groupMembershipsSEXP, SEXP monotoneAvgSEXP) {
@@ -172,7 +177,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_OBBPredictionsInterface
-Rcpp::List rcpp_OBBPredictionsInterface(SEXP forest, Rcpp::List x, bool existing_df, bool doubleOOB);
+Rcpp::NumericVector rcpp_OBBPredictionsInterface(SEXP forest, Rcpp::List x, bool existing_df, bool doubleOOB);
 RcppExport SEXP _Rforestry_rcpp_OBBPredictionsInterface(SEXP forestSEXP, SEXP xSEXP, SEXP existing_dfSEXP, SEXP doubleOOBSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
