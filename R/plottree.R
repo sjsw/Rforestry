@@ -246,28 +246,45 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
       remat <- predict(encoder, this_ds)
       ###
       y_leaf <- dta_y[leaf_idx[[leaf_id]]]
-      plm <- glmnet::glmnet(x = remat,
-                            y = y_leaf,
-                            lambda = forestry_tree@overfitPenalty * sd(y_leaf)/nrow(remat),
-                            alpha	= 0)
 
-      plm_pred <- predict(plm, type = "coef")
+      # handle single unique value y_leaf otherwise glmnet fails
+      y_leaf_unique <- unique(y_leaf)
       plm_pred_names <- c("interc", colnames(remat))
-
+      
       return_char <- character()
-      for (i in 1:length(plm_pred)) {
-        return_char <- paste0(return_char,
-                              substr(plm_pred_names[i], 1, beta.char.len), " ",
-                              round(plm_pred[i], 2), "<br>")
+      dev.ratio <- 1
+      
+      if(length(y_leaf_unique) == 1) {
+        return_char = paste0(substr(plm_pred_names[1], 1, beta.char.len), " ", round(y_leaf_unique, 2), "<br>")
+        dev.ratio <- 1
+      } else {
+        plm <- glmnet::glmnet(x = remat,
+                              y = y_leaf,
+                              lambda = forestry_tree@overfitPenalty * sd(y_leaf)/nrow(remat),
+                              alpha	= 0)
+        
+        plm_pred <- predict(plm, type = "coef")
+        
+        
+        
+        for (i in 1:length(plm_pred)) {
+          return_char <- paste0(return_char,
+                                substr(plm_pred_names[i], 1, beta.char.len), " ",
+                                round(plm_pred[i], 2), "<br>")
+        }
+        
+        dev.ratio <- plm$dev.ratio
       }
+      
+      
       nodes$title[leaf_id] <- paste0(nodes$label[leaf_id],
                                      "<br> R2 = ",
-                                     plm$dev.ratio,
+                                     dev.ratio,
                                      "<br>========<br>",
                                      return_char)
       nodes$label[leaf_id] <- paste0(nodes$label[leaf_id],
                                      "\n R2 = ",
-                                     round(plm$dev.ratio, 3),
+                                     round(dev.ratio, 3),
                                      "\n=======\nm = ",
                                      round(mean(dta_y[leaf_idx[[leaf_id]]]), 5))
     }
