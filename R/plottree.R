@@ -241,19 +241,37 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
       # leaf_id = 5
       ###
       this_ds <- dta_x[leaf_idx[[leaf_id]],
-                       forestry_tree@linFeats + 1]
+                       forestry_tree@linFeats + 1, drop = FALSE]
       encoder <- onehot::onehot(this_ds)
       remat <- predict(encoder, this_ds)
       ###
       y_leaf <- dta_y[leaf_idx[[leaf_id]]]
-      plm <- glmnet::glmnet(x = remat,
-                            y = y_leaf,
-                            lambda = forestry_tree@overfitPenalty * sd(y_leaf)/nrow(remat),
-                            alpha	= 0)
+      single_feat <- ncol(remat) == 1
+      constant_y <- length(y_leaf) == 1 || var(y_leaf, na.rm = TRUE) < .Machine$double.eps * 10
+      # This threshold is arbitrary
+      #if(constant_y) browser()
+      if(!constant_y) {
+        x_names <- colnames(remat)
+        if(single_feat) {
+          remat <- cbind(1, remat)
+          intercept <- TRUE
+          penalty.factor <- c(0, 1)
+        } else {
+          intercept <- TRUE
+          penalty.factor <- rep(1, ncol(remat))
+        }
+        plm <- glmnet::glmnet(x = remat,
+                              y = y_leaf,
+                              lambda = forestry_tree@overfitPenalty * sd(y_leaf)/nrow(remat),
+                              alpha	= 0, intercept = intercept, penalty.factor = penalty.factor)
 
-      plm_pred <- predict(plm, type = "coef")
-      plm_pred_names <- c("interc", colnames(remat))
-
+        plm_pred <- predict(plm, type = "coef")
+        if(single_feat) plm_pred <- plm_pred[-2, , drop = FALSE]
+        plm_pred_names <- c("interc", x_names)
+      } else {
+        plm_pred <- matrix(mean(y_leaf), ncol = 1, nrow = 1)
+        plm_pred_names <- "interc"
+      }
       return_char <- character()
       for (i in 1:length(plm_pred)) {
         return_char <- paste0(return_char,
@@ -262,12 +280,12 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
       }
       nodes$title[leaf_id] <- paste0(nodes$label[leaf_id],
                                      "<br> R2 = ",
-                                     plm$dev.ratio,
+                                     if(constant_y) "undefined" else plm$dev.ratio,
                                      "<br>========<br>",
                                      return_char)
       nodes$label[leaf_id] <- paste0(nodes$label[leaf_id],
                                      "\n R2 = ",
-                                     round(plm$dev.ratio, 3),
+                                     if(constant_y) "undefined" else round(plm$dev.ratio, 3),
                                      "\n=======\nm = ",
                                      round(mean(dta_y[leaf_idx[[leaf_id]]]), 5))
     }
@@ -303,3 +321,4 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
   if (print.meta_dta) print(node_info)
   return(p1)
 }
+
