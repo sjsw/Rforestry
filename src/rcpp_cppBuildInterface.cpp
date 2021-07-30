@@ -686,7 +686,7 @@ double rcpp_OBBPredictInterface(
 }
 
 // [[Rcpp::export]]
-Rcpp::List rcpp_OBBPredictionsInterface(
+Rcpp::NumericVector rcpp_OBBPredictionsInterface(
     SEXP forest,
     Rcpp::List x,
     bool existing_df,
@@ -699,21 +699,10 @@ Rcpp::List rcpp_OBBPredictionsInterface(
 
     try {
       Rcpp::XPtr< forestry > testFullForest(forest) ;
-
-      arma::Mat<double> weightMatrix;
-
-      size_t nrow = featureData[0].size(); // number of features to be predicted
-      size_t ncol = (*testFullForest).getNtrain(); // number of train data
-      weightMatrix.resize(nrow, ncol); // initialize the space for the matrix
-      weightMatrix.zeros(nrow, ncol);// set it all to 0
-
       std::vector<double> OOBpreds = (*testFullForest).predictOOB(&featureData,
-                                                                  &weightMatrix,
                                                                   doubleOOB);
       Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
-
-      return Rcpp::List::create(Rcpp::Named("predictions") = wrapped_preds,
-                                Rcpp::Named("weightMatrix") = weightMatrix);
+      return wrapped_preds;
     } catch(std::runtime_error const& err) {
       forward_exception_to_r(err);
     } catch(...) {
@@ -726,7 +715,7 @@ Rcpp::List rcpp_OBBPredictionsInterface(
       Rcpp::XPtr< forestry > testFullForest(forest) ;
       std::vector<double> OOBpreds = (*testFullForest).getOOBpreds(doubleOOB);
       Rcpp::NumericVector wrapped_preds = Rcpp::wrap(OOBpreds);
-      return Rcpp::List::create(Rcpp::Named("predictions") = wrapped_preds);
+      return wrapped_preds;
     } catch(std::runtime_error const& err) {
       forward_exception_to_r(err);
     } catch(...) {
@@ -734,7 +723,7 @@ Rcpp::List rcpp_OBBPredictionsInterface(
     }
   }
 
-  return Rcpp::List::create(NA_REAL);
+  return Rcpp::NumericVector::get_na() ;
 }
 
 // [[Rcpp::export]]

@@ -246,6 +246,7 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
       remat <- predict(encoder, this_ds)
       ###
       y_leaf <- dta_y[leaf_idx[[leaf_id]]]
+<<<<<<< HEAD
       single_feat <- ncol(remat) == 1
       # Checking if all features are the same
       constant_y <- length(y_leaf) == 1 || var(y_leaf, na.rm = TRUE) < .Machine$double.eps * 10
@@ -274,20 +275,55 @@ plot.forestry <- function(x, tree.id = 1, print.meta_dta = FALSE,
         plm_pred <- matrix(mean(y_leaf), ncol = 1, nrow = 1)
         plm_pred_names <- "interc"
       }
+=======
+
+      # handle single unique value y_leaf otherwise glmnet fails
+      y_leaf_unique <- unique(y_leaf)
+      plm_pred_names <- c("interc", colnames(remat))
+      
+>>>>>>> master
       return_char <- character()
-      for (i in 1:length(plm_pred)) {
-        return_char <- paste0(return_char,
-                              substr(plm_pred_names[i], 1, beta.char.len), " ",
-                              round(plm_pred[i], 2), "<br>")
+      dev.ratio <- 1
+      
+      if(length(y_leaf_unique) == 1) {
+        return_char = paste0(substr(plm_pred_names[1], 1, beta.char.len), " ", round(y_leaf_unique, 2), "<br>")
+        dev.ratio <- 1
+      } else {
+        plm <- glmnet::glmnet(x = remat,
+                              y = y_leaf,
+                              lambda = forestry_tree@overfitPenalty * sd(y_leaf)/nrow(remat),
+                              alpha	= 0)
+        
+        plm_pred <- predict(plm, type = "coef")
+        
+        
+        
+        for (i in 1:length(plm_pred)) {
+          return_char <- paste0(return_char,
+                                substr(plm_pred_names[i], 1, beta.char.len), " ",
+                                round(plm_pred[i], 2), "<br>")
+        }
+        
+        dev.ratio <- plm$dev.ratio
       }
+      
+      
       nodes$title[leaf_id] <- paste0(nodes$label[leaf_id],
                                      "<br> R2 = ",
+<<<<<<< HEAD
                                      if(constant_y) "undefined" else plm$dev.ratio,
+=======
+                                     dev.ratio,
+>>>>>>> master
                                      "<br>========<br>",
                                      return_char)
       nodes$label[leaf_id] <- paste0(nodes$label[leaf_id],
                                      "\n R2 = ",
+<<<<<<< HEAD
                                      if(constant_y) "undefined" else round(plm$dev.ratio, 3),
+=======
+                                     round(dev.ratio, 3),
+>>>>>>> master
                                      "\n=======\nm = ",
                                      round(mean(dta_y[leaf_idx[[leaf_id]]]), 5))
     }
